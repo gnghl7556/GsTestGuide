@@ -1,0 +1,25 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    // ... 기존 설정들 ...
+
+    // 1. 모듈 구문 엄격함 끄기 (가장 중요)
+    // TypeScript 5.0 이상에서는 이 값이 true면 'import type'을 강제합니다.
+    "verbatimModuleSyntax": false,
+
+    // 2. 사용하지 않는 import 처리 (선택 사항)
+    // "remove"로 설정하면 타입 용도로만 쓴 import는 컴파일 시 알아서 지워줍니다.
+    // (TS 구버전 옵션이지만 여전히 유효할 수 있음)
+    "importsNotUsedAsValues": "remove",
+    "preserveValueImports": false,
+
+    // 3. (참고) Vite 환경 필수 옵션
+    // Vite는 각 파일을 독립적으로 변환하므로 이 옵션은 true여야 하지만,
+    // 위 설정을 끄면 'import type' 없이도 대부분 잘 작동합니다.
+    "isolatedModules": true
+  }
+}
