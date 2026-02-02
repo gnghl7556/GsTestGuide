@@ -1,15 +1,14 @@
 import { createContext } from 'react';
 import type { PlContact } from '../components/PlDirectoryPage';
-import type { ProjectSummary } from '../hooks/useProjects';
-import type { UserSummary } from '../hooks/useUsers';
+import type { Project, User } from '../types';
 import type { UseDirectoryActionsReturn } from '../hooks/useDirectoryActions';
 import type { UseTestSetupStateReturn } from '../hooks/useTestSetupState';
 
 export type TestSetupContextValue = UseTestSetupStateReturn &
   UseDirectoryActionsReturn & {
-    projects: ProjectSummary[];
+    projects: Project[];
     plDirectory: PlContact[];
-    users: UserSummary[];
+    users: User[];
     progressByTestNumber: Record<string, number>;
     authReady: boolean;
     dbReady: boolean;

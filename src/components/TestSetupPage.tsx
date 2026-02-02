@@ -1,26 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, List, UploadCloud, User, Trash2 } from 'lucide-react';
-import type { AgreementParsed, DocEntry } from '../types/testSetup';
+import type { AgreementParsed, DocEntry, Project, User as AppUser, UserCreateInput, UserUpdateInput } from '../types';
 
 interface TestSetupPageProps {
   testNumber: string;
   plId: string;
   scheduleStartDate: string;
   scheduleEndDate: string;
-  users: Array<{ id: string; name: string; rank?: string; email?: string; phone?: string }>;
+  users: AppUser[];
   currentUserId: string;
   onChangeUserId: (userId: string) => void;
-  onCreateUser: (input: { name: string; rank: string; email: string; phone: string }) => Promise<string | null>;
-  onUpdateUser: (id: string, input: { name: string; rank: string; email: string; phone: string }) => Promise<boolean>;
+  onCreateUser: (input: UserCreateInput) => Promise<string | null>;
+  onUpdateUser: (id: string, input: UserUpdateInput) => Promise<boolean>;
   onDeleteUser: (id: string) => Promise<boolean>;
-  projects: Array<{
-    id: string;
-    testNumber: string;
-    plId?: string;
-    testerId?: string;
-    createdBy?: string | null;
-    updatedAt?: number | null;
-  }>;
+  projects: Project[];
   progressByTestNumber: Record<string, number>;
   plDirectory: Array<{ id: string; name: string; role: string; phone: string; email: string }>;
   docs: DocEntry[];

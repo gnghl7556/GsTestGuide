@@ -10,18 +10,16 @@ import {
 } from 'firebase/firestore';
 import { deleteObject, getDownloadURL, ref, uploadBytes, type FirebaseStorage } from 'firebase/storage';
 import type { PlContact } from '../components/PlDirectoryPage';
-import type { TestSetupState } from '../types/testSetup';
-import type { ProjectSummary } from './useProjects';
-import type { UserSummary } from './useUsers';
+import type { Project, TestSetupState, User } from '../types';
 import { isDocEntry } from '../utils/testSetup';
 
 export type UseTestSetupParams = {
   db: Firestore | null | undefined;
   storage: FirebaseStorage | null | undefined;
   authReady: boolean;
-  projects: ProjectSummary[];
+  projects: Project[];
   plDirectory: PlContact[];
-  users: UserSummary[];
+  users: User[];
   initialTestSetup?: TestSetupState;
   initialCurrentUserId?: string;
 };
@@ -500,11 +498,11 @@ export function useTestSetupState({
     }
     const savedProject = await saveProjectNow();
     if (!savedProject.ok) {
-      return { ok: false, reason: savedProject.reason || '프로젝트 저장 실패(권한 또는 규칙 확인 필요)' };
+      return { ok: false, reason: savedProject.reason || '프로젝트 저장 실패(규칙 확인 필요)' };
     }
     const docsSaved = await saveDocsNow();
     if (!docsSaved.ok) {
-      return { ok: false, reason: docsSaved.reason || '문서 저장 실패(권한 또는 규칙 확인 필요)' };
+      return { ok: false, reason: docsSaved.reason || '문서 저장 실패(규칙 확인 필요)' };
     }
     return { ok: true };
   };

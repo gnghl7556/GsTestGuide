@@ -31,14 +31,6 @@ const stageData = [
       { id: 'fn-1', title: '설치 및 초기 구동', status: '진행 중' },
       { id: 'fn-2', title: '기본 기능 검증', status: '대기' }
     ]
-  },
-  {
-    name: '보안 점검',
-    status: '대기',
-    tasks: [
-      { id: 'sec-1', title: '로그/권한 점검', status: '대기' },
-      { id: 'sec-2', title: '암호화 점검', status: '대기' }
-    ]
   }
 ];
 

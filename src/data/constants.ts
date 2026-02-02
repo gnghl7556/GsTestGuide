@@ -1,4 +1,4 @@
-import { type RequirementCategory } from './requirements';
+import type { RequirementCategory } from '../types';
 
 // 1. 카테고리 정의
 export const CATEGORIES: { id: RequirementCategory; name: string }[] = [
@@ -43,13 +43,3 @@ export const CATEGORY_THEMES: Record<RequirementCategory, {
     badgeText: 'text-slate-700'
   }
 };
-
-// 3. 리뷰 데이터 타입
-export type ReviewStatus = 'Verified' | 'Cannot_Verify' | 'Hold' | 'None';
-
-export interface ReviewData {
-  docName: string;
-  page: string;
-  status: ReviewStatus;
-  comment: string;
-}

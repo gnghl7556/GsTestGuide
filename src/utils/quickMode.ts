@@ -1,75 +1,22 @@
-import type { Requirement } from '../data/requirements';
-
-export type QuickAnswer = 'YES' | 'NO' | 'NA';
-export type QuickDecision = 'PASS' | 'HOLD' | 'FAIL';
-export type QuickQuestionId = 'Q1' | 'Q2' | 'Q3';
-export type QuestionImportance = 'MUST' | 'SHOULD';
-
-export interface QuickQuestion {
-  id: QuickQuestionId;
-  text: string;
-  importance: QuestionImportance;
-}
-
-export interface ExpertDetails {
-  description: string;
-  checkPoints: string[];
-  evidenceExamples: string[];
-  testSuggestions: string[];
-  passCriteria: string;
-}
-
-export interface QuickModeItem {
-  requirementId: string;
-  category: Requirement['category'];
-  title: string;
-  summary: string;
-  targetTags: string[];
-  quickQuestions: QuickQuestion[];
-  evidenceChips: string[];
-  expertDetails: ExpertDetails;
-}
-
-export interface QuickReviewAnswer {
-  requirementId: string;
-  answers: Record<QuickQuestionId, QuickAnswer>;
-  answeredQuestions?: Partial<Record<QuickQuestionId, boolean>>;
-  autoRecommendation: QuickDecision;
-  finalDecision?: QuickDecision;
-  note?: string;
-  evidenceMappings?: { docName: string; page: string };
-  lockedQuestions?: Partial<Record<QuickQuestionId, boolean>>;
-  inputValues?: Record<
-    string,
-    | string
-    | number
-    | { name: string; ip?: string }[]
-    | { docType: string; fileName?: string; url?: string; source?: 'drive' | 'storage' }[]
-    | {
-        parseStatus?: 'pending' | 'parsed' | 'failed';
-        applicationNumber?: string;
-        contractType?: string;
-        certificationType?: string;
-        담당자?: string;
-        연락처?: string;
-        이메일?: string;
-      }
-  >;
-}
+import type {
+  Requirement,
+  QuickAnswer,
+  QuickDecision,
+  QuickQuestionId,
+  QuestionImportance,
+  QuickQuestion,
+  ExpertDetails,
+  QuickModeItem
+} from '../types';
 
 const MUST_HINTS = [
   '차단',
   '강제',
   '필수',
   '우회',
-  '암호화',
-  'TLS',
-  '서명',
   '검증',
-  '접근통제',
-  '무결성',
   '로그',
-  '보안부팅'
+  '서명'
 ];
 
 const SHOULD_HINTS = ['권장', '가능', '절차', '정의', '훈련', '정기', '점검', '정책'];
@@ -87,7 +34,6 @@ const CATEGORY_TAGS: Record<Requirement['category'], string[]> = {
   ],
   DURING: [
     '기능 테스트',
-    '보안성 테스트',
     '성능 테스트',
     '회귀 테스트',
     '결함 리포트',
@@ -107,13 +53,7 @@ const TAG_PATTERNS: Array<{ pattern: RegExp; tag: string }> = [
   { pattern: /로컬|콘솔/i, tag: '로컬 콘솔' },
   { pattern: /계정|사용자/i, tag: '계정' },
   { pattern: /세션|토큰|쿠키/i, tag: '세션/토큰' },
-  { pattern: /로그|감사/i, tag: '감사로그' },
-  { pattern: /암호|암호화|TLS|HTTPS/i, tag: '암호화' },
-  { pattern: /키|시크릿|KMS/i, tag: '키관리' },
-  { pattern: /SBOM|오픈소스/i, tag: 'SBOM' },
-  { pattern: /취약점|점검|검사/i, tag: '취약점' },
   { pattern: /업데이트|패치/i, tag: '업데이트' },
-  { pattern: /보안부팅|Secure Boot|부트/i, tag: '보안부팅' },
   { pattern: /백업|복구|DR|RTO|RPO/i, tag: '백업/복구' }
 ];
 

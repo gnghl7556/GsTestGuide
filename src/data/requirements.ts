@@ -1,39 +1,4 @@
-// ✅ export type이 반드시 있어야 합니다.
-export type RequirementCategory = 'BEFORE' | 'DURING' | 'AFTER';
-
-// ✅ export interface가 반드시 있어야 합니다.
-export interface Requirement {
-  id: string;
-  category: RequirementCategory;
-  title: string;
-  description: string;
-  keywords?: string[];
-  relatedInfo?: Array<{ label: string; value: string; href?: string }>;
-  requiredDocs?: string[];
-  docRequirements?: {
-    must?: string[];
-    multi?: string[];
-  };
-  inputFields?: Array<{
-    id: string;
-    label: string;
-    type: 'text' | 'number' | 'email' | 'tel' | 'textarea' | 'equipmentList';
-    placeholder?: string;
-    helper?: string;
-  }>;
-  checkPoints?: string[];
-  evidenceExamples?: string[];
-  testSuggestions?: string[];
-  passCriteria?: string;
-  excludeConditions?: {
-    isSaMD?: boolean;
-    noUserInterface?: boolean;
-  };
-  includeConditions?: {
-    isAI?: boolean;
-    hasPatientData?: boolean;
-  };
-}
+import type { Requirement } from '../types';
 
 // ✅ export const가 반드시 있어야 합니다.
 export const REQUIREMENTS_DB: Requirement[] = [
@@ -80,7 +45,7 @@ export const REQUIREMENTS_DB: Requirement[] = [
     checkPoints: [
       '시험 장비 목록이 확정되고 배정이 완료되었는가?',
       '장비별 사양과 역할이 문서화되어 있는가?',
-      '장비 전원/네트워크/보안 설정이 기본 상태로 준비되었는가?'
+      '장비 전원/네트워크 설정이 기본 상태로 준비되었는가?'
     ],
     evidenceExamples: ['장비 배정표', '장비 사양서', '장비 구성 사진'],
     testSuggestions: ['시험 시작 전 장비 점검 로그 확인'],
@@ -161,21 +126,13 @@ export const REQUIREMENTS_DB: Requirement[] = [
   {
     id: 'DUR-EXEC-02',
     category: 'DURING',
-    title: '보안성 테스트',
-    description: '보안성 테스트가 계획대로 수행되고 결과가 기록되는지 확인한다.',
-    checkPoints: ['보안성 테스트가 수행되었는가?', '결과가 기록되었는가?', '취약점이 관리되는가?'],
-    passCriteria: '보안성 테스트가 정상적으로 수행되고 결과가 기록되었다.'
-  },
-  {
-    id: 'DUR-EXEC-03',
-    category: 'DURING',
     title: '성능 테스트',
     description: '성능 테스트가 계획대로 수행되고 결과가 기록되는지 확인한다.',
     checkPoints: ['성능 테스트가 수행되었는가?', '결과가 기록되었는가?', '기준 대비 결과가 확인되었는가?'],
     passCriteria: '성능 테스트가 정상적으로 수행되고 결과가 기록되었다.'
   },
   {
-    id: 'DUR-EXEC-04',
+    id: 'DUR-EXEC-03',
     category: 'DURING',
     title: '회귀 테스트',
     description: '회귀 테스트가 계획대로 수행되고 결과가 기록되는지 확인한다.',

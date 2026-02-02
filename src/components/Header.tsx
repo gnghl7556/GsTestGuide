@@ -1,6 +1,6 @@
 import { ShieldCheck, CheckCircle2, AlertCircle, Clock, FileDown, Download, Upload } from 'lucide-react';
-import { CATEGORY_THEMES, type ReviewData } from '../data/constants';
-import { type ChecklistItem } from '../utils/checklistGenerator';
+import { CATEGORY_THEMES } from '../data/constants';
+import type { ChecklistItem, ReviewData } from '../types';
 
 interface HeaderProps { 
   reviewData: Record<string, ReviewData>; 

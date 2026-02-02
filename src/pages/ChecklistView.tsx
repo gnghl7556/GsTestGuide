@@ -1,14 +1,14 @@
 import { NavSidebar } from '../components/NavSidebar';
 import { CenterDisplay } from '../components/CenterDisplay';
 import { RightActionPanel } from '../components/RightActionPanel';
-import type { ChecklistItem } from '../utils/checklistGenerator';
 import type {
+  ChecklistItem,
   QuickAnswer,
   QuickModeItem,
   QuickQuestionId,
-  QuickReviewAnswer
-} from '../utils/quickMode';
-import type { ReviewData } from '../data/constants';
+  QuickReviewAnswer,
+  ReviewData
+} from '../types';
 
 type QuickInputValues = NonNullable<QuickReviewAnswer['inputValues']>;
 type QuickInputValue = QuickInputValues[string];

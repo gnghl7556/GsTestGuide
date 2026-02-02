@@ -4,17 +4,16 @@ import type { Firestore } from 'firebase/firestore';
 import type { PlContact } from '../components/PlDirectoryPage';
 import { useDirectoryActions } from '../hooks/useDirectoryActions';
 import { useTestSetupState, type UseTestSetupParams } from '../hooks/useTestSetupState';
-import type { ProjectSummary } from '../hooks/useProjects';
-import type { UserSummary } from '../hooks/useUsers';
+import type { Project, User } from '../types';
 import { TestSetupContext } from './testSetupContext';
 
 export type TestSetupProviderProps = {
   db: Firestore | null | undefined;
   storage: FirebaseStorage | null | undefined;
   authReady: boolean;
-  projects: ProjectSummary[];
+  projects: Project[];
   plDirectory: PlContact[];
-  users: UserSummary[];
+  users: User[];
   progressByTestNumber: Record<string, number>;
   initialTestSetup?: UseTestSetupParams['initialTestSetup'];
   initialCurrentUserId?: string;

@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { doc, getDoc, type Firestore } from 'firebase/firestore';
-import type { ChecklistItem } from '../utils/checklistGenerator';
-import type { ProjectSummary } from './useProjects';
+import type { ChecklistItem, Project } from '../types';
 
 export function useProgressByTestNumber(
   db: Firestore | null | undefined,
   authReady: boolean,
-  projects: ProjectSummary[],
+  projects: Project[],
   checklist: ChecklistItem[]
 ) {
   const [progressByTestNumber, setProgressByTestNumber] = useState<Record<string, number>>({});

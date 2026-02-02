@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { type ChecklistItem } from '../utils/checklistGenerator';
-import { type ReviewData } from '../data/constants';
-import { type QuickDecision } from '../utils/quickMode';
+import type { ChecklistItem, ReviewData, QuickDecision } from '../types';
 import { Check, AlertCircle, Clock, FileText, ChevronDown, ChevronUp, type LucideIcon } from 'lucide-react';
 
 interface RightActionPanelProps {

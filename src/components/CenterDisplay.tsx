@@ -1,5 +1,4 @@
-import { type ChecklistItem } from '../utils/checklistGenerator';
-import { type QuickAnswer, type QuickModeItem, type QuickQuestionId } from '../utils/quickMode';
+import type { ChecklistItem, QuickAnswer, QuickModeItem, QuickQuestionId, QuickInputValue } from '../types';
 import { CATEGORIES, CATEGORY_THEMES } from '../data/constants';
 import { Ban } from 'lucide-react';
 
@@ -9,39 +8,8 @@ interface CenterDisplayProps {
   quickModeItem: QuickModeItem | undefined;
   quickAnswers: Record<QuickQuestionId, QuickAnswer>;
   onQuickAnswer: (itemId: string, questionId: QuickQuestionId, value: QuickAnswer) => void;
-  inputValues: Record<
-    string,
-    | string
-    | number
-    | { name: string; ip?: string }[]
-    | { docType: string; fileName?: string; url?: string; source?: 'drive' | 'storage' }[]
-    | {
-        parseStatus?: 'pending' | 'parsed' | 'failed';
-        applicationNumber?: string;
-        contractType?: string;
-        certificationType?: string;
-        담당자?: string;
-        연락처?: string;
-        이메일?: string;
-      }
-  >;
-  onInputChange: (
-    itemId: string,
-    fieldId: string,
-    value:
-      | string
-      | number
-      | { name: string; ip?: string }[]
-      | { docType: string; fileName?: string; url?: string; source?: 'drive' | 'storage' }[]
-      | {
-          parseStatus?: 'pending' | 'parsed' | 'failed';
-          applicationNumber?: string;
-          contractType?: string;
-          certificationType?: string;
-          담당자?: string;
-          연락처?: string;
-        }
-  ) => void;
+  inputValues: Record<string, QuickInputValue>;
+  onInputChange: (itemId: string, fieldId: string, value: QuickInputValue) => void;
 }
 
 export function CenterDisplay({

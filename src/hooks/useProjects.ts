@@ -1,34 +1,9 @@
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, type Firestore, type Timestamp } from 'firebase/firestore';
-
-export type ProjectSummary = {
-  id: string;
-  testNumber: string;
-  plId?: string;
-  plName?: string;
-  plPhone?: string;
-  plEmail?: string;
-  testerName?: string;
-  testerPhone?: string;
-  testerEmail?: string;
-  testerId?: string;
-  createdBy?: string | null;
-  updatedAt?: number | null;
-  companyContactName?: string;
-  companyContactPhone?: string;
-  companyContactEmail?: string;
-  companyName?: string;
-  scheduleWorkingDays?: string;
-  scheduleStartDate?: string;
-  scheduleDefect1?: string;
-  scheduleDefect2?: string;
-  schedulePatchDate?: string;
-  scheduleEndDate?: string;
-  projectName?: string;
-};
+import type { Project } from '../types';
 
 export function useProjects(db: Firestore | null | undefined, authReady: boolean) {
-  const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     if (!db || !authReady) return;
@@ -59,13 +34,25 @@ export function useProjects(db: Firestore | null | undefined, authReady: boolean
           scheduleDefect2?: string;
           schedulePatchDate?: string;
           scheduleEndDate?: string;
+          projectYear?: number;
+          projectNumber?: number;
+          contractType?: string;
+          status?: Project['status'];
+          startDate?: Timestamp;
+          endDate?: Timestamp;
         };
         const testNumber = data.testNumber || docSnap.id;
         return {
           id: docSnap.id,
           testNumber,
+          projectYear: data.projectYear,
+          projectNumber: data.projectNumber,
           projectName: data.projectName,
           companyName: data.companyName,
+          contractType: data.contractType,
+          status: data.status,
+          startDate: data.startDate,
+          endDate: data.endDate,
           plId: data.plId,
           plName: data.plName,
           plPhone: data.plPhone,

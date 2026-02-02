@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Check, X } from 'lucide-react';
 
-// Type과 Value import 구분 (자동 적용)
-import type { ChecklistItem } from '../utils/checklistGenerator';
-import type { QuickReviewAnswer, QuickQuestionId } from '../utils/quickMode';
-import type { ReviewData } from '../data/constants';
+import type { ChecklistItem, QuickReviewAnswer, QuickQuestionId, ReviewData } from '../types';
 import { CATEGORIES, CATEGORY_THEMES } from '../data/constants';
 
 

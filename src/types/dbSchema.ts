@@ -1,36 +1,10 @@
 import type { Timestamp } from 'firebase/firestore';
 
-export type UserRank = '전임' | '선임' | '책임' | '수석';
-export type ProjectStatus = '대기' | '진행' | '중단' | '완료' | '재시험';
-export type ProjectMemberRole = 'PL' | '시험원';
 export type FeatureChangeType = '신규' | '수정' | '삭제' | '유지';
 export type TestCaseStatus = '대기' | 'Pass' | 'Fail' | 'Skip';
 export type DefectSeverity = 'H' | 'M' | 'L';
 export type DefectFrequency = 'A' | 'I';
 export type DefectStatus = '신규' | '확인' | '수정' | '보류' | '종료';
-
-export interface SchemaUser {
-  userId: string;
-  name: string;
-  rank: UserRank;
-  email: string;
-  phone: string;
-  password?: string;
-}
-
-export interface SchemaProject {
-  projectId: string;
-  projectYear: number;
-  projectNumber: number;
-  projectName: string;
-  status: ProjectStatus;
-  startDate: Timestamp;
-  endDate: Timestamp;
-  contractType?: string;
-  companyContactName?: string;
-  companyContactEmail?: string;
-  companyContactPhone?: string;
-}
 
 export interface SchemaTestEquipment {
   equipmentId: string;
@@ -43,11 +17,6 @@ export interface SchemaTestEquipment {
   storage: string;
   ipAddress?: string;
   prerequisites?: string[];
-}
-
-export interface SchemaProjectMember {
-  memberId: string;
-  role: ProjectMemberRole;
 }
 
 export interface SchemaFeature {

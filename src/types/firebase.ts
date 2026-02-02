@@ -1,43 +1,5 @@
 import type { Timestamp } from 'firebase/firestore';
 
-export interface UserProfile {
-  uid: string;
-  userName: string;
-  email: string;
-  role: 'PL' | 'Tester' | 'Admin';
-}
-
-export interface Project {
-  id: string;
-  testNumber: string;
-  projectYear: number;
-  projectNumber: number;
-  productName: string;
-  status: '대기' | '진행' | '중단' | '재시험' | '완료';
-  plId?: string;
-  testerIds?: string[];
-  agreementDocUrl?: string;
-  manualDocUrl?: string;
-  startDate: Timestamp;
-  endDate: Timestamp;
-  createdAt: Timestamp;
-}
-
-export interface ProjectMember {
-  uid: string;
-  userName: string;
-  roleInProject: 'PL' | 'Tester';
-}
-
-export interface TesterProfile {
-  id: string;
-  name: string;
-  role: string;
-  phone: string;
-  email: string;
-  org?: string;
-}
-
 export interface TestEquipment {
   id: string;
   role: string;

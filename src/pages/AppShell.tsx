@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { generateChecklist, type UserProfile, type ChecklistItem } from '../utils/checklistGenerator';
+import { generateChecklist } from '../utils/checklistGenerator';
 import {
   toQuickModeItem,
-  getRecommendation,
-  type QuickAnswer,
-  type QuickDecision,
-  type QuickModeItem,
-  type QuickQuestionId,
-  type QuickReviewAnswer
+  getRecommendation
 } from '../utils/quickMode';
-import { type ReviewData } from '../data/constants';
+import type {
+  ChecklistItem,
+  QuickAnswer,
+  QuickDecision,
+  QuickModeItem,
+  QuickQuestionId,
+  QuickReviewAnswer,
+  ReviewData,
+  UserProfile
+} from '../types';
 
 import { CompactDashboardHeader } from '../components/CompactDashboardHeader';
 import { FeatureListModal } from '../components/FeatureListModal';

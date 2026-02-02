@@ -1,19 +1,5 @@
-// ✅ requirements 파일을 정확히 import 해야 합니다.
-import { REQUIREMENTS_DB, type Requirement } from '../data/requirements';
-
-// ✅ export interface 필수
-export interface UserProfile {
-  productType: 'SaMD' | 'Embedded';
-  hasAI: boolean;
-  hasPatientData: boolean;
-  hasUI: boolean;
-}
-
-// ✅ export interface 필수
-export interface ChecklistItem extends Requirement {
-  status: 'Applicable' | 'Not_Applicable';
-  autoReason?: string;
-}
+import { REQUIREMENTS_DB } from '../data/requirements';
+import type { ChecklistItem, UserProfile } from '../types';
 
 // ✅ export function 필수
 export function generateChecklist(profile: UserProfile): ChecklistItem[] {
