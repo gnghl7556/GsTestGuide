@@ -1,8 +1,40 @@
+import { useState } from 'react';
+import { FeatureManager } from '../components/FeatureManager';
+import { TestCaseManager } from '../components/TestCaseManager';
+
 export function DesignPage() {
+  const [activeTab, setActiveTab] = useState<'feature' | 'testcase'>('feature');
+
   return (
-    <div className="rounded-xl border border-surface-200 bg-white p-6">
-      <h2 className="text-lg font-bold text-primary-800">설계</h2>
-      <p className="text-sm text-primary-500 mt-2">기능 리스트 및 테스트 케이스 관리 페이지 준비 중입니다.</p>
+    <div className="h-full flex flex-col">
+      <div className="flex items-center gap-2 border-b border-surface-200 bg-white px-4 py-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab('feature')}
+          className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+            activeTab === 'feature'
+              ? 'bg-primary-800 text-white'
+              : 'bg-surface-100 text-primary-600 hover:bg-surface-200'
+          }`}
+        >
+          기능 명세 (Features)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('testcase')}
+          className={`rounded-full px-4 py-2 text-xs font-semibold transition-colors ${
+            activeTab === 'testcase'
+              ? 'bg-primary-800 text-white'
+              : 'bg-surface-100 text-primary-600 hover:bg-surface-200'
+          }`}
+        >
+          테스트 케이스 (Test Cases)
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6">
+        {activeTab === 'feature' ? <FeatureManager /> : <TestCaseManager />}
+      </div>
     </div>
   );
 }
