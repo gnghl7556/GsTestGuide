@@ -119,9 +119,11 @@ export function useTestSetupState({
           certificationType?: string;
           productNameKo?: string;
           companyName?: string;
-          담당자?: string;
-          연락처?: string;
-          이메일?: string;
+          managerName?: string;
+          managerMobile?: string;
+          managerEmail?: string;
+          managerDepartment?: string;
+          managerJobTitle?: string;
         };
       };
       setTestSetup((prev) => {
@@ -132,16 +134,16 @@ export function useTestSetupState({
         };
         let changed = false;
         const next = { ...prev, agreementParsed: nextAgreementParsed };
-        if (nextAgreementParsed?.담당자 && !prev.companyContactName) {
-          next.companyContactName = nextAgreementParsed.담당자;
+        if ((nextAgreementParsed as { managerName?: string }).managerName && !prev.companyContactName) {
+          next.companyContactName = (nextAgreementParsed as { managerName?: string }).managerName || '';
           changed = true;
         }
-        if (nextAgreementParsed?.연락처 && !prev.companyContactPhone) {
-          next.companyContactPhone = nextAgreementParsed.연락처;
+        if ((nextAgreementParsed as { managerMobile?: string }).managerMobile && !prev.companyContactPhone) {
+          next.companyContactPhone = (nextAgreementParsed as { managerMobile?: string }).managerMobile || '';
           changed = true;
         }
-        if (nextAgreementParsed?.이메일 && !prev.companyContactEmail) {
-          next.companyContactEmail = nextAgreementParsed.이메일;
+        if ((nextAgreementParsed as { managerEmail?: string }).managerEmail && !prev.companyContactEmail) {
+          next.companyContactEmail = (nextAgreementParsed as { managerEmail?: string }).managerEmail || '';
           changed = true;
         }
         if ((nextAgreementParsed as { workingDays?: string }).workingDays && !prev.scheduleWorkingDays) {

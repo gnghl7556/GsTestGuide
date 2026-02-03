@@ -324,9 +324,9 @@ export function TestSetupPage({
                     onChange={(e) => onChangeUserId(e.target.value)}
                     className="bg-transparent w-full text-sm text-white/80 focus:outline-none"
                   >
-                    <option value="">선택하세요</option>
+                    <option value="" className="text-gray-900">선택하세요</option>
                     {users.map((user) => (
-                      <option key={user.id} value={user.id}>
+                      <option key={user.id} value={user.id} className="text-gray-900">
                         {user.name}{user.rank ? ` (${user.rank})` : ''}
                       </option>
                     ))}
@@ -443,9 +443,9 @@ export function TestSetupPage({
                   onChange={(e) => onChangePlId(e.target.value)}
                   className="bg-transparent w-full text-sm text-white/80 focus:outline-none"
                 >
-                  <option value="">선택하세요</option>
+                  <option value="" className="text-gray-900">선택하세요</option>
                   {plDirectory.map((pl) => (
-                    <option key={pl.id} value={pl.id}>
+                    <option key={pl.id} value={pl.id} className="text-gray-900">
                       {pl.name} {pl.role ? `(${pl.role})` : ''}
                     </option>
                   ))}
@@ -546,9 +546,9 @@ export function TestSetupPage({
                     <div>인증 유형: <span className="font-semibold text-white">{agreementParsed.certificationType || '-'}</span></div>
                     <div>제품명: <span className="font-semibold text-white">{agreementParsed.productNameKo || '-'}</span></div>
                     <div>업체명: <span className="font-semibold text-white">{agreementParsed.companyName || '-'}</span></div>
-                    <div>업무 담당자: <span className="font-semibold text-white">{agreementParsed.담당자 || '-'}</span></div>
-                    <div>연락처: <span className="font-semibold text-white">{agreementParsed.연락처 || '-'}</span></div>
-                    <div>이메일: <span className="font-semibold text-white">{agreementParsed.이메일 || '-'}</span></div>
+                    <div>업무 담당자: <span className="font-semibold text-white">{agreementParsed.managerName || '-'}</span></div>
+                    <div>연락처: <span className="font-semibold text-white">{agreementParsed.managerMobile || '-'}</span></div>
+                    <div>이메일: <span className="font-semibold text-white">{agreementParsed.managerEmail || '-'}</span></div>
                   </div>
                 ) : agreementParsed.parseStatus === 'failed' ? (
                   <div className="text-red-300">합의서 내용을 추출하지 못했습니다.</div>
@@ -610,9 +610,9 @@ export function TestSetupPage({
                   <div>인증 유형: <span className="font-semibold text-slate-900">{agreementParsed?.certificationType || '-'}</span></div>
                   <div>제품명: <span className="font-semibold text-slate-900">{agreementParsed?.productNameKo || '-'}</span></div>
                   <div>업체명: <span className="font-semibold text-slate-900">{agreementParsed?.companyName || '-'}</span></div>
-                  <div>업무 담당자: <span className="font-semibold text-slate-900">{agreementParsed?.담당자 || '-'}</span></div>
-                  <div>연락처: <span className="font-semibold text-slate-900">{agreementParsed?.연락처 || '-'}</span></div>
-                  <div>이메일: <span className="font-semibold text-slate-900">{agreementParsed?.이메일 || '-'}</span></div>
+                  <div>업무 담당자: <span className="font-semibold text-slate-900">{agreementParsed?.managerName || '-'}</span></div>
+                  <div>연락처: <span className="font-semibold text-slate-900">{agreementParsed?.managerMobile || '-'}</span></div>
+                  <div>이메일: <span className="font-semibold text-slate-900">{agreementParsed?.managerEmail || '-'}</span></div>
                 </div>
               ) : (
                 <div className="text-sm text-red-600">합의서 내용을 추출하지 못했습니다. 파일을 다시 업로드하거나 형식을 확인해주세요.</div>

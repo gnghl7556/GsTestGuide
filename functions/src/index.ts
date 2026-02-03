@@ -6,7 +6,12 @@ import { getStorage } from 'firebase-admin/storage';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as pdfParse from 'pdf-parse';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pdfParseLib = require('pdf-parse');
+// 함수면 그대로 쓰고, 아니면 .default를 사용 (방어 코드)
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const pdfParse = typeof pdfParseLib === 'function' ? pdfParseLib : pdfParseLib.default;
+console.log('[DEBUG] pdfParse type:', typeof pdfParse);
 
 initializeApp();
 
@@ -24,9 +29,11 @@ const parseTestNumber = (objectPath: string) => {
 // ==========================================
 export const onAgreementUpload = onObjectFinalized({ region: REGION }, async (event) => {
   const objectPath = event.data.name;
+  console.log('Triggered with:', objectPath);
   if (!objectPath || !isAgreementPath(objectPath)) return;
 
   const testNumber = parseTestNumber(objectPath);
+  console.log('Detected testNumber:', testNumber);
   if (!testNumber) return;
 
   const fileName = objectPath.split('/').slice(2).join('/');
@@ -63,11 +70,35 @@ export const onAgreementUpload = onObjectFinalized({ region: REGION }, async (ev
     }
 
     const buffer = await fs.promises.readFile(localPath);
-    
-    // 로그 추가 포인트
-    const result = await pdfParse(buffer);
-    text = result.text || '';
+
+    try {
+      const result = await pdfParse(buffer);
+      text = result.text || '';
+    } catch (error) {
+      console.error('[PDF Parse] failed:', error);
+      await db.collection('agreementDocs').doc(testNumber).set(
+        {
+          parseStatus: 'failed',
+          parseError: String(error),
+        },
+        { merge: true }
+      );
+      return;
+    }
+
     console.log(`[DEBUG] PDF Text Start: ${text.substring(0, 500)}`);
+
+    if (!text.trim()) {
+      console.log('저장 시도 중...');
+      await db.collection('agreementDocs').doc(testNumber).set(
+        {
+          parseStatus: 'failed',
+          parseError: '텍스트를 추출할 수 없는 PDF입니다. (이미지 스캔본 등)',
+        },
+        { merge: true }
+      );
+      return;
+    }
 
     // 추출 로직 실행
     const parsed = extractAgreementFields(text);
@@ -86,6 +117,7 @@ export const onAgreementUpload = onObjectFinalized({ region: REGION }, async (ev
     }
 
     // 최종 저장
+    console.log('저장 시도 중...');
     await db.collection('agreementDocs').doc(testNumber).set(
       {
         parseStatus,
@@ -171,8 +203,28 @@ const extractAgreementFields = (text: string) => {
   const { normalized, compact, findValueByLine } = context;
 
   const findEmail = () => {
-    const m = execOnce(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i, normalized);
-    return m?.[0];
+    // 업무 담당자 섹션의 E-Mail을 우선 추출
+    const managerEmailMatch = execOnce(
+      /업\s*무\s*담\s*당\s*자[\s\S]{0,400}?E\s*-?\s*Mail\s*[:：]?\s*([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i,
+      normalized
+    );
+    if (managerEmailMatch?.[1]) return managerEmailMatch[1];
+
+    // 대표자 E-Mail 제외: 대표자 섹션 내의 이메일은 무시
+    const representativeEmailMatch = execOnce(
+      /대표자[\s\S]{0,200}?E\s*-?\s*Mail\s*[:：]?\s*([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i,
+      normalized
+    );
+
+    const fallback = execOnce(
+      /E\s*-?\s*Mail\s*[:：]?\s*([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/i,
+      normalized
+    );
+
+    if (fallback?.[1] && fallback[1] !== representativeEmailMatch?.[1]) {
+      return fallback[1];
+    }
+    return undefined;
   };
 
   const findMobile = () => {
@@ -181,17 +233,45 @@ const extractAgreementFields = (text: string) => {
   };
 
   const extractManagerName = () => {
+    let raw = '';
     const m1 = execOnce(/업\s*무\s*담\s*당\s*자[\s\S]{0,1500}?성\s*명\s*[:：]?\s*([^\n]+)/, normalized);
-    if (m1?.[1]) return m1[1].trim();
-    const matches = [...normalized.matchAll(/성\s*명\s*[:：]?\s*([^\n]+)/g)];
-    if (matches.length > 0) return matches[matches.length - 1][1].trim();
-    return undefined;
+    if (m1?.[1]) {
+      raw = m1[1];
+    } else {
+      const matches = [...normalized.matchAll(/성\s*명\s*[:：]?\s*([^\n]+)/g)];
+      if (matches.length > 0) raw = matches[matches.length - 1][1];
+    }
+
+    if (!raw) return undefined;
+
+    return raw.split(/\s+(?:전화|연락|이메일|서명|인\s*$)/)[0].trim();
+  };
+
+  const extractCompanyName = () => {
+    const m = execOnce(/신청(?:기업|기관)[\s\S]{0,400}?국문명\s+(?![:：])\s*([^\n]+)/, normalized);
+    return m?.[1]?.trim() ? cleanName(m[1]) : undefined;
+  };
+
+  const extractProductName = () => {
+    const m = execOnce(/제품명[\s\S]{0,400}?국문명\s*[:：]\s*([^\n]+)/, normalized);
+    return m?.[1]?.trim() ? cleanName(m[1]) : undefined;
+  };
+
+  const cleanName = (raw: string) => {
+    return raw
+      .replace(/\([^)]*\)/g, '')
+      .replace(/\s*영문명[\s\S]*$/g, '')
+      .replace(/[A-Za-z]/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
   };
 
   const { department, jobTitle } = extractDepartmentAndTitle(normalized);
   const managerName = extractManagerName() || '';
   const managerMobile = findMobile() || '';
   const managerEmail = findEmail() || '';
+  const companyName = extractCompanyName() || '';
+  const productNameKo = extractProductName() || '';
 
   const applicationNumberMatch = normalized.match(/GS-A-\d{2}-\d{4}/);
   const applicationNumber = applicationNumberMatch?.[0] || findValueByLine(/시험신청번호\s*[:：]?\s*([^\n]+)/) || '-';
@@ -215,9 +295,8 @@ const extractAgreementFields = (text: string) => {
     managerEmail,
     managerDepartment: department,
     managerJobTitle: jobTitle,
-    담당자: managerName,
-    연락처: managerMobile,
-    이메일: managerEmail,
+    companyName,
+    productNameKo,
   };
 };
 

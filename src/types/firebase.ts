@@ -72,8 +72,13 @@ export interface AgreementDocumentRecord {
     applicationNumber?: string;
     contractType?: string;
     certificationType?: string;
-    담당자?: string;
-    연락처?: string;
+    productNameKo?: string;
+    companyName?: string;
+    managerName?: string;
+    managerMobile?: string;
+    managerEmail?: string;
+    managerDepartment?: string;
+    managerJobTitle?: string;
   };
 }
 

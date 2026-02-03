@@ -8,9 +8,11 @@ export type AgreementParsed = {
   certificationType?: string;
   productNameKo?: string;
   companyName?: string;
-  담당자?: string;
-  연락처?: string;
-  이메일?: string;
+  managerName?: string;
+  managerMobile?: string;
+  managerEmail?: string;
+  managerDepartment?: string;
+  managerJobTitle?: string;
   workingDays?: string;
 };
 
