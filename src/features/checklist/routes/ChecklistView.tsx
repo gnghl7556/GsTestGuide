@@ -8,7 +8,7 @@ import type {
   QuickQuestionId,
   QuickReviewAnswer,
   ReviewData
-} from '../types';
+} from '../../../types';
 
 type QuickInputValues = NonNullable<QuickReviewAnswer['inputValues']>;
 type QuickInputValue = QuickInputValues[string];

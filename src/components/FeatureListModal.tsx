@@ -3,7 +3,7 @@ import { UploadCloud, Plus, Save, X } from 'lucide-react';
 import { collection, doc, getDocs, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
-import { db, storage, functions } from '../firebase/config';
+import { db, storage, functions } from '../lib/firebase';
 
 type FeatureItem = {
   id: string;

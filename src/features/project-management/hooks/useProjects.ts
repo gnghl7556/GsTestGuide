@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, query, type Firestore, type Timestamp } from 'firebase/firestore';
-import type { Project } from '../types';
+import type { Project } from '../../../types';
 
 export function useProjects(db: Firestore | null | undefined, authReady: boolean) {
   const [projects, setProjects] = useState<Project[]>([]);

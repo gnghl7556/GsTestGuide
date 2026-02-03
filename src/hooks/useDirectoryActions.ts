@@ -1,5 +1,6 @@
 import { addDoc, collection, deleteDoc, doc, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore';
-import type { PlContactInput } from '../components/PlDirectoryPage';
+import type { PlContactInput } from '../features/pl-directory/components/PlDirectoryPage';
+import type { UserCreateInput, UserUpdateInput } from '../types';
 
 export function useDirectoryActions(db: Firestore | null | undefined, authReady: boolean) {
   const addPlContact = async (input: PlContactInput) => {
@@ -18,7 +19,7 @@ export function useDirectoryActions(db: Firestore | null | undefined, authReady:
     await deleteDoc(doc(db, 'plContacts', id));
   };
 
-  const createUser = async (input: { name: string; rank: string; email: string; phone: string }) => {
+  const createUser = async (input: UserCreateInput) => {
     if (!db || !authReady) {
       window.alert('Firestore가 연결되지 않았습니다.');
       return null;
@@ -46,20 +47,21 @@ export function useDirectoryActions(db: Firestore | null | undefined, authReady:
     }
   };
 
-  const updateUser = async (id: string, input: { name: string; rank: string; email: string; phone: string }) => {
+  const updateUser = async (id: string, input: UserUpdateInput) => {
     if (!db || !authReady) {
       window.alert('Firestore가 연결되지 않았습니다.');
       return false;
     }
+    const payload: Record<string, unknown> = { userId: id };
+    if (input.name !== undefined) payload.name = input.name;
+    if (input.rank !== undefined) payload.rank = input.rank;
+    if (input.email !== undefined) payload.email = input.email;
+    if (input.phone !== undefined) payload.phone = input.phone;
     try {
       await setDoc(
         doc(db, 'users', id),
         {
-          userId: id,
-          name: input.name,
-          rank: input.rank,
-          email: input.email,
-          phone: input.phone,
+          ...payload,
           updatedAt: serverTimestamp()
         },
         { merge: true }

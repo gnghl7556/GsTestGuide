@@ -4,7 +4,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { collection, onSnapshot, query, Timestamp } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../../../lib/firebase';
 
 type ProjectDoc = {
   projectId?: string;

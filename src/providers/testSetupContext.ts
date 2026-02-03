@@ -1,8 +1,8 @@
 import { createContext } from 'react';
-import type { PlContact } from '../components/PlDirectoryPage';
+import type { PlContact } from '../features/pl-directory/components/PlDirectoryPage';
 import type { Project, User } from '../types';
 import type { UseDirectoryActionsReturn } from '../hooks/useDirectoryActions';
-import type { UseTestSetupStateReturn } from '../hooks/useTestSetupState';
+import type { UseTestSetupStateReturn } from '../features/test-setup/hooks/useTestSetupState';
 
 export type TestSetupContextValue = UseTestSetupStateReturn &
   UseDirectoryActionsReturn & {

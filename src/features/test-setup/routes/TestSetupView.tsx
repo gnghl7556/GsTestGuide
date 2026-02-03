@@ -1,5 +1,5 @@
 import { TestSetupPage } from '../components/TestSetupPage';
-import { useTestSetupContext } from '../context/useTestSetupContext';
+import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 
 type TestSetupViewProps = {
   onStartProject: () => Promise<{ ok: boolean; reason?: string }>;

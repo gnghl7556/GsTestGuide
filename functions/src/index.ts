@@ -126,23 +126,6 @@ const execOnce = (re: RegExp, input: string) => {
   return safe.exec(input);
 };
 
-const findFirstValue = (
-  rules: Array<{
-    input: string;
-    re: RegExp;
-    transform?: (value: string) => string;
-  }>
-) => {
-  for (const rule of rules) {
-    const m = execOnce(rule.re, rule.input);
-    if (m?.[1]) {
-      const raw = rule.transform ? rule.transform(m[1]) : m[1];
-      return raw.trim();
-    }
-  }
-  return undefined;
-};
-
 const matchesAny = (re: RegExp, inputs: string[]) => inputs.some((input) => !!execOnce(re, input));
 
 const selectCheckedOption = (

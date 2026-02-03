@@ -1,5 +1,5 @@
-import type { ChecklistItem, QuickAnswer, QuickModeItem, QuickQuestionId, QuickInputValue } from '../types';
-import { CATEGORIES, CATEGORY_THEMES } from '../data/constants';
+import type { ChecklistItem, QuickAnswer, QuickModeItem, QuickQuestionId, QuickInputValue } from '../../../types';
+import { CATEGORIES, CATEGORY_THEMES } from '../../../data/constants';
 import { Ban } from 'lucide-react';
 
 interface CenterDisplayProps {

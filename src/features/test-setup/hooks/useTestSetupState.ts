@@ -9,9 +9,9 @@ import {
   type Firestore
 } from 'firebase/firestore';
 import { deleteObject, getDownloadURL, ref, uploadBytes, type FirebaseStorage } from 'firebase/storage';
-import type { PlContact } from '../components/PlDirectoryPage';
-import type { Project, TestSetupState, User } from '../types';
-import { isDocEntry } from '../utils/testSetup';
+import type { PlContact } from '../../pl-directory/components/PlDirectoryPage';
+import type { Project, TestSetupState, User } from '../../../types';
+import { isDocEntry } from '../../../utils/testSetup';
 
 export type UseTestSetupParams = {
   db: Firestore | null | undefined;

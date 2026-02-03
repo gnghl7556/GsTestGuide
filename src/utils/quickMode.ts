@@ -5,7 +5,6 @@ import type {
   QuickQuestionId,
   QuestionImportance,
   QuickQuestion,
-  ExpertDetails,
   QuickModeItem
 } from '../types';
 

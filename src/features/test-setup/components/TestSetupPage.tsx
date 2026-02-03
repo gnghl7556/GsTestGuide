@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Building2, List, UploadCloud, User, Trash2 } from 'lucide-react';
-import type { AgreementParsed, DocEntry, Project, User as AppUser, UserCreateInput, UserUpdateInput } from '../types';
+import type {
+  AgreementParsed,
+  DocEntry,
+  Project,
+  User as AppUser,
+  UserCreateInput,
+  UserRank,
+  UserUpdateInput
+} from '../../../types';
 
 interface TestSetupPageProps {
   testNumber: string;
@@ -68,6 +76,13 @@ export function TestSetupPage({
   const trimmedTestNumber = testNumber.trim();
   const hasTestNumber = Boolean(trimmedTestNumber);
   const availableDocs = useMemo(() => docs.filter((item) => item.docType && (item.fileName || item.url)), [docs]);
+  const normalizeUpdatedAt = (value: Project['updatedAt']) => {
+    if (typeof value === 'number') return value;
+    if (value && typeof value === 'object' && 'toDate' in value && typeof value.toDate === 'function') {
+      return value.toDate().getTime();
+    }
+    return 0;
+  };
   const visibleProjects = useMemo(
     () =>
       projects
@@ -76,7 +91,7 @@ export function TestSetupPage({
           ...project,
           progress: progressByTestNumber[project.testNumber] ?? 0
         }))
-        .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)),
+        .sort((a, b) => normalizeUpdatedAt(b.updatedAt) - normalizeUpdatedAt(a.updatedAt)),
     [projects, currentUserId, progressByTestNumber]
   );
   const canSaveTestNumber = Boolean(
@@ -86,9 +101,10 @@ export function TestSetupPage({
   );
   const featuredProject = visibleProjects[0];
   const otherProjects = visibleProjects.slice(1);
-  const formatDate = (value?: number | null) => {
-    if (!value) return '미기록';
-    const date = new Date(value);
+  const formatDate = (value?: Project['updatedAt']) => {
+    const millis = normalizeUpdatedAt(value ?? 0);
+    if (!millis) return '미기록';
+    const date = new Date(millis);
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
@@ -109,7 +125,12 @@ export function TestSetupPage({
   const [agreementDeleteConfirmOpen, setAgreementDeleteConfirmOpen] = useState(false);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [createUserLoading, setCreateUserLoading] = useState(false);
-  const [newUserForm, setNewUserForm] = useState({
+  const [newUserForm, setNewUserForm] = useState<{
+    name: string;
+    rank: UserRank | '';
+    email: string;
+    phone: string;
+  }>({
     name: '',
     rank: '',
     email: '',
@@ -120,7 +141,13 @@ export function TestSetupPage({
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [editUserLoading, setEditUserLoading] = useState(false);
   const [editUserError, setEditUserError] = useState<string | null>(null);
-  const [editUserForm, setEditUserForm] = useState({
+  const [editUserForm, setEditUserForm] = useState<{
+    id: string;
+    name: string;
+    rank: UserRank | '';
+    email: string;
+    phone: string;
+  }>({
     id: '',
     name: '',
     rank: '',
@@ -675,7 +702,7 @@ export function TestSetupPage({
                 <input
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
                   value={newUserForm.rank}
-                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, rank: e.target.value }))}
+                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, rank: e.target.value as UserRank | '' }))}
                   placeholder="선임"
                 />
               </div>
@@ -726,7 +753,7 @@ export function TestSetupPage({
                   setCreateUserLoading(true);
                   const createdId = await onCreateUser({
                     name: newUserForm.name.trim(),
-                    rank: newUserForm.rank.trim(),
+                    rank: (newUserForm.rank.trim() || '전임') as UserRank,
                     email: newUserForm.email.trim(),
                     phone: newUserForm.phone.trim()
                   });
@@ -849,7 +876,7 @@ export function TestSetupPage({
                 <input
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
                   value={editUserForm.rank}
-                  onChange={(e) => setEditUserForm((prev) => ({ ...prev, rank: e.target.value }))}
+                  onChange={(e) => setEditUserForm((prev) => ({ ...prev, rank: e.target.value as UserRank | '' }))}
                 />
               </div>
               <div>
@@ -900,7 +927,7 @@ export function TestSetupPage({
                   setEditUserLoading(true);
                   const ok = await onUpdateUser(editUserForm.id, {
                     name: editUserForm.name.trim(),
-                    rank: editUserForm.rank.trim(),
+                    rank: editUserForm.rank.trim() ? (editUserForm.rank.trim() as UserRank) : undefined,
                     email: editUserForm.email.trim(),
                     phone: editUserForm.phone.trim()
                   });

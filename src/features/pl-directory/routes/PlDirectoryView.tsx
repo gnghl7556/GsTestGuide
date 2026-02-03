@@ -1,5 +1,5 @@
 import { PlDirectoryPage } from '../components/PlDirectoryPage';
-import { useTestSetupContext } from '../context/useTestSetupContext';
+import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 
 export function PlDirectoryView() {
   const { plDirectory, addPlContact, removePlContact, dbReady } = useTestSetupContext();

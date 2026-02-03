@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Save, X, RefreshCcw } from 'lucide-react';
 import { collection, doc, getDocs, writeBatch } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { db } from '../lib/firebase';
 import { DefectReportModal } from './DefectReportModal';
 
 type FeatureItem = {

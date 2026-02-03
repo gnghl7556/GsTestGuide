@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { generateChecklist } from '../utils/checklistGenerator';
+import { generateChecklist } from '../../utils/checklistGenerator';
 import {
   toQuickModeItem,
   getRecommendation
-} from '../utils/quickMode';
+} from '../../utils/quickMode';
 import type {
   ChecklistItem,
   QuickAnswer,
@@ -13,25 +13,25 @@ import type {
   QuickReviewAnswer,
   ReviewData,
   UserProfile
-} from '../types';
+} from '../../types';
 
-import { CompactDashboardHeader } from '../components/CompactDashboardHeader';
-import { FeatureListModal } from '../components/FeatureListModal';
-import { TestCaseModal } from '../components/TestCaseModal';
-import { ExportModal } from '../components/ExportModal';
-import { PlDirectoryView } from './PlDirectoryView';
-import { TestSetupView } from './TestSetupView';
-import { ChecklistView } from './ChecklistView';
-import { auth, db, storage } from '../firebase/config';
-import { useAuthReady } from '../hooks/useAuthReady';
-import { usePlDirectory } from '../hooks/usePlDirectory';
-import { useUsers } from '../hooks/useUsers';
-import { useProjects } from '../hooks/useProjects';
-import { useProgressByTestNumber } from '../hooks/useProgressByTestNumber';
-import { TestSetupProvider } from '../context/TestSetupProvider';
-import { useTestSetupContext } from '../context/useTestSetupContext';
-import { isDocEntry } from '../utils/testSetup';
-import type { AgreementParsed, TestSetupState } from '../types/testSetup';
+import { CompactDashboardHeader } from '../CompactDashboardHeader';
+import { FeatureListModal } from '../FeatureListModal';
+import { TestCaseModal } from '../TestCaseModal';
+import { ExportModal } from '../ExportModal';
+import { PlDirectoryView } from '../../features/pl-directory/routes/PlDirectoryView';
+import { TestSetupView } from '../../features/test-setup/routes/TestSetupView';
+import { ChecklistView } from '../../features/checklist/routes/ChecklistView';
+import { auth, db, storage } from '../../lib/firebase';
+import { useAuthReady } from '../../hooks/useAuthReady';
+import { usePlDirectory } from '../../features/pl-directory/hooks/usePlDirectory';
+import { useUsers } from '../../hooks/useUsers';
+import { useProjects } from '../../features/project-management/hooks/useProjects';
+import { useProgressByTestNumber } from '../../hooks/useProgressByTestNumber';
+import { TestSetupProvider } from '../../providers/TestSetupProvider';
+import { useTestSetupContext } from '../../providers/useTestSetupContext';
+import { isDocEntry } from '../../utils/testSetup';
+import type { AgreementParsed, TestSetupState } from '../../types';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 const storageKey = 'gs-test-guide:review';

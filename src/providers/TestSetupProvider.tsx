@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import type { FirebaseStorage } from 'firebase/storage';
 import type { Firestore } from 'firebase/firestore';
-import type { PlContact } from '../components/PlDirectoryPage';
+import type { PlContact } from '../features/pl-directory/components/PlDirectoryPage';
 import { useDirectoryActions } from '../hooks/useDirectoryActions';
-import { useTestSetupState, type UseTestSetupParams } from '../hooks/useTestSetupState';
+import { useTestSetupState, type UseTestSetupParams } from '../features/test-setup/hooks/useTestSetupState';
 import type { Project, User } from '../types';
 import { TestSetupContext } from './testSetupContext';
 

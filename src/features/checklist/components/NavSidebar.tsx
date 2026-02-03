@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Check, X } from 'lucide-react';
 
-import type { ChecklistItem, QuickReviewAnswer, QuickQuestionId, ReviewData } from '../types';
-import { CATEGORIES, CATEGORY_THEMES } from '../data/constants';
+import type { ChecklistItem, QuickReviewAnswer, QuickQuestionId, ReviewData } from '../../../types';
+import { CATEGORIES, CATEGORY_THEMES } from '../../../data/constants';
 
 
 interface NavSidebarProps {
