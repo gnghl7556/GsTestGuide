@@ -177,8 +177,7 @@ export function TestSetupPage({
           ? '추출 중'
           : '대기';
   const isParsing =
-    Boolean(agreementDoc) &&
-    (isParsingAgreement && parsingTestNumber === trimmedTestNumber || showAgreementModal);
+    (isParsingAgreement && parsingTestNumber === trimmedTestNumber) || showAgreementModal;
   const parsingProgress = Math.min(100, Math.max(5, agreementParsed?.parseProgress ?? 5));
 
   useEffect(() => {

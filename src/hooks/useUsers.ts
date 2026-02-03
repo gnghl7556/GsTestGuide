@@ -8,8 +8,15 @@ export function useUsers(db: Firestore | null | undefined, authReady: boolean) {
   useEffect(() => {
     if (!db || !authReady) return;
     const dbRef = db;
+    console.info('[Users] snapshot subscribe start', {
+      time: new Date().toISOString()
+    });
     const q = query(collection(dbRef, 'users'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.info('[Users] snapshot received', {
+        time: new Date().toISOString(),
+        count: snapshot.docs.length
+      });
       const next = snapshot.docs.map((docSnap) => {
         const data = docSnap.data() as {
           name?: string;

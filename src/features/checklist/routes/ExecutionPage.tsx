@@ -48,6 +48,13 @@ export function ExecutionPage() {
   useEffect(() => {
     if (didLoadRef.current) return;
     didLoadRef.current = true;
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const skipRestore = window.sessionStorage.getItem('gs-test-guide:skip-restore');
+      if (skipRestore === '1') {
+        window.sessionStorage.removeItem('gs-test-guide:skip-restore');
+        return;
+      }
+    }
     const raw = localStorage.getItem(storageKey);
     if (!raw) return;
     try {

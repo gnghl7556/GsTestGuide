@@ -506,6 +506,25 @@ export function useTestSetupState({
     if (!docsSaved.ok) {
       return { ok: false, reason: docsSaved.reason || '문서 저장 실패(규칙 확인 필요)' };
     }
+    // Reset fields to allow adding a new test after starting the project.
+    setTestSetup((prev) => ({
+      ...prev,
+      testNumber: '',
+      scheduleWorkingDays: '',
+      scheduleStartDate: '',
+      scheduleDefect1: '',
+      scheduleDefect2: '',
+      schedulePatchDate: '',
+      scheduleEndDate: '',
+      docs: [],
+      agreementParsed: undefined
+    }));
+    setPendingAgreementFile(null);
+    setAgreementParsing(false);
+    setAgreementParsingTestNumber(null);
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.setItem('gs-test-guide:skip-restore', '1');
+    }
     return { ok: true };
   };
 

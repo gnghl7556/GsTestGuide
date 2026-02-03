@@ -228,8 +228,24 @@ const extractAgreementFields = (text: string) => {
   };
 
   const findMobile = () => {
-    const m = execOnce(/010\s*-?\s*\d{3,4}\s*-?\s*\d{4}/, normalized);
-    return m?.[0] ? m[0].replace(/\s/g, '') : undefined;
+    const normalizePhone = (raw: string) => {
+      const digits = raw.replace(/\D/g, '');
+      if (digits.length === 11) return digits.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+      if (digits.length === 10) return digits.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+      return undefined;
+    };
+
+    const m1 = execOnce(
+      /업\s*무\s*담\s*당\s*자[\s\S]{0,1200}?Mobile[\s\S]{0,120}?((?:\d[\s-]*){9,13})/i,
+      normalized
+    );
+    if (m1?.[1]) {
+      const normalizedPhone = normalizePhone(m1[1]);
+      if (normalizedPhone) return normalizedPhone;
+    }
+
+    const m2 = execOnce(/010\s*-?\s*\d{3,4}\s*-?\s*\d{4}/, normalized);
+    return m2?.[0] ? m2[0].replace(/\s/g, '') : undefined;
   };
 
   const extractManagerName = () => {
