@@ -1,33 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { UploadCloud, Plus, Save, Pencil, Trash2 } from 'lucide-react';
-import { collection, doc, getDocs, writeBatch } from 'firebase/firestore';
-import { ref, uploadBytes } from 'firebase/storage';
-import { httpsCallable } from 'firebase/functions';
-import { db, storage, functions } from '../../../lib/firebase';
-import { useTestSetupContext } from '../../../providers/useTestSetupContext';
+import { useMemo, useState } from 'react';
+import { UploadCloud, Plus, Save, Pencil, Trash2, Sparkles } from 'lucide-react';
 import { Button, Input } from '../../../components/ui';
-
-type FeatureItem = {
-  id: string;
-  category1: string;
-  category2: string;
-  category3: string;
-  category4?: string;
-  description: string;
-  version?: number;
-  changeType?: string;
-};
-
-type DraftResponse = {
-  features: Array<{
-    category1?: string;
-    category2?: string;
-    category3?: string;
-    category4?: string;
-    description?: string;
-  }>;
-  message?: string;
-};
+import { PageHeader, PageFilterBar, PageContent } from '../../../components/ui/layout';
+import { useFeatureActions, type FeatureItem } from '../hooks/useFeatureActions';
+import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 
 const groupFeatures = (features: FeatureItem[]) => {
   const group: Record<string, Record<string, Record<string, Record<string, FeatureItem[]>>>> = {};
@@ -49,11 +25,19 @@ export function FeatureManager() {
   const { currentTestNumber } = useTestSetupContext();
   const projectId = currentTestNumber;
 
-  const [features, setFeatures] = useState<FeatureItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [aiStatus, setAiStatus] = useState<'idle' | 'uploading' | 'generating' | 'done' | 'error'>('idle');
-  const [aiMessage, setAiMessage] = useState<string | null>(null);
+  const {
+    features,
+    loading,
+    saving,
+    aiStatus,
+    aiMessage,
+    addFeature,
+    updateFeature,
+    deleteFeature,
+    saveFeatures,
+    generateAiDraft
+  } = useFeatureActions();
+
   const [newFeature, setNewFeature] = useState<Omit<FeatureItem, 'id'>>({
     category1: '',
     category2: '',
@@ -66,53 +50,15 @@ export function FeatureManager() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<FeatureItem | null>(null);
 
-  useEffect(() => {
-    if (!db || !projectId) return;
-    const dbRef = db;
-    let alive = true;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const snap = await getDocs(collection(dbRef, 'projects', projectId, 'features'));
-        const next = snap.docs.map((docSnap) => {
-          const data = docSnap.data() as Omit<FeatureItem, 'id'>;
-          return {
-            id: docSnap.id,
-            category1: data.category1 || '',
-            category2: data.category2 || '',
-            category3: data.category3 || '',
-            category4: data.category4 || '',
-            description: data.description || '',
-            version: data.version,
-            changeType: data.changeType
-          };
-        });
-        if (alive) setFeatures(next);
-      } catch (error) {
-        console.warn('[Features] 불러오기 실패:', error);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    };
-    void load();
-    return () => {
-      alive = false;
-    };
-  }, [projectId]);
-
   const grouped = useMemo(() => groupFeatures(features), [features]);
 
   const handleAddFeature = () => {
     if (!newFeature.category1.trim() || !newFeature.category2.trim() || !newFeature.category3.trim()) return;
     if (!newFeature.description.trim()) return;
-    setFeatures((prev) => [
-      ...prev,
-      {
-        ...newFeature,
-        id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        category4: newFeature.category4?.trim() || ''
-      }
-    ]);
+    addFeature({
+      ...newFeature,
+      category4: newFeature.category4?.trim() || ''
+    });
     setNewFeature({
       category1: '',
       category2: '',
@@ -124,120 +70,53 @@ export function FeatureManager() {
     });
   };
 
-  const handleSave = async () => {
-    if (!db || !projectId) return;
-    const dbRef = db;
-    setSaving(true);
-    try {
-      const batch = writeBatch(dbRef);
-      const featureCol = collection(dbRef, 'projects', projectId, 'features');
-      const existing = await getDocs(featureCol);
-      existing.forEach((docSnap) => batch.delete(docSnap.ref));
-      features.forEach((feature, index) => {
-        const featureId = feature.id.startsWith('local-')
-          ? `feature-${Date.now()}-${index}`
-          : feature.id;
-        const payload = {
-          featureId,
-          category1: feature.category1,
-          category2: feature.category2,
-          category3: feature.category3,
-          category4: feature.category4 || '',
-          description: feature.description,
-          version: feature.version ?? 1,
-          changeType: feature.changeType || ''
-        };
-        batch.set(doc(featureCol, featureId), payload);
-      });
-      await batch.commit();
-    } catch (error) {
-      console.warn('[Features] 저장 실패:', error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleAIDraft = async (file: File) => {
-    if (!storage || !functions || !projectId) return;
-    setAiStatus('uploading');
-    setAiMessage(null);
-    try {
-      const storagePath = `feature-drafts/${projectId}/${Date.now()}-${file.name}`;
-      const fileRef = ref(storage, storagePath);
-      await uploadBytes(fileRef, file);
-      setAiStatus('generating');
-      const callable = httpsCallable(functions, 'generateFeatureDraft');
-      const response = (await callable({ storagePath, projectId })) as { data: DraftResponse };
-      const draft = response.data?.features || [];
-      const normalized: FeatureItem[] = draft.map((item, index) => ({
-        id: `ai-${Date.now()}-${index}`,
-        category1: item.category1 || '미분류',
-        category2: item.category2 || '미분류',
-        category3: item.category3 || '미분류',
-        category4: item.category4 || '',
-        description: item.description || '',
-        version: 1,
-        changeType: ''
-      }));
-      if (normalized.length > 0) {
-        setFeatures(normalized);
-        setAiMessage(response.data?.message || 'AI 초안이 적용되었습니다.');
-      } else {
-        setAiMessage('AI 초안이 비어 있습니다. PDF 내용을 확인해주세요.');
-      }
-      setAiStatus('done');
-    } catch (error) {
-      console.warn('[Features] AI 초안 생성 실패:', error);
-      setAiStatus('error');
-      setAiMessage('AI 초안 생성에 실패했습니다.');
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-xl font-extrabold text-primary-900">기능 리스트 관리</h2>
-        <p className="text-sm text-primary-500">AI 초안 생성 및 트리 구조 편집</p>
-        {!projectId && (
-          <div className="mt-2 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-700">
-            시험번호가 없습니다. 프로젝트를 먼저 선택해주세요.
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2.1fr_1fr]">
-        <div className="space-y-4">
-          <div className="rounded-xl border border-surface-200 bg-white p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-primary-900">AI 초안 생성</div>
-                <div className="text-xs text-primary-500">제품 매뉴얼(PDF) 업로드 후 기능 리스트 초안 생성</div>
-              </div>
-              <label className="inline-flex items-center gap-2 rounded-lg border border-surface-200 bg-white px-3 py-2 text-xs font-semibold text-primary-600 hover:border-surface-300">
-                <UploadCloud size={14} />
+    <div className="h-full flex flex-col">
+      <PageHeader
+        title="기능 명세 관리"
+        description="AI 초안 생성 및 트리 구조 편집"
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" icon={Sparkles} disabled={!projectId}>
+              AI 초안 생성
+            </Button>
+            <label className="inline-flex">
+              <Button variant="secondary" size="sm" icon={UploadCloud} disabled={!projectId}>
                 PDF 업로드
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    void handleAIDraft(file);
-                  }}
-                  disabled={!projectId}
-                />
-              </label>
-            </div>
-            <div className="mt-2 text-xs text-primary-500">
-              {aiStatus === 'uploading' && '업로드 중...'}
-              {aiStatus === 'generating' && 'AI 초안 생성 중...'}
-              {aiStatus === 'done' && (aiMessage || 'AI 초안이 적용되었습니다.')}
-              {aiStatus === 'error' && (aiMessage || 'AI 초안 생성 실패')}
-            </div>
+              </Button>
+              <input
+                type="file"
+                accept="application/pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  void generateAiDraft(file);
+                }}
+                disabled={!projectId}
+              />
+            </label>
           </div>
+        }
+      />
 
-          <div className="rounded-xl border border-surface-200 bg-white p-4">
+      <PageFilterBar>
+        <div className="text-xs text-primary-500">
+          {aiStatus === 'uploading' && '업로드 중...'}
+          {aiStatus === 'generating' && 'AI 초안 생성 중...'}
+          {aiStatus === 'done' && (aiMessage || 'AI 초안이 적용되었습니다.')}
+          {aiStatus === 'error' && (aiMessage || 'AI 초안 생성 실패')}
+        </div>
+        {!projectId && (
+          <span className="ml-auto text-xs text-warning-700 bg-warning-50 border border-warning-200 px-2 py-1 rounded">
+            시험번호가 없습니다. 프로젝트를 먼저 선택해주세요.
+          </span>
+        )}
+      </PageFilterBar>
+
+      <PageContent className="p-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
+          <section className="rounded-xl border border-surface-200 bg-white p-4 flex flex-col">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-primary-900">트리 뷰 편집기</div>
               <div className="text-xs text-primary-400">{features.length}개 항목</div>
@@ -245,7 +124,7 @@ export function FeatureManager() {
             {loading ? (
               <div className="py-12 text-center text-sm text-primary-400">불러오는 중...</div>
             ) : (
-              <div className="mt-3 space-y-3 max-h-[56vh] overflow-y-auto pr-2">
+              <div className="mt-3 space-y-3 flex-1 overflow-y-auto pr-2">
                 {Object.entries(grouped).map(([c1, level2]) => (
                   <div key={c1} className="rounded-lg border border-surface-200 bg-surface-50 p-3">
                     <div className="text-sm font-semibold text-primary-800">{c1}</div>
@@ -304,9 +183,7 @@ export function FeatureManager() {
                                               size="sm"
                                               onClick={() => {
                                                 if (!editDraft) return;
-                                                setFeatures((prev) =>
-                                                  prev.map((f) => (f.id === editDraft.id ? { ...editDraft } : f))
-                                                );
+                                                updateFeature({ ...editDraft });
                                                 setEditId(null);
                                                 setEditDraft(null);
                                               }}
@@ -346,9 +223,7 @@ export function FeatureManager() {
                                               variant="ghost"
                                               size="sm"
                                               icon={Trash2}
-                                              onClick={() =>
-                                                setFeatures((prev) => prev.filter((f) => f.id !== item.id))
-                                              }
+                                              onClick={() => deleteFeature(item.id)}
                                             >
                                               삭제
                                             </Button>
@@ -373,69 +248,69 @@ export function FeatureManager() {
                 )}
               </div>
             )}
-          </div>
-        </div>
+          </section>
 
-        <div className="space-y-4">
-          <div className="rounded-xl border border-surface-200 bg-white p-4">
-            <div className="text-sm font-semibold text-primary-900 mb-3">새 기능 추가</div>
-            <div className="space-y-2">
-              <Input
-                placeholder="대분류"
-                value={newFeature.category1}
-                onChange={(e) => setNewFeature((prev) => ({ ...prev, category1: e.target.value }))}
-              />
-              <Input
-                placeholder="중분류"
-                value={newFeature.category2}
-                onChange={(e) => setNewFeature((prev) => ({ ...prev, category2: e.target.value }))}
-              />
-              <Input
-                placeholder="소분류"
-                value={newFeature.category3}
-                onChange={(e) => setNewFeature((prev) => ({ ...prev, category3: e.target.value }))}
-              />
-              <Input
-                placeholder="소소분류 (선택)"
-                value={newFeature.category4 || ''}
-                onChange={(e) => setNewFeature((prev) => ({ ...prev, category4: e.target.value }))}
-              />
-              <Input
-                placeholder="기능 설명"
-                value={newFeature.description}
-                onChange={(e) => setNewFeature((prev) => ({ ...prev, description: e.target.value }))}
-              />
-              <div className="grid grid-cols-2 gap-2">
+          <aside className="rounded-xl border border-surface-200 bg-white p-4 space-y-4">
+            <div>
+              <div className="text-sm font-semibold text-primary-900 mb-3">새 기능 추가</div>
+              <div className="space-y-2">
                 <Input
-                  placeholder="버전 (예: 1.0)"
-                  value={String(newFeature.version ?? 1)}
-                  onChange={(e) =>
-                    setNewFeature((prev) => ({ ...prev, version: Number(e.target.value) || 1 }))
-                  }
+                  placeholder="대분류"
+                  value={newFeature.category1}
+                  onChange={(e) => setNewFeature((prev) => ({ ...prev, category1: e.target.value }))}
                 />
                 <Input
-                  placeholder="변경 유형"
-                  value={newFeature.changeType || ''}
-                  onChange={(e) => setNewFeature((prev) => ({ ...prev, changeType: e.target.value }))}
+                  placeholder="중분류"
+                  value={newFeature.category2}
+                  onChange={(e) => setNewFeature((prev) => ({ ...prev, category2: e.target.value }))}
                 />
+                <Input
+                  placeholder="소분류"
+                  value={newFeature.category3}
+                  onChange={(e) => setNewFeature((prev) => ({ ...prev, category3: e.target.value }))}
+                />
+                <Input
+                  placeholder="소소분류 (선택)"
+                  value={newFeature.category4 || ''}
+                  onChange={(e) => setNewFeature((prev) => ({ ...prev, category4: e.target.value }))}
+                />
+                <Input
+                  placeholder="기능 설명"
+                  value={newFeature.description}
+                  onChange={(e) => setNewFeature((prev) => ({ ...prev, description: e.target.value }))}
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="버전 (예: 1.0)"
+                    value={String(newFeature.version ?? 1)}
+                    onChange={(e) =>
+                      setNewFeature((prev) => ({ ...prev, version: Number(e.target.value) || 1 }))
+                    }
+                  />
+                  <Input
+                    placeholder="변경 유형"
+                    value={newFeature.changeType || ''}
+                    onChange={(e) => setNewFeature((prev) => ({ ...prev, changeType: e.target.value }))}
+                  />
+                </div>
+                <Button variant="secondary" icon={Plus} onClick={handleAddFeature}>
+                  기능 추가
+                </Button>
               </div>
-              <Button variant="secondary" icon={Plus} onClick={handleAddFeature}>
-                기능 추가
+            </div>
+
+            <div>
+              <div className="text-sm font-semibold text-primary-900 mb-2">저장</div>
+              <p className="text-xs text-primary-500 mb-3">
+                변경사항을 프로젝트의 features 서브 컬렉션에 저장합니다.
+              </p>
+              <Button icon={Save} onClick={saveFeatures} disabled={saving || !projectId}>
+                {saving ? '저장 중...' : '저장'}
               </Button>
             </div>
-          </div>
-
-          <div className="rounded-xl border border-surface-200 bg-white p-4">
-            <div className="text-sm font-semibold text-primary-900 mb-2">저장</div>
-            <p className="text-xs text-primary-500 mb-3">
-              변경사항을 프로젝트의 features 서브 컬렉션에 저장합니다.
-            </p>
-            <Button icon={Save} onClick={handleSave} disabled={saving || !projectId}>
-              {saving ? '저장 중...' : '저장'}
-            </Button>
-          </div>
+          </aside>
         </div>
-      </div>
+      </PageContent>
     </div>
   );
 }
