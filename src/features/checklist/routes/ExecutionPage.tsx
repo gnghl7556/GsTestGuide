@@ -301,8 +301,6 @@ export function ExecutionPage() {
       onQuickAnswer={updateQuickAnswer}
       onInputChange={updateQuickInput}
       onSelectQuestion={scrollToQuestion}
-      onOpenFeatureManager={() => undefined}
-      onOpenTestCaseManager={() => undefined}
       updateReviewData={updateReviewData}
       recommendation={recommendation}
       canReview={canReview}

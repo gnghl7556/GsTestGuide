@@ -1,9 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { FeatureManager } from '../components/FeatureManager';
 import { TestCaseManager } from '../components/TestCaseManager';
 
 export function DesignPage() {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<'feature' | 'testcase'>('feature');
+
+  useEffect(() => {
+    const nextTab = (location.state as { tab?: 'feature' | 'testcase' } | null)?.tab;
+    if (nextTab) {
+      setActiveTab(nextTab);
+    }
+  }, [location.state]);
 
   return (
     <div className="h-full flex flex-col">

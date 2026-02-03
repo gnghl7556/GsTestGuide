@@ -27,8 +27,6 @@ type ChecklistViewProps = {
   onQuickAnswer: (itemId: string, questionId: QuickQuestionId, value: QuickAnswer) => void;
   onInputChange: (itemId: string, fieldId: string, value: QuickInputValue) => void;
   onSelectQuestion: (itemId: string, questionId: QuickQuestionId) => void;
-  onOpenFeatureManager: () => void;
-  onOpenTestCaseManager: () => void;
   updateReviewData: (id: string, field: keyof ReviewData, value: ReviewData[keyof ReviewData]) => void;
   recommendation: QuickReviewAnswer['autoRecommendation'];
   canReview: boolean;
@@ -48,8 +46,6 @@ export function ChecklistView({
   onQuickAnswer,
   onInputChange,
   onSelectQuestion,
-  onOpenFeatureManager,
-  onOpenTestCaseManager,
   updateReviewData,
   recommendation,
   canReview
@@ -65,8 +61,6 @@ export function ChecklistView({
           setSelectedReqId={setSelectedReqId}
           activeCategory={activeItem?.category || 'BEFORE'}
           onSelectQuestion={onSelectQuestion}
-          onOpenFeatureManager={onOpenFeatureManager}
-          onOpenTestCaseManager={onOpenTestCaseManager}
         />
       </div>
 

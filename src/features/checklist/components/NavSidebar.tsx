@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Check, X } from 'lucide-react';
 
 import type { ChecklistItem, QuickReviewAnswer, QuickQuestionId, ReviewData } from '../../../types';
@@ -13,8 +14,6 @@ interface NavSidebarProps {
   setSelectedReqId: (id: string) => void;
   activeCategory: string;
   onSelectQuestion: (itemId: string, questionId: QuickQuestionId) => void;
-  onOpenFeatureManager: () => void;
-  onOpenTestCaseManager: () => void;
 }
 
 export function NavSidebar({
@@ -24,10 +23,9 @@ export function NavSidebar({
   selectedReqId,
   setSelectedReqId,
   activeCategory,
-  onSelectQuestion,
-  onOpenFeatureManager,
-  onOpenTestCaseManager
+  onSelectQuestion
 }: NavSidebarProps) {
+  const navigate = useNavigate();
   const [expandedCats, setExpandedCats] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'HOLD' | 'FAIL'>('ALL');
   const [evidenceOnly, setEvidenceOnly] = useState(false);
@@ -250,10 +248,10 @@ export function NavSidebar({
                             <div className="pl-7">
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenFeatureManager();
-                                }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/design', { state: { tab: 'feature' } });
+                                  }}
                                 className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-2 py-1 text-[10px] font-semibold text-gray-600 hover:text-gray-800"
                               >
                                 기능 리스트 관리
@@ -264,10 +262,10 @@ export function NavSidebar({
                             <div className="pl-7">
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onOpenTestCaseManager();
-                                }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/design', { state: { tab: 'testcase' } });
+                                  }}
                                 className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-2 py-1 text-[10px] font-semibold text-gray-600 hover:text-gray-800"
                               >
                                 TC 관리
