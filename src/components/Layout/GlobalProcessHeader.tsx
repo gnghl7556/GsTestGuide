@@ -1,4 +1,4 @@
-import { Building2, Calendar, LogOut, User, List, Mail, Phone } from 'lucide-react';
+import { Building2, LogOut, User, List, Mail, Phone } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 export type GlobalProjectInfo = {
@@ -22,13 +22,6 @@ type GlobalProcessHeaderProps = {
   onOpenTestList?: () => void;
 };
 
-const steps = [
-  { id: 1, label: '시험 식별' },
-  { id: 2, label: '시험 설계' },
-  { id: 3, label: '시험 수행' },
-  { id: 4, label: '결과 산출' }
-];
-
 const safeValue = (value?: string | number) => {
   if (value === undefined || value === null || value === '') return '-';
   return String(value);
@@ -47,10 +40,7 @@ export function GlobalProcessHeader({
   const testNumber = safeValue(projectInfo?.testNumber);
   const projectName = safeValue(projectInfo?.projectName);
   const companyName = safeValue(projectInfo?.companyName);
-  const workingDays = safeValue(projectInfo?.scheduleWorkingDays);
-  const startDate = safeValue(projectInfo?.scheduleStartDate);
-  const endDate = safeValue(projectInfo?.scheduleEndDate);
-  const plName = safeValue(projectInfo?.plName);
+  void currentStep;
   const companyContactName = safeValue(projectInfo?.companyContactName);
   const companyContactPhone = safeValue(projectInfo?.companyContactPhone);
   const companyContactEmail = safeValue(projectInfo?.companyContactEmail);
