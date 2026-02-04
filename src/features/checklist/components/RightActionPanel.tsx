@@ -81,7 +81,7 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
   };
 
   return (
-    <div className="h-full bg-slate-50 border-l border-gray-200 flex flex-col">
+    <div className="h-full bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
       <div className="p-4 border-b border-gray-200 bg-white">
         <h3 className="text-sm font-extrabold text-gray-800 tracking-wider flex items-center gap-2 mb-2">
           검토 결과 판정

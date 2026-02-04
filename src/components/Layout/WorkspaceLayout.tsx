@@ -1,7 +1,8 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { GlobalProcessHeader } from './GlobalProcessHeader';
 import { ProcessLayout } from './ProcessLayout';
 import { useTestSetupContext } from '../../providers/useTestSetupContext';
+import { useMemo, useState } from 'react';
 
 const getStepFromPath = (pathname: string) => {
   if (pathname.startsWith('/design')) return 2;
@@ -12,7 +13,17 @@ const getStepFromPath = (pathname: string) => {
 
 export function WorkspaceLayout() {
   const location = useLocation();
-  const { testSetup } = useTestSetupContext();
+  const navigate = useNavigate();
+  const {
+    testSetup,
+    setCurrentUserId,
+    currentUserId,
+    projects,
+    progressByTestNumber,
+    selectTestNumber,
+    resetTestSetup
+  } = useTestSetupContext();
+  const [testListOpen, setTestListOpen] = useState(false);
   const currentStep = getStepFromPath(location.pathname);
 
   const projectInfo = {
@@ -23,13 +34,110 @@ export function WorkspaceLayout() {
     scheduleStartDate: testSetup.scheduleStartDate,
     scheduleEndDate: testSetup.scheduleEndDate,
     plName: testSetup.plName,
-    companyContactName: testSetup.companyContactName
+    companyContactName: testSetup.companyContactName,
+    companyContactPhone: testSetup.companyContactPhone,
+    companyContactEmail: testSetup.companyContactEmail
   };
 
+  const visibleProjects = useMemo(
+    () =>
+      projects
+        .filter((project) => project.testerId === currentUserId || project.createdBy === currentUserId)
+        .map((project) => ({
+          ...project,
+          progress: progressByTestNumber[project.testNumber] ?? 0
+        }))
+        .sort((a, b) => {
+          const aTime =
+            typeof a.updatedAt === 'number'
+              ? a.updatedAt
+              : a.updatedAt && typeof a.updatedAt === 'object' && 'toDate' in a.updatedAt
+                ? a.updatedAt.toDate().getTime()
+                : 0;
+          const bTime =
+            typeof b.updatedAt === 'number'
+              ? b.updatedAt
+              : b.updatedAt && typeof b.updatedAt === 'object' && 'toDate' in b.updatedAt
+                ? b.updatedAt.toDate().getTime()
+                : 0;
+          return bTime - aTime;
+        }),
+    [projects, currentUserId, progressByTestNumber]
+  );
+
   return (
-    <ProcessLayout
-      header={<GlobalProcessHeader currentStep={currentStep} projectInfo={projectInfo} />}
-      content={<Outlet />}
-    />
+    <>
+      <ProcessLayout
+        header={
+          <GlobalProcessHeader
+            currentStep={currentStep}
+            projectInfo={projectInfo}
+          onLogout={() => {
+            setCurrentUserId('');
+            resetTestSetup();
+            navigate('/dashboard', { replace: false });
+          }}
+            onOpenTestList={() => {
+              setTestListOpen(true);
+            }}
+          />
+        }
+        content={<Outlet />}
+      />
+      {testListOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div className="text-sm font-extrabold text-slate-900">전체 시험 목록</div>
+              <button
+                type="button"
+                onClick={() => setTestListOpen(false)}
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700"
+              >
+                닫기
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+              {visibleProjects.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-xs text-slate-500">
+                  현재 할당된 시험이 없습니다.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {visibleProjects.map((project) => (
+                    <button
+                      key={project.id}
+                      type="button"
+                      onClick={() => {
+                        selectTestNumber(project.testNumber);
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem('gs-test-guide:selected-test', project.testNumber);
+                        }
+                        setTestListOpen(false);
+                      }}
+                      className={`rounded-xl border px-4 py-3 text-left transition ${
+                        testSetup.testNumber === project.testNumber
+                          ? 'border-blue-400 bg-blue-50'
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="text-[11px] text-slate-500 mb-1">시험번호</div>
+                      <div className="font-semibold text-slate-900">{project.testNumber}</div>
+                      <div className="mt-1 text-xs text-slate-600 truncate">
+                        {project.projectName || project.productName || '-'}
+                        {project.companyName ? ` (${project.companyName})` : ''}
+                      </div>
+                      <div className="mt-2 text-[10px] text-slate-500">
+                        진행율 {project.progress}%
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

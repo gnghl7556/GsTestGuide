@@ -216,8 +216,8 @@ export function NavSidebar({
                         <Circle size={14} className="text-gray-300" />
                       );
                     
-                    const isFeatureList = item.id === 'DUR-PLAN-04';
-                    const isTestCase = item.id === 'DUR-DESIGN-02';
+                    const isFeatureList = item.id === 'DUR-PLAN-01';
+                    const isTestCase = item.id === 'DUR-DESIGN-01';
                     return (
                       <li key={item.id}>
                         <div className="space-y-1.5">

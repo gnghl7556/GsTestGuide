@@ -217,6 +217,16 @@ export function useTestSetupState({
     }));
   };
 
+  const resetTestSetup = () => {
+    setTestSetup(createEmptyTestSetup());
+    setPendingAgreementFile(null);
+    setAgreementParsing(false);
+    setAgreementParsingTestNumber(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('gs-test-guide:selected-test');
+    }
+  };
+
   const ensureProjectSkeleton = async (testNumber: string) => {
     if (!db || !authReady || !testNumber.trim()) return;
     try {
@@ -579,6 +589,7 @@ export function useTestSetupState({
     updateScheduleStartDate,
     updateScheduleEndDate,
     updateManualInfo,
+    resetTestSetup,
     ensureProjectSkeleton,
     saveProjectNow,
     saveDocsNow,

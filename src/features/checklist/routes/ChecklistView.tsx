@@ -51,7 +51,7 @@ export function ChecklistView({
   canReview
 }: ChecklistViewProps) {
   return (
-    <div className="flex-1 grid grid-cols-[2.7fr_6.3fr_3fr] gap-4 min-h-0 pb-2">
+    <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)_clamp(280px,24vw,380px)] gap-5 min-h-0 pb-2">
       <div className="h-full overflow-hidden">
         <NavSidebar
           checklist={checklist}
@@ -76,7 +76,7 @@ export function ChecklistView({
         />
       </div>
 
-      <div className="h-full overflow-hidden bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="h-full overflow-hidden lg:col-span-2 2xl:col-span-1">
         <RightActionPanel
           activeItem={activeItem}
           reviewData={reviewData}

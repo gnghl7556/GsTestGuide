@@ -26,7 +26,9 @@ export function DesignPage() {
     scheduleStartDate: testSetup.scheduleStartDate,
     scheduleEndDate: testSetup.scheduleEndDate,
     plName: testSetup.plName,
-    companyContactName: testSetup.companyContactName
+    companyContactName: testSetup.companyContactName,
+    companyContactPhone: testSetup.companyContactPhone,
+    companyContactEmail: testSetup.companyContactEmail
   };
 
   return (

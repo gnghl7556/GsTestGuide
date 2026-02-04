@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Building2, List, UploadCloud, User, Trash2 } from 'lucide-react';
 import type {
   AgreementParsed,
@@ -102,17 +103,16 @@ export function TestSetupPage({
     }
     return 0;
   };
-  const visibleProjects = useMemo(
-    () =>
-      projects
-        .filter((project) => project.testerId === currentUserId || project.createdBy === currentUserId)
-        .map((project) => ({
-          ...project,
-          progress: progressByTestNumber[project.testNumber] ?? 0
-        }))
-        .sort((a, b) => normalizeUpdatedAt(b.updatedAt) - normalizeUpdatedAt(a.updatedAt)),
-    [projects, currentUserId, progressByTestNumber]
-  );
+  const visibleProjects = useMemo(() => {
+    if (!currentUserId) return [];
+    return projects
+      .filter((project) => project.testerId === currentUserId || project.createdBy === currentUserId)
+      .map((project) => ({
+        ...project,
+        progress: progressByTestNumber[project.testNumber] ?? 0
+      }))
+      .sort((a, b) => normalizeUpdatedAt(b.updatedAt) - normalizeUpdatedAt(a.updatedAt));
+  }, [projects, currentUserId, progressByTestNumber]);
   const canSaveTestNumber = Boolean(
     trimmedTestNumber &&
       currentUserId &&
@@ -123,6 +123,16 @@ export function TestSetupPage({
   const recentSideProjects = otherProjects.slice(0, 2);
   const hasMoreProjects = otherProjects.length > 2;
   const selectedProject = visibleProjects.find((project) => project.testNumber === trimmedTestNumber);
+  const resolveTesterName = (project?: Project) => {
+    if (!project) return '미정';
+    const fromUser = users.find((u) => u.id === project.testerId)?.name;
+    return fromUser || project.testerName || '미정';
+  };
+  const resolvePlName = (project?: Project) => {
+    if (!project) return '미정';
+    const fromPl = plDirectory.find((pl) => pl.id === project.plId)?.name;
+    return fromPl || project.plName || '미정';
+  };
   const formatDate = (value?: Project['updatedAt']) => {
     const millis = normalizeUpdatedAt(value ?? 0);
     if (!millis) return '미기록';
@@ -184,6 +194,10 @@ export function TestSetupPage({
   });
   const [deleteUserConfirmOpen, setDeleteUserConfirmOpen] = useState(false);
   const [deleteTargetUser, setDeleteTargetUser] = useState<{ id: string; name: string } | null>(null);
+  const [accessDeniedOpen, setAccessDeniedOpen] = useState(false);
+  const [accessDeniedInfo, setAccessDeniedInfo] = useState<{ testerName: string; plName: string } | null>(null);
+  const location = useLocation();
+  const openedFromStateRef = useRef(false);
   const [testNumberValidation, setTestNumberValidation] = useState<{
     touched: boolean;
     isValid: boolean;
@@ -248,6 +262,13 @@ export function TestSetupPage({
     if (!trimmedTestNumber) return;
     localStorage.setItem(selectedTestStorageKey, trimmedTestNumber);
   }, [trimmedTestNumber]);
+
+  useEffect(() => {
+    const shouldOpen = Boolean((location.state as { openTestList?: boolean } | null)?.openTestList);
+    if (!shouldOpen || openedFromStateRef.current) return;
+    setProjectListOpen(true);
+    openedFromStateRef.current = true;
+  }, [location.state]);
 
   const hasDuplicateUser = (candidate: { id?: string; name: string; email: string }) => {
     const normalizedName = candidate.name.trim();
@@ -522,7 +543,7 @@ export function TestSetupPage({
                   </button>
                 </div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <div className="relative rounded-2xl border border-white/10 bg-white/5 p-3">
                 <div className="flex items-center gap-2 text-[11px] text-white/50 mb-2">
                   <List size={14} className="text-white/50" />
                   최근 작업 시험
@@ -619,6 +640,16 @@ export function TestSetupPage({
                     </div>
                   </div>
                 )}
+                {!currentUserId && (
+                  <div className="absolute inset-0 z-10 rounded-2xl bg-slate-900/55 backdrop-blur-[2px] flex items-center justify-center text-center px-4">
+                    <div>
+                      <div className="text-sm font-semibold text-white/90">사용자 선택 필요</div>
+                      <div className="mt-1 text-xs text-white/60">
+                        시험 목록은 사용자 선택 후 확인할 수 있습니다.
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             )}
@@ -660,7 +691,7 @@ export function TestSetupPage({
                       message: result.message
                     });
                   }}
-                  readOnly={flowMode === 'existing'}
+                  readOnly={false}
                 />
                 {flowMode === 'create' && (
                   <button
@@ -757,7 +788,17 @@ export function TestSetupPage({
             )}
 
             {flowMode === 'existing' ? (
-              <div className="mt-5">
+              <div className="mt-5 relative">
+                {!currentUserId && (
+                  <div className="absolute inset-0 z-10 rounded-2xl bg-slate-900/55 backdrop-blur-[2px] flex items-center justify-center text-center px-4">
+                    <div>
+                      <div className="text-sm font-semibold text-white/90">사용자 선택 필요</div>
+                      <div className="mt-1 text-xs text-white/60">
+                        시험 정보 확인은 사용자 선택 후 가능합니다.
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="mb-2 flex items-center justify-between">
                   <div className="text-sm text-white/70">
                     <span className="mr-2 inline-flex rounded-md border border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-100">3단계</span>
@@ -923,7 +964,7 @@ export function TestSetupPage({
             </div>
             )}
 
-            <div className="mt-6 sticky bottom-0 bg-gradient-to-t from-[#2e2a5b] to-transparent pt-4 pb-1 flex flex-col items-center gap-2">
+            <div className="mt-6 sticky bottom-0 pt-4 pb-1 flex flex-col items-center gap-2">
               <div className="flex w-full max-w-lg items-center justify-center gap-3">
                 <button
                   type="button"
@@ -935,7 +976,7 @@ export function TestSetupPage({
                     }
                     setFlowMode('existing');
                   }}
-                  className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/20"
+                  className="w-full max-w-xs rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/20"
                 >
                   {flowMode === 'existing' ? '+ 시험 생성' : '시험 생성 닫기'}
                 </button>
@@ -945,6 +986,19 @@ export function TestSetupPage({
                     if (!canProceed) {
                       window.alert(`필수 항목을 입력해주세요: ${missingFields.join(', ')}`);
                       return;
+                    }
+                    if (flowMode === 'existing' && selectedProject) {
+                      const testerMismatch =
+                        selectedProject.testerId && selectedProject.testerId !== currentUserId;
+                      const plMismatch = selectedProject.plId && selectedProject.plId !== plId;
+                      if (testerMismatch || plMismatch) {
+                        setAccessDeniedInfo({
+                          testerName: resolveTesterName(selectedProject),
+                          plName: resolvePlName(selectedProject)
+                        });
+                        setAccessDeniedOpen(true);
+                        return;
+                      }
                     }
                     const result = await onStartProject();
                     if (!result.ok) {
@@ -967,6 +1021,47 @@ export function TestSetupPage({
           </div>
         </div>
       </div>
+      {accessDeniedOpen && accessDeniedInfo && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-6">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div className="text-sm font-extrabold text-slate-900">접근 권한 없음</div>
+              <button
+                type="button"
+                onClick={() => setAccessDeniedOpen(false)}
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700"
+              >
+                닫기
+              </button>
+            </div>
+            <div className="px-5 py-4 text-sm text-slate-700 space-y-3">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                선택한 시험은 현재 사용자에게 할당되지 않았습니다.
+              </div>
+              <div className="space-y-2 text-xs text-slate-600">
+                <div>
+                  <span className="font-semibold text-slate-700">시험원:</span>{' '}
+                  {accessDeniedInfo.testerName}
+                </div>
+                <div>
+                  <span className="font-semibold text-slate-700">담당 PL:</span>{' '}
+                  {accessDeniedInfo.plName}
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-slate-200 px-5 py-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setAccessDeniedOpen(false)}
+                className="rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {agreementModalOpen && agreementModalStatus && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/60 p-6">
           <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white shadow-xl">

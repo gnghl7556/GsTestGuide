@@ -52,47 +52,7 @@ export const REQUIREMENTS_DB: Requirement[] = [
     passCriteria: '시험 장비가 배정되고 정상 상태로 준비되어 시험 수행이 가능하다.'
   },
   {
-    id: 'PLAN-01',
-    category: 'BEFORE',
-    title: '품질특성별 제품 정보 기재사항',
-    description: '시험에 필요한 제품 정보가 품질특성 기준에 맞게 정리되어 있는지 확인한다.',
-    keywords: ['계획', '제품 정보', '품질특성'],
-    checkPoints: [
-      '제품 개요/기능/구성 정보가 최신으로 정리되어 있는가?',
-      '품질특성별 요구사항과 제품 정보가 매핑되어 있는가?',
-      '기업 측 제공 자료의 버전과 제출 일자가 기록되어 있는가?'
-    ],
-    evidenceExamples: ['제품 정보서', '품질특성 매핑표', '제출자료 목록'],
-    testSuggestions: ['제품 정보 문서 최신 버전 여부 확인'],
-    passCriteria: '품질특성별 제품 정보가 최신 자료 기준으로 정리되어 있고 제출 준비가 완료되었다.'
-  }
-  ,
-  {
     id: 'DUR-PLAN-01',
-    category: 'DURING',
-    title: '시험환경구성도',
-    description: '시험 수행 중 환경 구성도가 최신으로 유지되고 실제 환경과 일치하는지 확인한다.',
-    checkPoints: ['구성도 버전이 최신인가?', '실제 환경과 구성도가 일치하는가?', '변경 사항이 반영되었는가?'],
-    passCriteria: '시험환경구성도가 최신이며 실제 환경과 일치한다.'
-  },
-  {
-    id: 'DUR-PLAN-02',
-    category: 'DURING',
-    title: '시험계획서',
-    description: '시험 계획서가 최신이며 시험 범위/일정/절차가 명확히 정의되어 있는지 확인한다.',
-    checkPoints: ['시험 범위가 명확한가?', '일정과 절차가 정의되어 있는가?', '승인된 최신본인가?'],
-    passCriteria: '시험계획서가 최신이며 시험 수행에 필요한 정보가 충분하다.'
-  },
-  {
-    id: 'DUR-PLAN-03',
-    category: 'DURING',
-    title: '품질특성별 제품 정보 기재사항',
-    description: '시험 수행 중 품질특성별 제품 정보가 최신으로 유지되는지 확인한다.',
-    checkPoints: ['제품 정보가 최신인가?', '품질특성별 매핑이 유지되는가?', '변경 이력 기록이 있는가?'],
-    passCriteria: '품질특성별 제품 정보가 최신 상태로 유지된다.'
-  },
-  {
-    id: 'DUR-PLAN-04',
     category: 'DURING',
     title: '기능리스트',
     description: '시험 대상 기능 리스트가 최신이며 시험 범위를 반영하는지 확인한다.',
@@ -101,14 +61,6 @@ export const REQUIREMENTS_DB: Requirement[] = [
   },
   {
     id: 'DUR-DESIGN-01',
-    category: 'DURING',
-    title: '점검표',
-    description: '시험 수행 중 점검표가 최신이며 실제 점검 항목과 일치하는지 확인한다.',
-    checkPoints: ['점검 항목이 최신인가?', '현장 점검과 일치하는가?', '누락 항목이 없는가?'],
-    passCriteria: '점검표가 최신이며 실제 점검 항목과 일치한다.'
-  },
-  {
-    id: 'DUR-DESIGN-02',
     category: 'DURING',
     title: '테스트케이스',
     description: '시험 수행 중 테스트케이스가 최신이며 시험 범위를 충분히 커버하는지 확인한다.',
