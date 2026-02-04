@@ -15,6 +15,11 @@ interface TestSetupPageProps {
   plId: string;
   scheduleStartDate: string;
   scheduleEndDate: string;
+  projectName: string;
+  companyName: string;
+  companyContactName: string;
+  companyContactPhone: string;
+  companyContactEmail: string;
   users: AppUser[];
   currentUserId: string;
   onChangeUserId: (userId: string) => void;
@@ -32,6 +37,13 @@ interface TestSetupPageProps {
   onChangePlId: (value: string) => void;
   onChangeScheduleStartDate: (value: string) => void;
   onChangeScheduleEndDate: (value: string) => void;
+  onUpdateManualInfo: (updates: {
+    projectName?: string;
+    companyName?: string;
+    companyContactName?: string;
+    companyContactPhone?: string;
+    companyContactEmail?: string;
+  }) => void;
   onUploadAgreementDoc: (file: File) => void | Promise<void>;
   onDeleteAgreementDoc: () => void | Promise<void>;
   showAgreementModal: boolean;
@@ -47,6 +59,11 @@ export function TestSetupPage({
   plId,
   scheduleStartDate,
   scheduleEndDate,
+  projectName,
+  companyName,
+  companyContactName,
+  companyContactPhone,
+  companyContactEmail,
   users,
   currentUserId,
   onChangeUserId,
@@ -64,6 +81,7 @@ export function TestSetupPage({
   onChangePlId,
   onChangeScheduleStartDate,
   onChangeScheduleEndDate,
+  onUpdateManualInfo,
   onUploadAgreementDoc,
   onDeleteAgreementDoc,
   showAgreementModal,
@@ -101,6 +119,8 @@ export function TestSetupPage({
   );
   const featuredProject = visibleProjects[0];
   const otherProjects = visibleProjects.slice(1);
+  const recentSideProjects = otherProjects.slice(0, 2);
+  const hasMoreProjects = otherProjects.length > 2;
   const formatDate = (value?: Project['updatedAt']) => {
     const millis = normalizeUpdatedAt(value ?? 0);
     if (!millis) return '미기록';
@@ -123,6 +143,7 @@ export function TestSetupPage({
   const [agreementModalStatus, setAgreementModalStatus] = useState<'parsed' | 'failed' | null>(null);
   const prevStatusRef = useRef<AgreementParsed['parseStatus']>(undefined);
   const [agreementDeleteConfirmOpen, setAgreementDeleteConfirmOpen] = useState(false);
+  const [projectListOpen, setProjectListOpen] = useState(false);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [createUserLoading, setCreateUserLoading] = useState(false);
   const [newUserForm, setNewUserForm] = useState<{
@@ -373,6 +394,12 @@ export function TestSetupPage({
                       <div>
                         <div className="text-[11px] text-white/50 mb-1">시험번호</div>
                         <div className="text-lg font-semibold tracking-wide">{featuredProject.testNumber}</div>
+                        {(featuredProject.projectName || featuredProject.productName || featuredProject.companyName) && (
+                          <div className="mt-1 text-sm text-white/70">
+                            {featuredProject.projectName || featuredProject.productName || '-'}
+                            {featuredProject.companyName ? ` (${featuredProject.companyName})` : ''}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right text-[11px] text-white/50">
                         최근 수정 · {formatDate(featuredProject.updatedAt)}
@@ -398,15 +425,15 @@ export function TestSetupPage({
                 {otherProjects.length > 0 && (
                   <div className="mt-4">
                     <div className="text-[11px] text-white/50 mb-2">최근 수정 순</div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {otherProjects.map((project) => {
+                    <div className="flex items-stretch gap-2">
+                      {recentSideProjects.map((project) => {
                         const isActive = trimmedTestNumber === project.testNumber;
                         return (
                           <button
                             key={project.id}
                             type="button"
                             onClick={() => onSelectProject(project.testNumber)}
-                            className={`rounded-xl border px-3 py-3 text-left text-sm transition ${
+                            className={`flex-1 rounded-xl border px-3 py-3 text-left text-sm transition ${
                               isActive
                                 ? 'border-purple-400/70 bg-white/15 text-white shadow-[0_0_20px_rgba(124,58,237,0.25)]'
                                 : 'border-white/10 bg-white/5 text-white/70 hover:border-white/20'
@@ -414,6 +441,10 @@ export function TestSetupPage({
                           >
                             <div className="text-xs text-white/50 mb-1">시험번호</div>
                             <div className="font-semibold tracking-wide">{project.testNumber}</div>
+                            <div className="mt-1 text-sm text-white/70">
+                              {project.projectName || project.productName || '-'}
+                              {project.companyName ? ` (${project.companyName})` : ''}
+                            </div>
                             <div className="mt-2 flex items-center justify-between text-[11px] text-white/50">
                               <span>진행율 {project.progress}%</span>
                               <span>{formatDate(project.updatedAt)}</span>
@@ -421,6 +452,17 @@ export function TestSetupPage({
                           </button>
                         );
                       })}
+                      {hasMoreProjects && (
+                        <button
+                          type="button"
+                          onClick={() => setProjectListOpen(true)}
+                          className="w-9 shrink-0 rounded-xl border border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:text-white"
+                          aria-label="다른 시험 보기"
+                          title="다른 시험 보기"
+                        >
+                          &gt;
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -453,7 +495,7 @@ export function TestSetupPage({
             </div>
           </div>
 
-            <div>
+          <div className="space-y-5">
               <div className="mb-5">
                 <label className="text-sm text-white/70 mb-2 block">시험 번호</label>
                 <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500/60">
@@ -485,78 +527,113 @@ export function TestSetupPage({
               </div>
               <label className="text-sm text-white/70 mb-2 block">시험 합의서</label>
               <div className="min-h-[230px] border border-white/10 rounded-2xl bg-white/5 flex flex-col items-center justify-center gap-3 relative overflow-hidden">
-              <UploadCloud size={28} className="text-white/60" />
-              <div className="text-sm font-semibold text-white/80">시험 합의서</div>
-              <div className="text-xs text-white/50">드래그 파일을 업로드하세요.</div>
-              <label className="absolute inset-0 cursor-pointer">
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    if (!hasTestNumber) {
-                      window.alert('먼저 시험번호를 선택해주세요.');
-                      e.target.value = '';
-                      return;
-                    }
-                    onUploadAgreementDoc(file);
-                  }}
-                />
-              </label>
-              {agreementParsed?.parseStatus && (
-                <div className="absolute top-3 right-3 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] text-white/70">
-                  {statusLabel}
-                </div>
-              )}
-              <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
-                <div className="text-xs text-white/50 mb-1 flex justify-between">
-                  <span>{agreementParsed?.parseStatus === 'pending' ? '분석 중' : '대기'}</span>
-                  <span>{agreementDoc ? '업로드됨' : '미업로드'}</span>
-                </div>
-                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-500"
-                    style={{ width: agreementDoc ? '100%' : agreementParsed?.parseStatus === 'pending' ? '60%' : '20%' }}
+                <UploadCloud size={28} className="text-white/60" />
+                <div className="text-sm font-semibold text-white/80">시험 합의서</div>
+                <div className="text-xs text-white/50">드래그 파일을 업로드하세요.</div>
+                <label className="absolute inset-0 cursor-pointer">
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (!hasTestNumber) {
+                        window.alert('먼저 시험번호를 선택해주세요.');
+                        e.target.value = '';
+                        return;
+                      }
+                      onUploadAgreementDoc(file);
+                    }}
                   />
+                </label>
+                {agreementParsed?.parseStatus && (
+                  <div className="absolute top-3 right-3 flex items-center gap-2">
+                    <div className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] text-white/70">
+                      {statusLabel}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAgreementDeleteConfirmOpen(true)}
+                      className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2 py-1 text-[10px] font-semibold text-white/70 hover:text-white"
+                      title="시험 합의서 삭제"
+                      aria-label="시험 합의서 삭제"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                )}
+                <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
+                  <div className="text-xs text-white/50 mb-1 flex justify-between">
+                    <span>{agreementParsed?.parseStatus === 'pending' ? '분석 중' : '대기'}</span>
+                    <span>{agreementDoc ? '업로드됨' : '미업로드'}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-500"
+                      style={{ width: agreementDoc ? '100%' : agreementParsed?.parseStatus === 'pending' ? '60%' : '20%' }}
+                    />
+                  </div>
+                  {agreementParsed?.parseStatus && (
+                    <div className="mt-2 text-[11px] text-white/60">
+                      {agreementParsed.parseStatus === 'parsed'
+                        ? '합의서 추출이 완료되었습니다.'
+                        : agreementParsed.parseStatus === 'failed'
+                          ? '합의서 내용을 추출하지 못했습니다.'
+                          : '추출 중입니다.'}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-5">
+                <div className="text-[11px] text-white/60 mb-2">시험 정보</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500/60">
+                    <input
+                      className="bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
+                      placeholder="제품명"
+                      value={projectName}
+                      onChange={(e) => onUpdateManualInfo({ projectName: e.target.value })}
+                    />
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500/60">
+                    <input
+                      className="bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
+                      placeholder="업체명"
+                      value={companyName}
+                      onChange={(e) => onUpdateManualInfo({ companyName: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500/60">
+                    <input
+                      className="bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
+                      placeholder="담당자"
+                      value={companyContactName}
+                      onChange={(e) => onUpdateManualInfo({ companyContactName: e.target.value })}
+                    />
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500/60">
+                    <input
+                      className="bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
+                      placeholder="연락처"
+                      value={companyContactPhone}
+                      onChange={(e) => onUpdateManualInfo({ companyContactPhone: e.target.value })}
+                    />
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-purple-500/60">
+                    <input
+                      className="bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
+                      placeholder="이메일"
+                      value={companyContactEmail}
+                      onChange={(e) => onUpdateManualInfo({ companyContactEmail: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {availableDocs.length > 0 && agreementParsed?.parseStatus && (
-              <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-white/70">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="text-[11px] font-semibold text-white/60">추출된 정보</div>
-                  <button
-                    type="button"
-                    onClick={() => setAgreementDeleteConfirmOpen(true)}
-                    className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[11px] font-semibold text-white/60 hover:text-white"
-                    title="시험 합의서 삭제"
-                    aria-label="시험 합의서 삭제"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-                {agreementParsed.parseStatus === 'parsed' ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <div>시험신청번호: <span className="font-semibold text-white">{agreementParsed.applicationNumber || '-'}</span></div>
-                    <div>계약 유형: <span className="font-semibold text-white">{agreementParsed.contractType || '-'}</span></div>
-                    <div>인증 유형: <span className="font-semibold text-white">{agreementParsed.certificationType || '-'}</span></div>
-                    <div>제품명: <span className="font-semibold text-white">{agreementParsed.productNameKo || '-'}</span></div>
-                    <div>업체명: <span className="font-semibold text-white">{agreementParsed.companyName || '-'}</span></div>
-                    <div>업무 담당자: <span className="font-semibold text-white">{agreementParsed.managerName || '-'}</span></div>
-                    <div>연락처: <span className="font-semibold text-white">{agreementParsed.managerMobile || '-'}</span></div>
-                    <div>이메일: <span className="font-semibold text-white">{agreementParsed.managerEmail || '-'}</span></div>
-                  </div>
-                ) : agreementParsed.parseStatus === 'failed' ? (
-                  <div className="text-red-300">합의서 내용을 추출하지 못했습니다.</div>
-                ) : (
-                  <div className="text-white/60">추출 중입니다.</div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="mt-10 flex flex-col items-center gap-2">
@@ -603,16 +680,7 @@ export function TestSetupPage({
             </div>
             <div className="px-5 py-4 text-sm text-slate-700">
               {agreementModalStatus === 'parsed' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-                  <div>시험신청번호: <span className="font-semibold text-slate-900">{agreementParsed?.applicationNumber || '-'}</span></div>
-                  <div>계약 유형: <span className="font-semibold text-slate-900">{agreementParsed?.contractType || '-'}</span></div>
-                  <div>인증 유형: <span className="font-semibold text-slate-900">{agreementParsed?.certificationType || '-'}</span></div>
-                  <div>제품명: <span className="font-semibold text-slate-900">{agreementParsed?.productNameKo || '-'}</span></div>
-                  <div>업체명: <span className="font-semibold text-slate-900">{agreementParsed?.companyName || '-'}</span></div>
-                  <div>업무 담당자: <span className="font-semibold text-slate-900">{agreementParsed?.managerName || '-'}</span></div>
-                  <div>연락처: <span className="font-semibold text-slate-900">{agreementParsed?.managerMobile || '-'}</span></div>
-                  <div>이메일: <span className="font-semibold text-slate-900">{agreementParsed?.managerEmail || '-'}</span></div>
-                </div>
+                <div className="text-sm text-slate-600">합의서 추출이 완료되었습니다.</div>
               ) : (
                 <div className="text-sm text-red-600">합의서 내용을 추출하지 못했습니다. 파일을 다시 업로드하거나 형식을 확인해주세요.</div>
               )}
@@ -665,6 +733,54 @@ export function TestSetupPage({
               >
                 확인
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {projectListOpen && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/60 p-6">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div className="text-sm font-extrabold text-slate-900">전체 시험 목록</div>
+              <button
+                type="button"
+                onClick={() => setProjectListOpen(false)}
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700"
+              >
+                닫기
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-auto px-5 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {visibleProjects.map((project) => {
+                  const isActive = trimmedTestNumber === project.testNumber;
+                  return (
+                    <button
+                      key={project.id}
+                      type="button"
+                      onClick={() => {
+                        onSelectProject(project.testNumber);
+                        setProjectListOpen(false);
+                      }}
+                      className={`rounded-xl border px-3 py-3 text-left text-sm transition ${
+                        isActive
+                          ? 'border-purple-400/60 bg-slate-900 text-white'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="text-xs text-slate-400 mb-1">시험번호</div>
+                      <div className="font-semibold tracking-wide">{project.testNumber}</div>
+                      {(project.projectName || project.companyName) && (
+                        <div className="mt-1 text-xs text-slate-500 truncate">
+                          {project.projectName || '-'}
+                          {project.companyName ? ` · ${project.companyName}` : ''}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

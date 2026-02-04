@@ -14,6 +14,7 @@ export function useProjects(db: Firestore | null | undefined, authReady: boolean
         const data = docSnap.data() as {
           testNumber?: string;
           projectName?: string;
+          productName?: string;
           companyName?: string;
           plId?: string;
           plName?: string;
@@ -48,6 +49,7 @@ export function useProjects(db: Firestore | null | undefined, authReady: boolean
           projectYear: data.projectYear,
           projectNumber: data.projectNumber,
           projectName: data.projectName,
+          productName: data.productName,
           companyName: data.companyName,
           contractType: data.contractType,
           status: data.status,

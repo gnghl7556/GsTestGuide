@@ -23,6 +23,7 @@ export function TestSetupView({ onStartProject }: TestSetupViewProps) {
     updatePlId,
     updateScheduleStartDate,
     updateScheduleEndDate,
+    updateManualInfo,
     uploadAgreementDoc,
     deleteAgreementDoc,
     agreementModalEnabled,
@@ -38,6 +39,11 @@ export function TestSetupView({ onStartProject }: TestSetupViewProps) {
         plId={testSetup.plId}
         scheduleStartDate={testSetup.scheduleStartDate}
         scheduleEndDate={testSetup.scheduleEndDate}
+        projectName={testSetup.projectName}
+        companyName={testSetup.companyName}
+        companyContactName={testSetup.companyContactName}
+        companyContactPhone={testSetup.companyContactPhone}
+        companyContactEmail={testSetup.companyContactEmail}
         projects={projects}
         plDirectory={plDirectory}
         users={users}
@@ -55,6 +61,7 @@ export function TestSetupView({ onStartProject }: TestSetupViewProps) {
         onChangePlId={updatePlId}
         onChangeScheduleStartDate={updateScheduleStartDate}
         onChangeScheduleEndDate={updateScheduleEndDate}
+        onUpdateManualInfo={updateManualInfo}
         onUploadAgreementDoc={uploadAgreementDoc}
         onDeleteAgreementDoc={deleteAgreementDoc}
         showAgreementModal={agreementModalEnabled}

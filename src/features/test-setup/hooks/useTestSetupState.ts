@@ -124,13 +124,23 @@ export function useTestSetupState({
           managerEmail?: string;
           managerDepartment?: string;
           managerJobTitle?: string;
+          담당자?: string;
+          연락처?: string;
+          이메일?: string;
         };
+      };
+      const parsed = data.parsed || {};
+      const normalizedParsed = {
+        ...parsed,
+        managerName: parsed.managerName ?? parsed.담당자,
+        managerMobile: parsed.managerMobile ?? parsed.연락처,
+        managerEmail: parsed.managerEmail ?? parsed.이메일
       };
       setTestSetup((prev) => {
         const nextAgreementParsed = {
           parseStatus: data.parseStatus,
           parseProgress: data.parseProgress,
-          ...(data.parsed || {})
+          ...normalizedParsed
         };
         let changed = false;
         const next = { ...prev, agreementParsed: nextAgreementParsed };
@@ -144,6 +154,14 @@ export function useTestSetupState({
         }
         if ((nextAgreementParsed as { managerEmail?: string }).managerEmail && !prev.companyContactEmail) {
           next.companyContactEmail = (nextAgreementParsed as { managerEmail?: string }).managerEmail || '';
+          changed = true;
+        }
+        if ((nextAgreementParsed as { productNameKo?: string }).productNameKo && !prev.projectName) {
+          next.projectName = (nextAgreementParsed as { productNameKo?: string }).productNameKo || '';
+          changed = true;
+        }
+        if ((nextAgreementParsed as { companyName?: string }).companyName && !prev.companyName) {
+          next.companyName = (nextAgreementParsed as { companyName?: string }).companyName || '';
           changed = true;
         }
         if ((nextAgreementParsed as { workingDays?: string }).workingDays && !prev.scheduleWorkingDays) {
@@ -183,6 +201,19 @@ export function useTestSetupState({
     setTestSetup((prev) => ({
       ...prev,
       scheduleEndDate: value
+    }));
+  };
+
+  const updateManualInfo = (updates: {
+    projectName?: string;
+    companyName?: string;
+    companyContactName?: string;
+    companyContactPhone?: string;
+    companyContactEmail?: string;
+  }) => {
+    setTestSetup((prev) => ({
+      ...prev,
+      ...updates
     }));
   };
 
@@ -547,6 +578,7 @@ export function useTestSetupState({
     updatePlId,
     updateScheduleStartDate,
     updateScheduleEndDate,
+    updateManualInfo,
     ensureProjectSkeleton,
     saveProjectNow,
     saveDocsNow,
