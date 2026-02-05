@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Save, X, RefreshCcw } from 'lucide-react';
 import { collection, doc, getDocs, writeBatch } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { DefectReportModal } from './DefectReportModal';
+import { db } from '../../../lib/firebase';
+import { DefectReportModal } from '../../defects/components/DefectReportModal';
 
 type FeatureItem = {
   id: string;

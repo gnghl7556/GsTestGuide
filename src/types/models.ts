@@ -12,6 +12,7 @@ export type TestCaseStatus = '대기' | 'Pass' | 'Fail' | 'Skip';
 export type DefectSeverity = 'H' | 'M' | 'L';
 export type DefectFrequency = 'A' | 'I';
 export type DefectStatus = '신규' | '확인' | '수정' | '보류' | '종료';
+export type DefectReportVersion = 1 | 2 | 3 | 4;
 
 export type User = {
   id: string;
@@ -108,6 +109,8 @@ export type Defect = {
   defectId: string;
   defectNumber?: number;
   linkedTestCaseId?: string;
+  reportVersion: DefectReportVersion;
+  isDerived: boolean;
   summary: string;
   testEnvironment: string;
   severity: DefectSeverity;

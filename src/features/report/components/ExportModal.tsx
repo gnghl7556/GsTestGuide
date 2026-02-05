@@ -4,7 +4,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { db, functions } from '../lib/firebase';
+import { db, functions } from '../../../lib/firebase';
 
 interface ExportModalProps {
   open: boolean;

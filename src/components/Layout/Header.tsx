@@ -70,7 +70,7 @@ export function Header({
   testInfo,
   onTestInfoChange
 }: HeaderProps) {
-  const theme = CATEGORY_THEMES[activeCategory as keyof typeof CATEGORY_THEMES] || CATEGORY_THEMES['BEFORE'];
+  const theme = CATEGORY_THEMES[activeCategory as keyof typeof CATEGORY_THEMES] || CATEGORY_THEMES['SETUP'];
   const applicableItems = checklist.filter(item => item.status !== 'Not_Applicable');
   const stats = applicableItems.reduce(
     (acc, item) => {

@@ -6,6 +6,7 @@ import { getStorage } from 'firebase-admin/storage';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
+import { generateDefectReport } from './utils/excelGenerator';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const pdfParseLib = require('pdf-parse');
 // 함수면 그대로 쓰고, 아니면 .default를 사용 (방어 코드)
@@ -323,6 +324,67 @@ export const generateFeatureDraft = onCall({ region: REGION }, async () => {
     // ... 기존 generateFeatureDraft 로직 ...
 });
 
-export const exportDefectsXlsx = onCall({ region: REGION }, async () => {
-    // ... 기존 exportDefectsXlsx 로직 ...
+export const exportDefectsXlsx = onCall({ region: REGION }, async (request) => {
+  const db = getFirestore();
+  const { projectId, reportVersion, reportDate, environment } = (request.data || {}) as {
+    projectId?: string;
+    reportVersion?: 1 | 2 | 3 | 4;
+    reportDate?: string;
+    environment?: string;
+  };
+
+  if (!projectId) {
+    throw new Error('projectId가 필요합니다.');
+  }
+
+  const defectsSnap = await db
+    .collection('projects')
+    .doc(projectId)
+    .collection('defects')
+    .get();
+
+  const defects = defectsSnap.docs.map((docSnap) => {
+    const data = docSnap.data() as Record<string, unknown>;
+    return {
+      defectId: (data.defectId as string) || docSnap.id,
+      defectNumber: data.defectNumber as number | undefined,
+      linkedTestCaseId: data.linkedTestCaseId as string | undefined,
+      reportVersion: (data.reportVersion ?? 1) as 1 | 2 | 3 | 4,
+      isDerived: Boolean(data.isDerived),
+      summary: (data.summary as string) || '',
+      testEnvironment: (data.testEnvironment as string) || '',
+      severity: ((data.severity as string) || 'M') as 'H' | 'M' | 'L',
+      frequency: ((data.frequency as string) || 'I') as 'A' | 'I',
+      qualityCharacteristic: (data.qualityCharacteristic as string) || '',
+      accessPath: (data.accessPath as string) || '',
+      stepsToReproduce: Array.isArray(data.stepsToReproduce) ? data.stepsToReproduce : [],
+      description: (data.description as string) || '',
+      ttaComment: (data.ttaComment as string) || '',
+      status: ((data.status as string) || '신규') as '신규' | '확인' | '수정' | '보류' | '종료',
+      reportedBy: (data.reportedBy as string) || '',
+      reportedAt: data.reportedAt
+    };
+  });
+
+  const normalizedReportVersion = reportVersion ?? 1;
+  const filtered = reportVersion
+    ? defects.filter((item) => item.reportVersion === reportVersion)
+    : defects;
+
+  const now = new Date();
+  const dateLabel =
+    reportDate || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  const buffer = await generateDefectReport({
+    testNumber: projectId,
+    reportVersion: normalizedReportVersion,
+    reportDate: dateLabel,
+    environment: environment || '',
+    defects: filtered
+  });
+
+  return {
+    fileBase64: buffer.toString('base64'),
+    fileName: `${projectId}_defects_${normalizedReportVersion}차.xlsx`
+  };
 });

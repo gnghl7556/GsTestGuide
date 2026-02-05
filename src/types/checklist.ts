@@ -1,6 +1,6 @@
 import type { DocEntry, AgreementParsed } from './testSetup';
 
-export type RequirementCategory = 'BEFORE' | 'DURING' | 'AFTER';
+export type RequirementCategory = 'SETUP' | 'DESIGN' | 'EXECUTION' | 'COMPLETION';
 
 export interface Requirement {
   id: string;

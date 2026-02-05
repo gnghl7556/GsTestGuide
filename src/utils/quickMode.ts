@@ -21,7 +21,7 @@ const MUST_HINTS = [
 const SHOULD_HINTS = ['권장', '가능', '절차', '정의', '훈련', '정기', '점검', '정책'];
 
 const CATEGORY_TAGS: Record<Requirement['category'], string[]> = {
-  BEFORE: [
+  SETUP: [
     '사전 준비',
     '안내 메일',
     '자료 확인',
@@ -31,14 +31,15 @@ const CATEGORY_TAGS: Record<Requirement['category'], string[]> = {
     '설치',
     '네트워크'
   ],
-  DURING: [
+  DESIGN: ['기능 목록', '테스트 케이스', '시나리오', '설계 검토'],
+  EXECUTION: [
     '기능 테스트',
     '성능 테스트',
     '회귀 테스트',
     '결함 리포트',
     'RawData'
   ],
-  AFTER: ['최종 산출물', '반입/반출', '정리', '종료']
+  COMPLETION: ['최종 산출물', '반입/반출', '정리', '종료']
 };
 
 const TAG_PATTERNS: Array<{ pattern: RegExp; tag: string }> = [

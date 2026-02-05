@@ -5,6 +5,7 @@ export type TestCaseStatus = '대기' | 'Pass' | 'Fail' | 'Skip';
 export type DefectSeverity = 'H' | 'M' | 'L';
 export type DefectFrequency = 'A' | 'I';
 export type DefectStatus = '신규' | '확인' | '수정' | '보류' | '종료';
+export type DefectReportVersion = 1 | 2 | 3 | 4;
 
 export interface SchemaTestEquipment {
   equipmentId: string;
@@ -44,6 +45,8 @@ export interface SchemaTestCase {
 export interface SchemaDefect {
   defectId: string;
   defectNumber?: number;
+  reportVersion: DefectReportVersion;
+  isDerived: boolean;
   linkedTestCaseId?: string;
   summary: string;
   testEnvironment: string;

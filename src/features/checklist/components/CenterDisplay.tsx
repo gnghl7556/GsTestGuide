@@ -1,6 +1,8 @@
 import type { ChecklistItem, QuickAnswer, QuickModeItem, QuickQuestionId, QuickInputValue } from '../../../types';
 import { CATEGORIES, CATEGORY_THEMES } from '../../../data/constants';
 import { Ban } from 'lucide-react';
+import { useTestSetupContext } from '../../../providers/useTestSetupContext';
+import { DefectReportForm } from '../../defects/components/DefectReportForm';
 
 interface CenterDisplayProps {
   activeItem: ChecklistItem | undefined;
@@ -22,6 +24,16 @@ export function CenterDisplay({
   onInputChange,
 }: CenterDisplayProps) {
   if (!activeItem) return <div className="h-full bg-white rounded-xl border border-gray-200" />;
+  const { currentTestNumber } = useTestSetupContext();
+
+  if (activeItem.id === 'DUR-EXEC-01' && currentTestNumber) {
+    return (
+      <DefectReportForm
+        projectId={currentTestNumber || ''}
+        testCaseId={activeItem.id}
+      />
+    );
+  }
 
   const theme = CATEGORY_THEMES[activeItem.category];
   const isNA = activeItem.status === 'Not_Applicable';

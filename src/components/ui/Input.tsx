@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes } from 'react';
 
 const baseInputStyles =
-  'w-full rounded-lg border px-3 py-2 text-sm text-primary-800 placeholder:text-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500';
+  'w-full rounded-lg border bg-white/90 px-3 py-2 text-sm text-primary-800 placeholder:text-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-400/60 focus:border-primary-400 disabled:cursor-not-allowed disabled:bg-surface-50 disabled:text-surface-500';
 
 type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
   label?: string;
@@ -21,13 +21,13 @@ export function Input({
   return (
     <div className={`space-y-1 ${containerClassName}`}>
       {label && (
-        <label htmlFor={inputId} className="block text-xs font-semibold text-primary-700">
+        <label htmlFor={inputId} className="block text-xs font-semibold text-surface-600">
           {label}
         </label>
       )}
       <input
         id={inputId}
-        className={`${baseInputStyles} ${error ? 'border-error-400 bg-error-50/40' : 'border-primary-200'} ${className}`}
+        className={`${baseInputStyles} ${error ? 'border-error-400 bg-error-50/40 text-error-700' : 'border-surface-200'} ${className}`}
         {...props}
       />
       {error && <p className="text-xs text-error-600">{error}</p>}

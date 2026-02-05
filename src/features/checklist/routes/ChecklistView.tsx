@@ -59,7 +59,7 @@ export function ChecklistView({
           quickReviewById={quickReviewById}
           selectedReqId={selectedReqId}
           setSelectedReqId={setSelectedReqId}
-          activeCategory={activeItem?.category || 'BEFORE'}
+          activeCategory={activeItem?.category || 'SETUP'}
           onSelectQuestion={onSelectQuestion}
         />
       </div>

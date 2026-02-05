@@ -2,12 +2,12 @@ import type { ButtonHTMLAttributes } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 const baseStyles =
-  'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-50 disabled:cursor-not-allowed disabled:opacity-50';
 
 const variantStyles = {
   primary: 'bg-primary-800 text-white hover:bg-primary-700',
   secondary: 'bg-secondary-600 text-white hover:bg-secondary-500',
-  outline: 'border border-primary-200 text-primary-800 hover:bg-primary-50',
+  outline: 'border border-primary-300 text-primary-700 hover:bg-primary-50',
   ghost: 'text-primary-700 hover:bg-primary-50'
 } as const;
 

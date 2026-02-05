@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X, UploadCloud } from 'lucide-react';
 import { addDoc, collection, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { db, storage } from '../lib/firebase';
+import { db, storage } from '../../../lib/firebase';
 
 interface DefectReportModalProps {
   open: boolean;
@@ -15,6 +15,8 @@ type EvidenceFile = { name: string; url: string };
 
 export function DefectReportModal({ open, projectId, testCaseId, onClose }: DefectReportModalProps) {
   const [summary, setSummary] = useState('');
+  const [reportVersion, setReportVersion] = useState<1 | 2 | 3 | 4>(1);
+  const [isDerived, setIsDerived] = useState(false);
   const [severity, setSeverity] = useState<'H' | 'M' | 'L' | ''>('');
   const [frequency, setFrequency] = useState<'A' | 'I' | ''>('');
   const [qualityCharacteristic, setQualityCharacteristic] = useState('');
@@ -29,6 +31,8 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
 
   const resetForm = () => {
     setSummary('');
+    setReportVersion(1);
+    setIsDerived(false);
     setSeverity('');
     setFrequency('');
     setQualityCharacteristic('');
@@ -62,6 +66,8 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
       const defectRef = await addDoc(collection(db, 'projects', projectId, 'defects'), {
         defectId: '',
         linkedTestCaseId: testCaseId,
+        reportVersion,
+        isDerived,
         summary: summary.trim(),
         testEnvironment: testEnvironment.trim(),
         severity,
@@ -122,12 +128,37 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
               />
             </div>
             <div>
+              <label className="block text-[11px] text-gray-500 mb-1">결함 리포트 차수</label>
+              <select
+                className="w-full rounded-md border border-gray-200 px-2 py-1"
+                value={reportVersion}
+                onChange={(e) => setReportVersion(Number(e.target.value) as 1 | 2 | 3 | 4)}
+              >
+                <option value={1}>1차 (초기)</option>
+                <option value={2}>2차 (초기)</option>
+                <option value={3}>3차 (1차 패치 후 파생/보안/성능)</option>
+                <option value={4}>4차 (최종)</option>
+              </select>
+            </div>
+            <div>
               <label className="block text-[11px] text-gray-500 mb-1">시험 환경</label>
               <input
                 className="w-full rounded-md border border-gray-200 px-2 py-1"
                 value={testEnvironment}
                 onChange={(e) => setTestEnvironment(e.target.value)}
               />
+            </div>
+            <div className="flex items-center gap-2 pt-5">
+              <input
+                id="defect-derived"
+                type="checkbox"
+                checked={isDerived}
+                onChange={(e) => setIsDerived(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary-700 focus:ring-primary-500"
+              />
+              <label htmlFor="defect-derived" className="text-[11px] text-gray-600">
+                파생 결함 (회귀/패치 후 파생)
+              </label>
             </div>
             <div>
               <label className="block text-[11px] text-gray-500 mb-1">결함 정도 *</label>
