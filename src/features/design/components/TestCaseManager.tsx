@@ -4,7 +4,6 @@ import { Button, Input } from '../../../components/ui';
 import { PageHeader, PageFilterBar, PageContent } from '../../../components/ui/layout';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 import { useTestCaseActions, type TestCaseItem } from '../hooks/useTestCaseActions';
-import { DefectReportModal } from '../../defects/components/DefectReportModal';
 
 type NewCaseInput = Omit<TestCaseItem, 'id' | 'testCaseId'>;
 

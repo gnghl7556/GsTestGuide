@@ -176,4 +176,4 @@ export const DEFECT_REFERENCES = {
     },
   ],
   호환성: [],
-};
+} satisfies Record<string, DefectReference[]>;

@@ -11,7 +11,9 @@ type DefectReportFormProps = {
 
 export function DefectReportForm({ projectId, testCaseId }: DefectReportFormProps) {
   const { state, update, save, reset, saving, errorMsg } = useDefectForm(projectId, testCaseId);
-  const [activeTab, setActiveTab] = useState<string>('기능적합성');
+  const [activeTab, setActiveTab] = useState<keyof typeof DEFECT_REFERENCES>('기능적합성');
+  type DefectReferenceItem = (typeof DEFECT_REFERENCES)[keyof typeof DEFECT_REFERENCES][number];
+  const tabs = Object.keys(DEFECT_REFERENCES) as Array<keyof typeof DEFECT_REFERENCES>;
 
   const envOptions = [
     { value: 'ALL_OS', label: '시험환경 모든 OS' },
@@ -234,7 +236,7 @@ export function DefectReportForm({ projectId, testCaseId }: DefectReportFormProp
               <span>품질 특성별 사례</span>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {Object.keys(DEFECT_REFERENCES).map((key) => (
+              {tabs.map((key) => (
                 <button
                   key={key}
                   onClick={() => setActiveTab(key)}
@@ -252,7 +254,7 @@ export function DefectReportForm({ projectId, testCaseId }: DefectReportFormProp
 
           <div className="flex-1 overflow-y-auto p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {(DEFECT_REFERENCES[activeTab] || []).map((item, idx) => (
+              {(DEFECT_REFERENCES[activeTab] || []).map((item: DefectReferenceItem, idx: number) => (
                 <div
                   key={`${activeTab}-${idx}`}
                   className="group bg-white rounded-xl border border-surface-200 p-4 hover:border-primary-300 hover:shadow-md transition-all flex flex-col"
