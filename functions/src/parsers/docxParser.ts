@@ -5,12 +5,20 @@
 
 import * as fs from 'fs';
 
-// mammoth는 동적 import로 사용
-let mammoth: any = null;
+type MammothMessage = { message: string };
+type MammothResult = { value: string; messages?: MammothMessage[] };
+type MammothLib = {
+  extractRawText: (input: { path: string } | { buffer: Buffer }) => Promise<MammothResult>;
+  convertToHtml: (input: { path: string } | { buffer: Buffer }) => Promise<{ value: string }>;
+};
 
-async function getMammoth() {
+// mammoth는 동적 import로 사용
+let mammoth: MammothLib | null = null;
+
+async function getMammoth(): Promise<MammothLib> {
   if (!mammoth) {
-    mammoth = await import('mammoth');
+    const loaded = await import('mammoth');
+    mammoth = loaded as unknown as MammothLib;
   }
   return mammoth;
 }
@@ -53,7 +61,7 @@ export async function parseDocx(
       text: textResult.value || '',
       html: htmlResult?.value,
       success: true,
-      warnings: textResult.messages?.map((m: any) => m.message),
+      warnings: textResult.messages?.map((m) => m.message),
     };
   } catch (error) {
     console.error('DOCX parsing error:', error);
@@ -90,7 +98,7 @@ export async function parseDocxFromBuffer(
       text: textResult.value || '',
       html: htmlResult?.value,
       success: true,
-      warnings: textResult.messages?.map((m: any) => m.message),
+      warnings: textResult.messages?.map((m) => m.message),
     };
   } catch (error) {
     console.error('DOCX parsing error:', error);

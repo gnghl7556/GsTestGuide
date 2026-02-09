@@ -1,5 +1,6 @@
 import { onObjectFinalized } from 'firebase-functions/v2/storage';
 import { onCall } from 'firebase-functions/v2/https';
+import { HttpsError } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
@@ -7,12 +8,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
 import { generateDefectReport } from './utils/excelGenerator';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pdfParseLib = require('pdf-parse');
-// 함수면 그대로 쓰고, 아니면 .default를 사용 (방어 코드)
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const pdfParse = typeof pdfParseLib === 'function' ? pdfParseLib : pdfParseLib.default;
-console.log('[DEBUG] pdfParse type:', typeof pdfParse);
+import pdfParse from 'pdf-parse';
 
 initializeApp();
 
@@ -23,6 +19,18 @@ const isAgreementPath = (objectPath: string) => objectPath.startsWith('agreement
 const parseTestNumber = (objectPath: string) => {
   const parts = objectPath.split('/');
   return parts.length >= 2 ? parts[1] : '';
+};
+
+const isProjectFinalized = async (projectId: string) => {
+  const db = getFirestore();
+  const projectRef = db.collection('projects').doc(projectId);
+  const projectSnap = await projectRef.get();
+  if (!projectSnap.exists) return false;
+  const project = projectSnap.data() as {
+    status?: string;
+    executionState?: { finalizedAt?: unknown };
+  };
+  return project.status === '완료' || Boolean(project.executionState?.finalizedAt);
 };
 
 // ==========================================
@@ -322,6 +330,65 @@ const extractAgreementFields = (text: string) => {
 // ==========================================
 export const generateFeatureDraft = onCall({ region: REGION }, async () => {
     // ... 기존 generateFeatureDraft 로직 ...
+});
+
+export const saveDefectReport = onCall({ region: REGION }, async (request) => {
+  const db = getFirestore();
+  const data = (request.data || {}) as {
+    projectId?: string;
+    testCaseId?: string;
+    reportVersion?: 1 | 2 | 3 | 4;
+    isDerived?: boolean;
+    summary?: string;
+    testEnvironment?: string;
+    severity?: 'H' | 'M' | 'L';
+    frequency?: 'A' | 'I';
+    qualityCharacteristic?: string;
+    accessPath?: string;
+    stepsToReproduce?: string[];
+    description?: string;
+    ttaComment?: string;
+    evidenceFiles?: Array<{ name: string; url: string }>;
+  };
+
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
+  }
+  if (!data.projectId) {
+    throw new HttpsError('invalid-argument', 'projectId가 필요합니다.');
+  }
+  if (!data.summary?.trim() || !data.qualityCharacteristic?.trim()) {
+    throw new HttpsError('invalid-argument', '요약과 품질 특성은 필수입니다.');
+  }
+  if (await isProjectFinalized(data.projectId)) {
+    throw new HttpsError('failed-precondition', '4차 확정 이후에는 결함을 수정할 수 없습니다.');
+  }
+
+  const defectRef = db.collection('projects').doc(data.projectId).collection('defects').doc();
+  await defectRef.set(
+    {
+      defectId: defectRef.id,
+      linkedTestCaseId: data.testCaseId || '',
+      reportVersion: data.reportVersion ?? 1,
+      isDerived: Boolean(data.isDerived),
+      summary: data.summary.trim(),
+      testEnvironment: data.testEnvironment || '',
+      severity: data.severity || 'M',
+      frequency: data.frequency || 'I',
+      qualityCharacteristic: data.qualityCharacteristic.trim(),
+      accessPath: data.accessPath || '',
+      stepsToReproduce: Array.isArray(data.stepsToReproduce) ? data.stepsToReproduce : [],
+      description: data.description || '',
+      ttaComment: data.ttaComment || '',
+      status: '신규',
+      evidenceFiles: Array.isArray(data.evidenceFiles) ? data.evidenceFiles : [],
+      reportedBy: request.auth.uid,
+      reportedAt: FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  return { defectId: defectRef.id };
 });
 
 export const exportDefectsXlsx = onCall({ region: REGION }, async (request) => {

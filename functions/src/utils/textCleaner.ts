@@ -119,17 +119,17 @@ function removePageNumbers(text: string): { text: string; count: number } {
 
   let result = text;
   
-  result = result.replace(pattern1, (match) => {
+  result = result.replace(pattern1, () => {
     count++;
     return '';
   });
 
-  result = result.replace(pattern2, (match) => {
+  result = result.replace(pattern2, () => {
     count++;
     return '';
   });
 
-  result = result.replace(pattern3, (match) => {
+  result = result.replace(pattern3, () => {
     count++;
     return '';
   });
@@ -160,7 +160,7 @@ function removeWatermarks(text: string): { text: string; count: number } {
   let result = text;
 
   watermarkPatterns.forEach((pattern) => {
-    result = result.replace(pattern, (match) => {
+    result = result.replace(pattern, () => {
       count++;
       return '';
     });
@@ -214,7 +214,7 @@ function removeHeadersAndFooters(
   [...repeatingHeaders, ...repeatingFooters].forEach((pattern) => {
     const escapedPattern = escapeRegExp(pattern);
     const regex = new RegExp(`^\\s*${escapedPattern}\\s*$`, 'gm');
-    result = result.replace(regex, (match) => {
+    result = result.replace(regex, () => {
       count++;
       return '';
     });
@@ -299,7 +299,7 @@ function removeCustomPatterns(
   let result = text;
 
   patterns.forEach((pattern) => {
-    result = result.replace(pattern, (match) => {
+    result = result.replace(pattern, () => {
       count++;
       return '';
     });

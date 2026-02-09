@@ -13,6 +13,16 @@ export type DefectSeverity = 'H' | 'M' | 'L';
 export type DefectFrequency = 'A' | 'I';
 export type DefectStatus = '신규' | '확인' | '수정' | '보류' | '종료';
 export type DefectReportVersion = 1 | 2 | 3 | 4;
+export type ExecutionPhase = 'INITIAL' | 'PATCH1_REGRESSION' | 'PATCH2_FINAL';
+export type FeatureRegressionStatus = 'PENDING' | 'PASS' | 'DERIVED_FOUND';
+
+export type ExecutionGateState = {
+  phase: ExecutionPhase;
+  featureRegressionStatus: FeatureRegressionStatus;
+  allowSecurityPerformance: boolean;
+  derivedFoundInFeatureRegression: boolean;
+  finalizedAt?: Timestamp | number | null;
+};
 
 export type User = {
   id: string;
@@ -38,6 +48,7 @@ export type Project = {
   startDate?: Timestamp;
   endDate?: Timestamp;
   contractType?: string;
+  operatingEnvironment?: string;
   companyName?: string;
   companyContactName?: string;
   companyContactEmail?: string;
@@ -60,6 +71,7 @@ export type Project = {
   manualDocUrl?: string;
   createdBy?: string | null;
   updatedAt?: Timestamp | number | null;
+  executionState?: ExecutionGateState;
 };
 
 export type ProjectCreateInput = Omit<Project, 'id'> & { id?: string };

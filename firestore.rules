@@ -1,8 +1,23 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isProjectLocked(projectId) {
+      let project = get(/databases/$(database)/documents/projects/$(projectId));
+      return project.exists()
+        && (project.data.status == '완료' || project.data.executionState.finalizedAt != null);
+    }
+
+    match /projects/{projectId}/defects/{defectId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && !isProjectLocked(projectId);
+    }
+
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isSignedIn();
     }
   }
 }

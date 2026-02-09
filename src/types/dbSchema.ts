@@ -6,6 +6,24 @@ export type DefectSeverity = 'H' | 'M' | 'L';
 export type DefectFrequency = 'A' | 'I';
 export type DefectStatus = '신규' | '확인' | '수정' | '보류' | '종료';
 export type DefectReportVersion = 1 | 2 | 3 | 4;
+export type ExecutionPhase = 'INITIAL' | 'PATCH1_REGRESSION' | 'PATCH2_FINAL';
+export type FeatureRegressionStatus = 'PENDING' | 'PASS' | 'DERIVED_FOUND';
+
+export interface SchemaExecutionGateState {
+  phase: ExecutionPhase;
+  featureRegressionStatus: FeatureRegressionStatus;
+  allowSecurityPerformance: boolean;
+  derivedFoundInFeatureRegression: boolean;
+  finalizedAt?: Timestamp | number | null;
+}
+
+export interface SchemaProject {
+  projectId: string;
+  testNumber: string;
+  status?: '대기' | '진행' | '중단' | '완료' | '재시험';
+  operatingEnvironment?: string;
+  executionState?: SchemaExecutionGateState;
+}
 
 export interface SchemaTestEquipment {
   equipmentId: string;

@@ -8,9 +8,10 @@ type DefectListProps = {
   defects: Defect[];
   filter: DefectFilter;
   loading: boolean;
+  isFinalized: boolean;
 };
 
-export function DefectList({ defects, filter, loading }: DefectListProps) {
+export function DefectList({ defects, filter, loading, isFinalized }: DefectListProps) {
   const filtered = useMemo(() => {
     return defects.filter((item) => {
       if (filter.version !== 'ALL' && item.reportVersion !== filter.version) return false;
@@ -34,6 +35,11 @@ export function DefectList({ defects, filter, loading }: DefectListProps) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-surface-200 bg-white">
+      {isFinalized && (
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-[11px] font-semibold text-amber-700">
+          4차 확정 이후 결함 수정은 잠금 상태입니다.
+        </div>
+      )}
       <table className="w-full text-left text-xs text-surface-700">
         <thead className="bg-surface-50 text-[11px] text-surface-500">
           <tr>

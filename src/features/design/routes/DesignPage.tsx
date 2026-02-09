@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { FeatureManager } from '../components/FeatureManager';
 import { TestCaseManager } from '../components/TestCaseManager';
@@ -9,14 +9,8 @@ import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 export function DesignPage() {
   const location = useLocation();
   const { testSetup } = useTestSetupContext();
-  const [activeTab, setActiveTab] = useState<'feature' | 'testcase'>('feature');
-
-  useEffect(() => {
-    const nextTab = (location.state as { tab?: 'feature' | 'testcase' } | null)?.tab;
-    if (nextTab) {
-      setActiveTab(nextTab);
-    }
-  }, [location.state]);
+  const initialTab = (location.state as { tab?: 'feature' | 'testcase' } | null)?.tab;
+  const [activeTab, setActiveTab] = useState<'feature' | 'testcase'>(initialTab || 'feature');
 
   const projectInfo = {
     testNumber: testSetup.testNumber,

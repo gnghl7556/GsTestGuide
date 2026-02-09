@@ -130,7 +130,9 @@ export const generateDefectReport = async ({
   const severityRange = `D${insertStart}:D${Math.max(insertStart, lastRowIndex)}`;
   const frequencyRange = `E${insertStart}:E${Math.max(insertStart, lastRowIndex)}`;
 
-  const dataValidations = (worksheet as unknown as { dataValidations?: { add: Function } }).dataValidations;
+  const dataValidations = (worksheet as unknown as {
+    dataValidations?: { add: (range: string, options: Record<string, unknown>) => void };
+  }).dataValidations;
   if (dataValidations) {
     dataValidations.add(severityRange, {
       type: 'list',

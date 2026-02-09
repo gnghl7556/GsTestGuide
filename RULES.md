@@ -60,6 +60,12 @@
     * **Output:** `[4차 결함 리포트]` (최종 결과).
     * *Note:* 이 단계 이후 발견된 결함은 수정 불가 (심사 상정).
 
+### 4.1 Runtime Enforcement (구현 규칙)
+* **Execution Gate (프론트):** `DUR-EXEC-03`(기능 회귀) 결과와 파생 결함 유무를 기준으로 `DUR-EXEC-02/04`(성능/보안) 항목 활성 여부를 제어한다.
+* **Final Lock (프론트+서버):**
+  * `projects/{projectId}.executionState.finalizedAt` 존재 또는 `status == 완료`이면 결함 저장/수정 UI를 잠근다.
+  * Cloud Functions `saveDefectReport`와 Firestore Rules에서도 동일 조건으로 쓰기를 차단해 우회 저장을 막는다.
+
 ### **Phase 4: COMPLETION (종료)**
 * 최종 산출물 정리, 테스트 데이터 삭제 및 장비 반납.
 

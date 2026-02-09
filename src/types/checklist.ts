@@ -114,3 +114,10 @@ export interface QuickReviewAnswer {
   lockedQuestions?: Partial<Record<QuickQuestionId, boolean>>;
   inputValues?: Record<string, QuickInputValue>;
 }
+
+export type ExecutionGateDecisionState = 'enabled' | 'disabled' | 'blockedByFinalization';
+
+export interface ExecutionItemGate {
+  state: ExecutionGateDecisionState;
+  reason?: string;
+}

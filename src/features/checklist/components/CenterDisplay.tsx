@@ -1,4 +1,12 @@
-import type { ChecklistItem, QuickAnswer, QuickModeItem, QuickQuestionId, QuickInputValue, RequiredDoc } from '../../../types';
+import type {
+  ChecklistItem,
+  ExecutionItemGate,
+  QuickAnswer,
+  QuickModeItem,
+  QuickQuestionId,
+  QuickInputValue,
+  RequiredDoc
+} from '../../../types';
 import { CATEGORY_THEMES } from '../../../data/constants';
 import { Ban } from 'lucide-react';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
@@ -16,6 +24,8 @@ interface CenterDisplayProps {
   onQuickAnswer: (itemId: string, questionId: QuickQuestionId, value: QuickAnswer) => void;
   inputValues: Record<string, QuickInputValue>;
   onInputChange: (itemId: string, fieldId: string, value: QuickInputValue) => void;
+  itemGate?: ExecutionItemGate;
+  isFinalized: boolean;
 }
 
 export function CenterDisplay({
@@ -26,6 +36,8 @@ export function CenterDisplay({
   onQuickAnswer,
   inputValues,
   onInputChange,
+  itemGate,
+  isFinalized
 }: CenterDisplayProps) {
   const [selectedDoc, setSelectedDoc] = useState<RequiredDoc | null>(null);
   const { currentTestNumber } = useTestSetupContext();
@@ -44,6 +56,7 @@ export function CenterDisplay({
       <DefectReportForm
         projectId={currentTestNumber || ''}
         testCaseId={activeItem.id}
+        isFinalized={isFinalized}
       />
     );
   }
@@ -107,6 +120,18 @@ export function CenterDisplay({
               <h2 className={`text-4xl font-extrabold leading-tight ${isNA ? 'text-gray-400 decoration-slate-300' : 'text-gray-900'}`}>
                 {activeItem.title}
               </h2>
+              {itemGate && itemGate.state !== 'enabled' && (
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    itemGate.state === 'blockedByFinalization'
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
+                  }`}
+                  title={itemGate.reason || ''}
+                >
+                  {itemGate.state === 'blockedByFinalization' ? '최종 잠금' : '조건 대기'}
+                </span>
+              )}
               {refItems.length > 0 && !isNA && (
                 <div className="flex flex-wrap items-center gap-2.5">
                   {refItems.map((doc, index) => (
@@ -352,7 +377,7 @@ export function CenterDisplay({
                             type="text"
                             value={seatValue}
                             onChange={(e) => onInputChange(activeItem.id, 'seatLocation', e.target.value)}
-                            placeholder="예: 3층 305호 / 좌석 A-3"
+                            placeholder="예: 9-L/R, 10-L/R"
                             className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
                           />
                           <p className="text-[11px] text-emerald-600">
@@ -382,7 +407,7 @@ export function CenterDisplay({
                             type="text"
                             value={seatValue}
                             onChange={(e) => onInputChange(activeItem.id, 'seatLocation', e.target.value)}
-                            placeholder="예: 3층 305호 / 좌석 A-3"
+                            placeholder="예: 9-L/R, 10-L/R"
                             className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
                           />
                           <p className="text-[11px] text-emerald-600">

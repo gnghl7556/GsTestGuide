@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { ChecklistView } from './ChecklistView';
 import { generateChecklist } from '../../../utils/checklistGenerator';
 import { toQuickModeItem, getRecommendation } from '../../../utils/quickMode';
+import { useDefects } from '../../report/hooks/useDefects';
+import { computeExecutionGate } from '../utils/executionGate';
 import type {
-  ChecklistItem,
   QuickAnswer,
   QuickDecision,
   QuickModeItem,
@@ -13,122 +15,100 @@ import type {
   UserProfile
 } from '../../../types';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
-import { isDocEntry } from '../../../utils/testSetup';
-import type { AgreementParsed, TestSetupState } from '../../../types';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 
 const storageKey = 'gs-test-guide:review';
 
 type QuickInputValues = NonNullable<QuickReviewAnswer['inputValues']>;
-
 type QuickInputValue = QuickInputValues[string];
+
+type StoredReviewPayload = {
+  profile?: UserProfile;
+  reviewData?: Record<string, ReviewData>;
+  selectedReqId?: string | null;
+  quickReviewById?: Record<string, QuickReviewAnswer>;
+};
+
+const readStoredReview = (): StoredReviewPayload => {
+  if (typeof window === 'undefined' || !window.localStorage) return {};
+  if (window.sessionStorage?.getItem('gs-test-guide:skip-restore') === '1') {
+    window.sessionStorage.removeItem('gs-test-guide:skip-restore');
+    return {};
+  }
+  const raw = window.localStorage.getItem(storageKey);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as StoredReviewPayload;
+  } catch {
+    window.localStorage.removeItem(storageKey);
+    return {};
+  }
+};
 
 export function ExecutionPage() {
   const {
     testSetup,
-    setTestSetup,
     currentUserId,
-    setCurrentUserId,
-    currentTestNumber
+    currentTestNumber,
+    projects
   } = useTestSetupContext();
-  const didLoadRef = useRef(false);
+  const stored = useMemo(() => readStoredReview(), []);
 
-  const [profile, setProfile] = useState<UserProfile>({
-    productType: 'SaMD',
-    hasAI: false,
-    hasPatientData: false,
-    hasUI: true
-  });
-  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
-  const [selectedReqId, setSelectedReqId] = useState<string | null>(null);
-  const [reviewData, setReviewData] = useState<Record<string, ReviewData>>({});
-  const [quickReviewById, setQuickReviewById] = useState<Record<string, QuickReviewAnswer>>({});
-
-  useEffect(() => {
-    if (didLoadRef.current) return;
-    didLoadRef.current = true;
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      const skipRestore = window.sessionStorage.getItem('gs-test-guide:skip-restore');
-      if (skipRestore === '1') {
-        window.sessionStorage.removeItem('gs-test-guide:skip-restore');
-        return;
-      }
+  const [profile] = useState<UserProfile>(
+    stored.profile || {
+      productType: 'SaMD',
+      hasAI: false,
+      hasPatientData: false,
+      hasUI: true
     }
-    const raw = localStorage.getItem(storageKey);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw) as {
-        profile?: UserProfile;
-        reviewData?: Record<string, ReviewData>;
-        selectedReqId?: string | null;
-        quickReviewById?: Record<string, QuickReviewAnswer>;
-        testSetup?: TestSetupState;
-        currentUserId?: string;
-      };
-      if (parsed.profile) setProfile(parsed.profile);
-      if (parsed.reviewData) setReviewData(parsed.reviewData);
-      if (parsed.selectedReqId) setSelectedReqId(parsed.selectedReqId);
-      if (parsed.quickReviewById) setQuickReviewById(parsed.quickReviewById);
-      if (typeof parsed.currentUserId === 'string') setCurrentUserId(parsed.currentUserId);
-      if (parsed.testSetup) {
-        setTestSetup(parsed.testSetup);
-      } else {
-        const legacyInputs = parsed.quickReviewById?.['PRE-01']?.inputValues as Record<string, unknown> | undefined;
-        if (legacyInputs) {
-          setTestSetup({
-            testNumber: typeof legacyInputs.pre01TestNumber === 'string' ? legacyInputs.pre01TestNumber : '',
-            plId: typeof legacyInputs.pre01PlId === 'string' ? legacyInputs.pre01PlId : '',
-            plName: '',
-            plPhone: '',
-            plEmail: '',
-            testerName: '',
-            testerPhone: '',
-            testerEmail: '',
-            companyContactName: '',
-            companyContactPhone: '',
-            companyContactEmail: '',
-            companyName: '',
-            scheduleWorkingDays: '',
-            scheduleStartDate: '',
-            scheduleDefect1: '',
-            scheduleDefect2: '',
-            schedulePatchDate: '',
-            scheduleEndDate: '',
-            projectName: '',
-            docs: Array.isArray(legacyInputs.pre01Docs) ? legacyInputs.pre01Docs.filter(isDocEntry) : [],
-            agreementParsed:
-              legacyInputs.pre01AgreementParsed && typeof legacyInputs.pre01AgreementParsed === 'object'
-                ? (legacyInputs.pre01AgreementParsed as AgreementParsed)
-                : undefined
-          });
-        }
-      }
-    } catch {
-      localStorage.removeItem(storageKey);
-    }
-  }, [setCurrentUserId, setQuickReviewById, setReviewData, setSelectedReqId, setTestSetup]);
+  );
+  const [selectedReqId, setSelectedReqId] = useState<string | null>(stored.selectedReqId || null);
+  const [reviewData, setReviewData] = useState<Record<string, ReviewData>>(stored.reviewData || {});
+  const [quickReviewById, setQuickReviewById] = useState<Record<string, QuickReviewAnswer>>(stored.quickReviewById || {});
+  const { defects } = useDefects(currentTestNumber || null);
 
   useEffect(() => {
     const payload = JSON.stringify({ profile, reviewData, selectedReqId, quickReviewById, testSetup, currentUserId });
     localStorage.setItem(storageKey, payload);
   }, [profile, reviewData, selectedReqId, quickReviewById, testSetup, currentUserId]);
 
-  const generatedChecklist = useMemo(() => generateChecklist(profile), [profile]);
+  const checklist = useMemo(() => generateChecklist(profile), [profile]);
+  const currentProject = useMemo(
+    () => projects.find((project) => project.testNumber === currentTestNumber || project.id === currentTestNumber),
+    [projects, currentTestNumber]
+  );
+  const isFinalized = useMemo(
+    () => Boolean(currentProject?.executionState?.finalizedAt) || currentProject?.status === '완료',
+    [currentProject]
+  );
+  const { itemGates, executionState } = useMemo(
+    () => computeExecutionGate({ checklist, reviewData, defects, finalized: isFinalized }),
+    [checklist, reviewData, defects, isFinalized]
+  );
 
   useEffect(() => {
-    setChecklist(generatedChecklist);
-    if (generatedChecklist.length > 0) {
-      const exists = generatedChecklist.find((item) => item.id === selectedReqId);
-      if (!selectedReqId || !exists) {
-        setSelectedReqId(generatedChecklist[0].id);
-      }
-    }
-  }, [generatedChecklist, selectedReqId]);
+    if (!db || !currentTestNumber) return;
+    void setDoc(
+      doc(db, 'projects', currentTestNumber),
+      { executionState: { ...executionState, updatedAt: serverTimestamp() } },
+      { merge: true }
+    );
+  }, [currentTestNumber, executionState]);
+
+  const resolvedSelectedReqId = useMemo(() => {
+    const selectedExists = selectedReqId && checklist.some((item) => item.id === selectedReqId);
+    const fallbackId = checklist[0]?.id ?? null;
+    const candidate = selectedExists ? selectedReqId : fallbackId;
+    if (!candidate) return null;
+    const gate = itemGates[candidate];
+    if (!gate || gate.state === 'enabled') return candidate;
+    const firstEnabled = checklist.find((item) => itemGates[item.id]?.state === 'enabled');
+    return firstEnabled?.id ?? candidate;
+  }, [checklist, itemGates, selectedReqId]);
 
   const activeItem = useMemo(
-    () => checklist.find((item) => item.id === selectedReqId) || checklist[0],
-    [checklist, selectedReqId]
+    () => checklist.find((item) => item.id === resolvedSelectedReqId) || checklist[0],
+    [checklist, resolvedSelectedReqId]
   );
   const activeIndex = useMemo(() => {
     if (!activeItem) return -1;
@@ -159,6 +139,8 @@ export function ExecutionPage() {
   }
 
   const isItemReadyForReview = (itemId: string) => {
+    const gate = itemGates[itemId];
+    if (gate && gate.state !== 'enabled') return false;
     const item = quickModeById[itemId];
     const entry = quickReviewById[itemId];
     if (!item || !entry) return false;
@@ -207,6 +189,7 @@ export function ExecutionPage() {
   };
 
   const updateReviewData = (id: string, field: keyof ReviewData, value: ReviewData[keyof ReviewData]) => {
+    if (itemGates[id]?.state !== 'enabled') return;
     if (field === 'status' && value !== 'None' && !isItemReadyForReview(id)) {
       return;
     }
@@ -251,6 +234,7 @@ export function ExecutionPage() {
   };
 
   const updateQuickAnswer = (itemId: string, questionId: QuickQuestionId, value: QuickAnswer) => {
+    if (itemGates[itemId]?.state !== 'enabled') return;
     const item = quickModeById[itemId];
     if (!item) return;
     setQuickReviewById((prev) => {
@@ -282,6 +266,7 @@ export function ExecutionPage() {
   };
 
   const updateQuickInput = (itemId: string, fieldId: string, value: QuickInputValue) => {
+    if (itemGates[itemId]?.state !== 'enabled') return;
     setQuickReviewById((prev) => {
       const existing = prev[itemId] || {
         requirementId: itemId,
@@ -301,26 +286,17 @@ export function ExecutionPage() {
     });
   };
 
-  const scrollToQuestion = (itemId: string, questionId: QuickQuestionId) => {
-    setSelectedReqId(itemId);
-    const targetId = `question-${itemId}-${questionId}`;
-    requestAnimationFrame(() => {
-      window.setTimeout(() => {
-        const el = document.getElementById(targetId);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 60);
-    });
-  };
-
   return (
     <ChecklistView
       checklist={checklist}
       reviewData={reviewData}
       quickReviewById={quickReviewById}
-      selectedReqId={selectedReqId}
-      setSelectedReqId={setSelectedReqId}
+      selectedReqId={resolvedSelectedReqId}
+      setSelectedReqId={(nextId) => {
+        if (!nextId) return;
+        if (itemGates[nextId]?.state !== 'enabled') return;
+        setSelectedReqId(nextId);
+      }}
       activeItem={activeItem}
       activeIndex={activeIndex}
       quickModeItem={quickModeItem}
@@ -328,7 +304,8 @@ export function ExecutionPage() {
       quickInputValues={quickInputValues}
       onQuickAnswer={updateQuickAnswer}
       onInputChange={updateQuickInput}
-      onSelectQuestion={scrollToQuestion}
+      itemGates={itemGates}
+      isFinalized={isFinalized}
       updateReviewData={updateReviewData}
       recommendation={recommendation}
       canReview={canReview}

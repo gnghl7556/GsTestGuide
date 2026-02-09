@@ -41,6 +41,8 @@ export function useProjects(db: Firestore | null | undefined, authReady: boolean
           status?: Project['status'];
           startDate?: Timestamp;
           endDate?: Timestamp;
+          operatingEnvironment?: string;
+          executionState?: Project['executionState'];
         };
         const testNumber = data.testNumber || docSnap.id;
         return {
@@ -55,6 +57,8 @@ export function useProjects(db: Firestore | null | undefined, authReady: boolean
           status: data.status,
           startDate: data.startDate,
           endDate: data.endDate,
+          operatingEnvironment: data.operatingEnvironment,
+          executionState: data.executionState,
           plId: data.plId,
           plName: data.plName,
           plPhone: data.plPhone,

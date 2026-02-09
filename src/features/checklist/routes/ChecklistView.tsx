@@ -3,6 +3,7 @@ import { CenterDisplay } from '../components/CenterDisplay';
 import { RightActionPanel } from '../components/RightActionPanel';
 import type {
   ChecklistItem,
+  ExecutionItemGate,
   QuickAnswer,
   QuickModeItem,
   QuickQuestionId,
@@ -26,7 +27,8 @@ type ChecklistViewProps = {
   quickInputValues: QuickInputValues;
   onQuickAnswer: (itemId: string, questionId: QuickQuestionId, value: QuickAnswer) => void;
   onInputChange: (itemId: string, fieldId: string, value: QuickInputValue) => void;
-  onSelectQuestion: (itemId: string, questionId: QuickQuestionId) => void;
+  itemGates: Record<string, ExecutionItemGate>;
+  isFinalized: boolean;
   updateReviewData: (id: string, field: keyof ReviewData, value: ReviewData[keyof ReviewData]) => void;
   recommendation: QuickReviewAnswer['autoRecommendation'];
   canReview: boolean;
@@ -45,7 +47,8 @@ export function ChecklistView({
   quickInputValues,
   onQuickAnswer,
   onInputChange,
-  onSelectQuestion,
+  itemGates,
+  isFinalized,
   updateReviewData,
   recommendation,
   canReview
@@ -60,7 +63,7 @@ export function ChecklistView({
           selectedReqId={selectedReqId}
           setSelectedReqId={setSelectedReqId}
           activeCategory={activeItem?.category || 'SETUP'}
-          onSelectQuestion={onSelectQuestion}
+          itemGates={itemGates}
         />
       </div>
 
@@ -73,6 +76,8 @@ export function ChecklistView({
           onQuickAnswer={onQuickAnswer}
           inputValues={quickInputValues}
           onInputChange={onInputChange}
+          itemGate={activeItem ? itemGates[activeItem.id] : undefined}
+          isFinalized={isFinalized}
         />
       </div>
 

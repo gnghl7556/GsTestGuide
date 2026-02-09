@@ -7,10 +7,11 @@ import { DEFECT_REFERENCES } from '../data/defectReferences';
 type DefectReportFormProps = {
   projectId: string;
   testCaseId: string;
+  isFinalized?: boolean;
 };
 
-export function DefectReportForm({ projectId, testCaseId }: DefectReportFormProps) {
-  const { state, update, save, reset, saving, errorMsg } = useDefectForm(projectId, testCaseId);
+export function DefectReportForm({ projectId, testCaseId, isFinalized = false }: DefectReportFormProps) {
+  const { state, update, save, reset, saving, errorMsg } = useDefectForm(projectId, testCaseId, isFinalized);
   const [activeTab, setActiveTab] = useState<keyof typeof DEFECT_REFERENCES>('기능적합성');
   type DefectReferenceItem = (typeof DEFECT_REFERENCES)[keyof typeof DEFECT_REFERENCES][number];
   const tabs = Object.keys(DEFECT_REFERENCES) as Array<keyof typeof DEFECT_REFERENCES>;
@@ -45,12 +46,15 @@ export function DefectReportForm({ projectId, testCaseId }: DefectReportFormProp
   ] as const;
 
   const applyReference = (refItem: { summary: string; description: string; severity: 'H' | 'M' | 'L'; frequency: 'A' | 'I' }) => {
+    if (isFinalized) return;
     update('summary', refItem.summary);
     update('description', refItem.description);
     update('severity', refItem.severity);
     update('frequency', refItem.frequency);
     update('qualityCharacteristic', activeTab);
   };
+
+  const formLocked = saving || isFinalized;
 
   return (
     <div className="h-full bg-white rounded-xl border border-surface-200 shadow-sm flex flex-col overflow-hidden">
@@ -63,20 +67,26 @@ export function DefectReportForm({ projectId, testCaseId }: DefectReportFormProp
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={reset} disabled={saving}>
+            <Button variant="outline" size="sm" onClick={reset} disabled={formLocked}>
               초기화
             </Button>
-            <Button size="sm" onClick={save} disabled={saving}>
-              {saving ? '저장 중...' : '결함 저장'}
+            <Button size="sm" onClick={save} disabled={formLocked}>
+              {isFinalized ? '4차 이후 수정 불가' : saving ? '저장 중...' : '결함 저장'}
             </Button>
           </div>
         </div>
+        {isFinalized && (
+          <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+            4차 확정 이후에는 결함 등록/수정이 잠금됩니다.
+          </div>
+        )}
         <div className="mt-4 text-[11px] text-surface-500">
           필수 항목: 요약, 품질 특성
         </div>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
+        <fieldset disabled={formLocked} className="contents">
         <div className="flex-none border-b border-surface-200 bg-white p-6 space-y-5 text-sm text-surface-700">
           {errorMsg && (
             <div className="rounded-lg border border-error-200 bg-error-50/40 px-4 py-2 text-xs text-error-600">
@@ -300,6 +310,7 @@ export function DefectReportForm({ projectId, testCaseId }: DefectReportFormProp
             )}
           </div>
         </div>
+        </fieldset>
       </div>
     </div>
   );

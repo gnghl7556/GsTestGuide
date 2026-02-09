@@ -91,17 +91,17 @@ export async function parsePdfFromBuffer(buffer: Buffer): Promise<PdfParseResult
 /**
  * PDF 메타데이터 추출
  */
-function extractMetadata(info: any): PdfParseResult['metadata'] {
+function extractMetadata(info: Record<string, unknown> | undefined): PdfParseResult['metadata'] {
   if (!info) return undefined;
 
   return {
-    title: info.Title,
-    author: info.Author,
-    subject: info.Subject,
-    creator: info.Creator,
-    producer: info.Producer,
-    creationDate: info.CreationDate ? parseDate(info.CreationDate) : undefined,
-    modificationDate: info.ModDate ? parseDate(info.ModDate) : undefined,
+    title: typeof info.Title === 'string' ? info.Title : undefined,
+    author: typeof info.Author === 'string' ? info.Author : undefined,
+    subject: typeof info.Subject === 'string' ? info.Subject : undefined,
+    creator: typeof info.Creator === 'string' ? info.Creator : undefined,
+    producer: typeof info.Producer === 'string' ? info.Producer : undefined,
+    creationDate: typeof info.CreationDate === 'string' ? parseDate(info.CreationDate) : undefined,
+    modificationDate: typeof info.ModDate === 'string' ? parseDate(info.ModDate) : undefined,
   };
 }
 
@@ -123,7 +123,7 @@ function parseDate(dateString: string): Date | undefined {
         parseInt(second)
       );
     }
-  } catch (error) {
+  } catch {
     console.warn('Failed to parse PDF date:', dateString);
   }
   return undefined;

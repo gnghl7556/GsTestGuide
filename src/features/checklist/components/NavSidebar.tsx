@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Check, X } from 'lucide-react';
 
-import type { ChecklistItem, QuickReviewAnswer, QuickQuestionId, ReviewData } from '../../../types';
+import type { ChecklistItem, ExecutionItemGate, QuickReviewAnswer, QuickQuestionId, ReviewData } from '../../../types';
 import { CATEGORIES, CATEGORY_THEMES } from '../../../data/constants';
 
 
@@ -13,7 +13,7 @@ interface NavSidebarProps {
   selectedReqId: string | null;
   setSelectedReqId: (id: string) => void;
   activeCategory: string;
-  onSelectQuestion: (itemId: string, questionId: QuickQuestionId) => void;
+  itemGates: Record<string, ExecutionItemGate>;
 }
 
 export function NavSidebar({
@@ -23,7 +23,7 @@ export function NavSidebar({
   selectedReqId,
   setSelectedReqId,
   activeCategory,
-  onSelectQuestion
+  itemGates
 }: NavSidebarProps) {
   const navigate = useNavigate();
   const [expandedCats, setExpandedCats] = useState<string[]>([]);
@@ -204,6 +204,8 @@ export function NavSidebar({
                   {catItems.map((item, index) => {
                     const isActive = selectedReqId === item.id;
                     const isNA = item.status === 'Not_Applicable';
+                    const gate = itemGates[item.id];
+                    const isBlocked = gate?.state && gate.state !== 'enabled';
                     const status = reviewData[item.id]?.status ?? 'None';
                     const statusIcon =
                       status === 'Verified' ? (
@@ -223,12 +225,18 @@ export function NavSidebar({
                         <div className="space-y-1.5">
                           <button
                             type="button"
-                            onClick={() => setSelectedReqId(item.id)}
+                            onClick={() => {
+                              if (isBlocked) return;
+                              setSelectedReqId(item.id);
+                            }}
+                            disabled={isBlocked}
+                            title={isBlocked ? gate?.reason : undefined}
                             className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all flex items-start justify-between gap-2 border shadow-sm
                               ${isActive 
                                 ? `bg-white ${theme.text} font-bold ${theme.border} border-l-2 ${theme.activeBorder}` 
                                 : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                               }
+                              ${isBlocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}
                               ${isNA && !isActive ? 'opacity-50 line-through decoration-gray-300' : ''}
                             `}
                           >
@@ -239,7 +247,12 @@ export function NavSidebar({
                                   <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : 'text-gray-400'}`}>
                                     {String(index + 1).padStart(2, '0')}
                                   </span>
-                                  <span className="block truncate flex-1">{item.title}</span>
+                                  <span className="block truncate flex-1">{toShortLabel(item.title)}</span>
+                                  {isBlocked && (
+                                    <span className="shrink-0 rounded-full border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">
+                                      잠금
+                                    </span>
+                                  )}
                                   {item.checkPoints && item.checkPoints.length > 0 && (
                                     <span className="hidden lg:flex items-center gap-1 ml-auto">
                                       {item.checkPoints.slice(0, 3).map((point, idx) => {

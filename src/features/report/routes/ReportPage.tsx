@@ -5,9 +5,15 @@ import { DefectList } from '../components/DefectList';
 import { Button } from '../../../components/ui';
 
 export function ReportPage() {
-  const { currentTestNumber } = useTestSetupContext();
+  const { currentTestNumber, projects } = useTestSetupContext();
   const { defects, loading } = useDefects(currentTestNumber || null);
   const [filter, setFilter] = useState<DefectFilter>({ version: 'ALL', derived: 'ALL' });
+  const currentProject = useMemo(
+    () => projects.find((project) => project.testNumber === currentTestNumber || project.id === currentTestNumber),
+    [projects, currentTestNumber]
+  );
+  const isFinalized =
+    Boolean(currentProject?.executionState?.finalizedAt) || currentProject?.status === '완료';
 
   const counts = useMemo(() => {
     return defects.reduce(
@@ -68,7 +74,7 @@ export function ReportPage() {
         ))}
       </div>
 
-      <DefectList defects={defects} filter={filter} loading={loading} />
+      <DefectList defects={defects} filter={filter} loading={loading} isFinalized={isFinalized} />
     </div>
   );
 }

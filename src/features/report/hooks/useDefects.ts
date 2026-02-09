@@ -32,25 +32,20 @@ export type DefectFilter = {
 
 export const useDefects = (projectId: string | null) => {
   const [defects, setDefects] = useState<Defect[]>([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!db || !projectId) {
-      setDefects([]);
       return;
     }
-    setLoading(true);
     const q = query(collection(db, 'projects', projectId, 'defects'), orderBy('reportedAt', 'desc'));
     const unsub = onSnapshot(
       q,
       (snap) => {
         const next = snap.docs.map((docSnap) => normalizeDefect(docSnap.id, docSnap.data()));
         setDefects(next);
-        setLoading(false);
       },
       () => {
         setDefects([]);
-        setLoading(false);
       }
     );
     return () => unsub();
@@ -63,5 +58,11 @@ export const useDefects = (projectId: string | null) => {
     }, {});
   }, [defects]);
 
-  return { defects, byId, loading };
+  const loading = Boolean(projectId) && defects.length === 0;
+
+  return {
+    defects: projectId ? defects : [],
+    byId: projectId ? byId : {},
+    loading: projectId ? loading : false
+  };
 };

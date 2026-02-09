@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { addDoc, collection, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { db, storage } from '../../../lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions, storage } from '../../../lib/firebase';
 
 export type DefectFormState = {
   summary: string;
@@ -29,7 +29,24 @@ const createInitialState = (): DefectFormState => ({
   evidenceFiles: []
 });
 
-export const useDefectForm = (projectId: string, testCaseId: string) => {
+type SaveDefectCallableInput = {
+  projectId: string;
+  testCaseId: string;
+  reportVersion: 1 | 2 | 3 | 4;
+  isDerived: boolean;
+  summary: string;
+  testEnvironment: string;
+  severity: 'H' | 'M' | 'L';
+  frequency: 'A' | 'I';
+  qualityCharacteristic: string;
+  accessPath: string;
+  stepsToReproduce: string[];
+  description: string;
+  ttaComment: string;
+  evidenceFiles: Array<{ name: string; url: string }>;
+};
+
+export const useDefectForm = (projectId: string, testCaseId: string, isFinalized: boolean = false) => {
   const [state, setState] = useState<DefectFormState>(createInitialState());
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -43,7 +60,11 @@ export const useDefectForm = (projectId: string, testCaseId: string) => {
   };
 
   const save = async () => {
-    if (!db || !projectId) return false;
+    if (!projectId || !functions) return false;
+    if (isFinalized) {
+      setErrorMsg('4차 확정 이후에는 결함을 등록/수정할 수 없습니다.');
+      return false;
+    }
     if (!state.summary.trim() || !state.qualityCharacteristic.trim()) {
       setErrorMsg('요약, 결함정도, 품질특성은 필수입니다.');
       return false;
@@ -60,11 +81,12 @@ export const useDefectForm = (projectId: string, testCaseId: string) => {
           evidenceMeta.push({ name: file.name, url });
         }
       }
-      const defectRef = await addDoc(collection(db, 'projects', projectId, 'defects'), {
-        defectId: '',
-        linkedTestCaseId: testCaseId,
+      const callable = httpsCallable<SaveDefectCallableInput, { defectId: string }>(functions, 'saveDefectReport');
+      await callable({
+        projectId,
+        testCaseId,
         reportVersion: state.reportVersion,
-        isDerived: false,
+        isDerived: state.reportVersion >= 3,
         summary: state.summary.trim(),
         testEnvironment: state.testEnvironment,
         severity: state.severity,
@@ -74,11 +96,8 @@ export const useDefectForm = (projectId: string, testCaseId: string) => {
         stepsToReproduce: [],
         description: state.description.trim(),
         ttaComment: state.ttaComment.trim(),
-        status: '신규',
-        evidenceFiles: evidenceMeta,
-        reportedAt: serverTimestamp()
+        evidenceFiles: evidenceMeta
       });
-      await setDoc(doc(db, 'projects', projectId, 'defects', defectRef.id), { defectId: defectRef.id }, { merge: true });
       reset();
       return true;
     } catch (error) {
