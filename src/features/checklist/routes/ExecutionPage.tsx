@@ -147,14 +147,28 @@ export function ExecutionPage() {
   const quickReview = quickModeItem ? quickReviewById[quickModeItem.requirementId] : undefined;
   const quickAnswers = quickReview?.answers || { Q1: 'NA', Q2: 'NA', Q3: 'NA' };
   const quickInputValues: QuickInputValues = quickReview?.inputValues || {};
-  const recommendation: QuickDecision = quickModeItem
+  let recommendation: QuickDecision = quickModeItem
     ? getRecommendation(quickModeItem.quickQuestions, quickAnswers)
     : 'HOLD';
+  if (activeItem?.id === 'ENV-01') {
+    if (quickAnswers.Q1 === 'YES' || quickAnswers.Q2 === 'YES') {
+      recommendation = 'PASS';
+    } else if (quickAnswers.Q1 === 'NO' && quickAnswers.Q2 === 'NO') {
+      recommendation = 'HOLD';
+    }
+  }
 
   const isItemReadyForReview = (itemId: string) => {
     const item = quickModeById[itemId];
     const entry = quickReviewById[itemId];
     if (!item || !entry) return false;
+    if (itemId === 'ENV-01') {
+      const q1 = entry.answers?.Q1 ?? 'NA';
+      const q2 = entry.answers?.Q2 ?? 'NA';
+      if (q1 === 'YES') return true;
+      if (q1 === 'NO') return q2 !== 'NA';
+      return false;
+    }
     const answered = entry.answeredQuestions || {};
     return item.quickQuestions.every((q) => Boolean(answered[q.id]));
   };
@@ -247,7 +261,14 @@ export function ExecutionPage() {
       };
       const nextAnswers = { ...existing.answers, [questionId]: value };
       const nextAnswered = { ...(existing.answeredQuestions || {}), [questionId]: true };
-      const autoRecommendation = getRecommendation(item.quickQuestions, nextAnswers);
+      let autoRecommendation = getRecommendation(item.quickQuestions, nextAnswers);
+      if (itemId === 'ENV-01') {
+        const q1 = nextAnswers.Q1 ?? 'NA';
+        const q2 = nextAnswers.Q2 ?? 'NA';
+        if (q1 === 'YES') autoRecommendation = 'PASS';
+        else if (q1 === 'NO' && q2 === 'YES') autoRecommendation = 'PASS';
+        else if (q1 === 'NO' && q2 === 'NO') autoRecommendation = 'HOLD';
+      }
       return {
         ...prev,
         [itemId]: {

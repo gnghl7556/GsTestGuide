@@ -52,8 +52,8 @@ export function NavSidebar({
   useEffect(() => {
     if (selectedReqId) {
       const item = checklist.find(i => i.id === selectedReqId);
-      if (item && !expandedCats.includes(item.category)) {
-        setExpandedCats(prev => [...prev, item.category]);
+      if (item) {
+        setExpandedCats([item.category]);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -71,7 +71,7 @@ export function NavSidebar({
 
   return (
     <nav className="h-full bg-white rounded-xl border border-gray-200 flex flex-col overflow-hidden shadow-sm">
-      <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white flex justify-between items-center">
+      <div className="p-4 border-b border-gray-100 bg-white flex justify-between items-center">
         <div>
           <h2 className="text-sm font-extrabold text-gray-800 tracking-wider flex items-center gap-2">
             점검 항목 목록
@@ -148,12 +148,12 @@ export function NavSidebar({
                 className={`w-full pl-2 pr-3 py-2 mb-0.5 text-sm font-bold rounded-lg flex items-center gap-2 transition-colors relative ${
                   isExpanded
                     ? `${theme.lightBg} ${theme.text}`
-                    : `bg-white hover:bg-gray-50 ${theme.text} ${hasActiveItem ? `${theme.lightBg} bg-gradient-to-r from-white to-transparent` : ''}`
+                    : `bg-white hover:bg-gray-50 ${theme.text} ${hasActiveItem ? `${theme.lightBg}` : ''}`
                 } ${isActiveCategory ? `${theme.bg} ${theme.text} ring-1 ring-inset ${theme.ring}` : ''}`}
               >
                 {!isExpanded && hasActiveItem && (
                   <span
-                    className={`absolute inset-0 ${theme.lightBg} bg-gradient-to-r from-white/70 via-transparent to-transparent pointer-events-none z-0`}
+                    className={`absolute inset-0 ${theme.lightBg} pointer-events-none z-0`}
                     aria-hidden="true"
                   />
                 )}
@@ -235,11 +235,41 @@ export function NavSidebar({
                             <div className="flex items-start gap-2 min-w-0">
                               <span className="mt-0.5 shrink-0">{statusIcon}</span>
                               <div className="min-w-0">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
                                   <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : 'text-gray-400'}`}>
                                     {String(index + 1).padStart(2, '0')}
                                   </span>
-                                  <span className="block truncate">{item.title}</span>
+                                  <span className="block truncate flex-1">{item.title}</span>
+                                  {item.checkPoints && item.checkPoints.length > 0 && (
+                                    <span className="hidden lg:flex items-center gap-1 ml-auto">
+                                      {item.checkPoints.slice(0, 3).map((point, idx) => {
+                                        const qid = (`Q${idx + 1}` as QuickQuestionId);
+                                        const answer = quickReviewById[item.id]?.answers?.[qid];
+                                        const icon =
+                                          answer === 'YES' ? (
+                                            <Check size={9} className="text-emerald-600" />
+                                          ) : answer === 'NO' ? (
+                                            <X size={9} className="text-red-500" />
+                                          ) : answer === 'NA' ? (
+                                            <span className="text-[9px] font-bold leading-none text-gray-400">–</span>
+                                          ) : (
+                                            <span className="text-[9px] font-bold leading-none text-gray-300">·</span>
+                                          );
+                                        return (
+                                          <span
+                                            key={`${item.id}-mini-${idx}`}
+                                            title={point}
+                                            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-200 bg-white"
+                                          >
+                                            {icon}
+                                          </span>
+                                        );
+                                      })}
+                                      {item.checkPoints.length > 3 && (
+                                        <span className="text-[9px] font-semibold text-gray-400">+{item.checkPoints.length - 3}</span>
+                                      )}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -271,46 +301,6 @@ export function NavSidebar({
                                 TC 관리
                               </button>
                             </div>
-                          )}
-                          {isActive && item.checkPoints && item.checkPoints.length > 0 && (
-                            <ul className={`pl-7 space-y-1 ${isNA ? 'opacity-60' : ''}`}>
-                              {item.checkPoints.slice(0, 3).map((point, idx) => {
-                                const qid = (`Q${idx + 1}` as QuickQuestionId);
-                                const answer = quickReviewById[item.id]?.answers?.[qid];
-                                const chipStyle =
-                                  answer === 'YES'
-                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                    : answer === 'NO'
-                                      ? 'border-red-200 bg-red-50 text-red-700'
-                                      : answer === 'NA'
-                                        ? 'border-gray-200 bg-gray-50 text-gray-500'
-                                        : 'border-gray-200 bg-white text-gray-400';
-                                const icon =
-                                  answer === 'YES' ? (
-                                    <Check size={10} className="text-emerald-600" />
-                                  ) : answer === 'NO' ? (
-                                    <X size={10} className="text-red-500" />
-                                  ) : answer === 'NA' ? (
-                                    <span className="text-[10px] font-bold leading-none text-gray-400">–</span>
-                                  ) : (
-                                    <span className="text-[10px] font-bold leading-none text-gray-300">·</span>
-                                  );
-                                return (
-                                  <li key={`${item.id}-kw-${idx}`}>
-                                    <button
-                                      type="button"
-                                      onClick={() => onSelectQuestion(item.id, qid)}
-                                      disabled={isNA}
-                                      title={point}
-                                      className={`w-full text-left inline-flex items-center gap-2 rounded-md border px-2 py-1 text-[10px] transition-colors ${chipStyle} ${isNA ? 'cursor-not-allowed' : 'hover:border-gray-300'}`}
-                                    >
-                                      {icon}
-                                      <span className="truncate">{toShortLabel(point)}</span>
-                                    </button>
-                                  </li>
-                                );
-                              })}
-                            </ul>
                           )}
                         </div>
                       </li>

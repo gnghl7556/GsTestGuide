@@ -9,7 +9,7 @@ export interface Requirement {
   description: string;
   keywords?: string[];
   relatedInfo?: Array<{ label: string; value: string; href?: string }>;
-  requiredDocs?: string[];
+  requiredDocs?: RequiredDoc[];
   docRequirements?: {
     must?: string[];
     multi?: string[];
@@ -34,6 +34,16 @@ export interface Requirement {
     hasPatientData?: boolean;
   };
 }
+
+export type RequiredDoc = {
+  label: string;
+  kind: 'file' | 'external';
+  fileUrl?: string;
+  previewImageUrl?: string;
+  description?: string;
+  showRelatedInfo?: boolean;
+  storagePath?: string;
+};
 
 export type UserProfile = {
   productType: 'SaMD' | 'Embedded';

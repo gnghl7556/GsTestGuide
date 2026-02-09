@@ -6,7 +6,24 @@ export const REQUIREMENTS_DB: Requirement[] = [
     id: 'ENV-01',
     category: 'SETUP',
     title: '자리 배정',
-    description: '시험 자리 배정이 완료되고 시험 수행에 적합한 공간인지 확인한다.',
+    description: '자리 배정 여부와 시험에 필요한 장비·공간 확보 상태를 확인한다.',
+    requiredDocs: [
+      {
+        label: '시험 합의서',
+        kind: 'file',
+        description: '시험 범위와 조건이 명시된 합의서를 확인하세요.',
+        previewImageUrl: '/src/assets/previews/doc-agreement-preview.png',
+        storagePath: 'previews/doc-agreement-preview.png'
+      },
+      {
+        label: '자리 배정표',
+        kind: 'external',
+        description: '시험 자리 배정 내역을 확인하세요.',
+        previewImageUrl: '/src/assets/previews/doc-seat-plan-preview.png',
+        storagePath: 'previews/doc-seat-plan-preview.png',
+        showRelatedInfo: true
+      }
+    ],
     keywords: ['시험 자리', '공간 적합성'],
     relatedInfo: [
       {
@@ -28,9 +45,8 @@ export const REQUIREMENTS_DB: Requirement[] = [
       }
     ],
     checkPoints: [
-      '서류상 사용 가능 자리와 실제 사용 가능 자리가 일치하는가?',
-      '시험 시 동작 시나리오에 필요한 공간(이동반경 포함)이 확보되었는가?',
-      '소음/동선 등 주변 시험에 영향을 주지 않는 공간인지 확인했는가?'
+      '시험 배정 후, 시험 자리가 이미 배정되었나요?',
+      '시험에 필요한 장비 및 공간을 확인했나요?'
     ],
     evidenceExamples: ['시험 합의서', '자리 배정표', '현장 배치 사진'],
     testSuggestions: ['시험 시작 전 현장 배치 확인 및 체크리스트 점검'],
