@@ -1,5 +1,6 @@
 import { onObjectFinalized } from 'firebase-functions/v2/storage';
 import { onCall } from 'firebase-functions/v2/https';
+import { onRequest } from 'firebase-functions/v2/https';
 import { HttpsError } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -20,6 +21,11 @@ const parseTestNumber = (objectPath: string) => {
   const parts = objectPath.split('/');
   return parts.length >= 2 ? parts[1] : '';
 };
+
+const PREVIEW_ASSETS = [
+  { fileName: 'doc-agreement-preview.png', storagePath: 'previews/doc-agreement-preview.png', contentType: 'image/png' },
+  { fileName: 'doc-seat-plan-preview.png', storagePath: 'previews/doc-seat-plan-preview.png', contentType: 'image/png' }
+] as const;
 
 const isProjectFinalized = async (projectId: string) => {
   const db = getFirestore();
@@ -330,6 +336,29 @@ const extractAgreementFields = (text: string) => {
 // ==========================================
 export const generateFeatureDraft = onCall({ region: REGION }, async () => {
     // ... 기존 generateFeatureDraft 로직 ...
+});
+
+export const syncPreviewAssets = onRequest({ region: REGION }, async (_req, res) => {
+  try {
+    const bucket = getStorage().bucket();
+    for (const asset of PREVIEW_ASSETS) {
+      const localPath = path.join(__dirname, '..', 'assets', 'previews', asset.fileName);
+      await bucket.upload(localPath, {
+        destination: asset.storagePath,
+        metadata: {
+          contentType: asset.contentType,
+          cacheControl: 'public,max-age=3600'
+        }
+      });
+    }
+    res.status(200).json({
+      ok: true,
+      uploaded: PREVIEW_ASSETS.map((asset) => asset.storagePath)
+    });
+  } catch (error) {
+    console.error('[syncPreviewAssets] failed:', error);
+    res.status(500).json({ ok: false, error: String(error) });
+  }
 });
 
 export const saveDefectReport = onCall({ region: REGION }, async (request) => {

@@ -13,6 +13,8 @@ import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 import { DefectReportForm } from '../../defects/components/DefectReportForm';
 import { RequiredDocChip } from '../../../components/ui';
 import { useEffect, useState } from 'react';
+import { storage } from '../../../lib/firebase';
+import { getDownloadURL, ref } from 'firebase/storage';
 
 
 
@@ -40,6 +42,7 @@ export function CenterDisplay({
   isFinalized
 }: CenterDisplayProps) {
   const [selectedDoc, setSelectedDoc] = useState<RequiredDoc | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const { currentTestNumber } = useTestSetupContext();
   useEffect(() => {
     if (!selectedDoc) return;
@@ -68,6 +71,47 @@ export function CenterDisplay({
       ? String(displayIndex + 1).padStart(2, '0')
       : activeItem.id;
   const refItems = activeItem.requiredDocs ?? [];
+  const storageBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string | undefined;
+  const toPublicStorageUrl = (storagePath: string) =>
+    storageBucket
+      ? `https://firebasestorage.googleapis.com/v0/b/${storageBucket}/o/${encodeURIComponent(storagePath)}?alt=media`
+      : '';
+  const resolveDocPreviewUrl = (doc: RequiredDoc) => {
+    const byLabel = previewUrls[doc.label];
+    if (byLabel) return byLabel;
+    if (doc.previewImageUrl && !doc.previewImageUrl.startsWith('/src/assets/')) return doc.previewImageUrl;
+    if (doc.storagePath) return toPublicStorageUrl(doc.storagePath);
+    return '';
+  };
+
+  useEffect(() => {
+    if (!storage || refItems.length === 0) return;
+    const previewStorage = storage;
+    let canceled = false;
+    void Promise.all(
+      refItems.map(async (doc) => {
+        if (!doc.storagePath) return null;
+        try {
+          const url = await getDownloadURL(ref(previewStorage, doc.storagePath));
+          return { label: doc.label, url };
+        } catch {
+          return null;
+        }
+      })
+    ).then((results) => {
+      if (canceled) return;
+      setPreviewUrls((prev) => {
+        const next = { ...prev };
+        results.forEach((item) => {
+          if (item) next[item.label] = item.url;
+        });
+        return next;
+      });
+    });
+    return () => {
+      canceled = true;
+    };
+  }, [refItems]);
   const isEquipmentItem = (item: unknown): item is { name: string; ip?: string } =>
     Boolean(item && typeof item === 'object' && 'name' in (item as Record<string, unknown>));
   const toEquipmentList = (value: unknown) =>
@@ -579,6 +623,9 @@ export function CenterDisplay({
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-6"
           onClick={() => setSelectedDoc(null)}
         >
+          {(() => {
+            const selectedPreviewUrl = resolveDocPreviewUrl(selectedDoc);
+            return (
           <div className="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div className="text-sm font-bold text-slate-800">{selectedDoc.label}</div>
@@ -592,14 +639,14 @@ export function CenterDisplay({
             </div>
             <div className="grid grid-cols-[7fr_3fr] gap-0 min-h-[60vh]" onClick={(e) => e.stopPropagation()}>
               <div className="border-r border-slate-200 bg-slate-50 p-4">
-                {selectedDoc.previewImageUrl && (
+                {selectedPreviewUrl && (
                   <img
-                    src={selectedDoc.previewImageUrl}
+                    src={selectedPreviewUrl}
                     alt={selectedDoc.label}
                     className="h-full w-full rounded-lg object-contain bg-white"
                   />
                 )}
-                {!selectedDoc.previewImageUrl && (
+                {!selectedPreviewUrl && (
                   <div className="h-full w-full rounded-lg border border-dashed border-slate-300 bg-white flex items-center justify-center text-sm text-slate-400">
                     미리보기 준비 중
                   </div>
@@ -639,6 +686,8 @@ export function CenterDisplay({
               </div>
             </div>
           </div>
+            );
+          })()}
         </div>
       )}
     </div>

@@ -12,14 +12,12 @@ export const REQUIREMENTS_DB: Requirement[] = [
         label: '시험 합의서',
         kind: 'file',
         description: '시험 범위와 조건이 명시된 합의서를 확인하세요.',
-        previewImageUrl: '/src/assets/previews/doc-agreement-preview.png',
         storagePath: 'previews/doc-agreement-preview.png'
       },
       {
         label: '자리 배정표',
         kind: 'external',
         description: '시험 자리 배정 내역을 확인하세요.',
-        previewImageUrl: '/src/assets/previews/doc-seat-plan-preview.png',
         storagePath: 'previews/doc-seat-plan-preview.png',
         showRelatedInfo: true
       }
