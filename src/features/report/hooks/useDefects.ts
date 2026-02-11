@@ -28,6 +28,7 @@ const normalizeDefect = (id: string, data: DocumentData): Defect => {
 export type DefectFilter = {
   version: 'ALL' | 1 | 2 | 3 | 4;
   derived: 'ALL' | 'DERIVED' | 'BASE';
+  quality: string;
 };
 
 export const useDefects = (projectId: string | null) => {

@@ -7,7 +7,7 @@ import { Button } from '../../../components/ui';
 export function ReportPage() {
   const { currentTestNumber, projects } = useTestSetupContext();
   const { defects, loading } = useDefects(currentTestNumber || null);
-  const [filter, setFilter] = useState<DefectFilter>({ version: 'ALL', derived: 'ALL' });
+  const [filter, setFilter] = useState<DefectFilter>({ version: 'ALL', derived: 'ALL', quality: 'ALL' });
   const currentProject = useMemo(
     () => projects.find((project) => project.testNumber === currentTestNumber || project.id === currentTestNumber),
     [projects, currentTestNumber]
@@ -72,6 +72,23 @@ export function ReportPage() {
             {value === 'ALL' ? '전체' : value === 'DERIVED' ? '파생' : '기본'}
           </Button>
         ))}
+        <div className="ml-4 font-semibold text-surface-600">품질특성</div>
+        <select
+          className="rounded-md border border-ln bg-surface-base px-2 py-1 text-xs text-tx-secondary"
+          value={filter.quality}
+          onChange={(e) => setFilter((prev) => ({ ...prev, quality: e.target.value }))}
+        >
+          <option value="ALL">전체</option>
+          <option value="사용성">사용성</option>
+          <option value="기능적합성">기능적합성</option>
+          <option value="보안성">보안성</option>
+          <option value="신뢰성">신뢰성</option>
+          <option value="유지보수성">유지보수성</option>
+          <option value="성능효율성">성능효율성</option>
+          <option value="이식성">이식성</option>
+          <option value="호환성">호환성</option>
+          <option value="일반적 요구사항">일반적 요구사항</option>
+        </select>
       </div>
 
       <DefectList defects={defects} filter={filter} loading={loading} isFinalized={isFinalized} />

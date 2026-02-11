@@ -17,6 +17,7 @@ export function DefectList({ defects, filter, loading, isFinalized }: DefectList
       if (filter.version !== 'ALL' && item.reportVersion !== filter.version) return false;
       if (filter.derived === 'DERIVED' && !item.isDerived) return false;
       if (filter.derived === 'BASE' && item.isDerived) return false;
+      if (filter.quality && filter.quality !== 'ALL' && item.qualityCharacteristic !== filter.quality) return false;
       return true;
     });
   }, [defects, filter]);
@@ -45,6 +46,7 @@ export function DefectList({ defects, filter, loading, isFinalized }: DefectList
           <tr>
             <th className="px-4 py-2">차수</th>
             <th className="px-4 py-2">파생</th>
+            <th className="px-4 py-2">품질특성</th>
             <th className="px-4 py-2">요약</th>
             <th className="px-4 py-2">심각도</th>
             <th className="px-4 py-2">상태</th>
@@ -59,6 +61,7 @@ export function DefectList({ defects, filter, loading, isFinalized }: DefectList
                   {item.isDerived ? '파생' : '기본'}
                 </span>
               </td>
+              <td className="px-4 py-2 text-tx-tertiary">{item.qualityCharacteristic || '-'}</td>
               <td className="px-4 py-2 text-surface-800">{item.summary}</td>
               <td className="px-4 py-2">{item.severity}</td>
               <td className="px-4 py-2">{item.status}</td>
