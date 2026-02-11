@@ -26,11 +26,8 @@ export function TestSetupView({ onStartProject }: TestSetupViewProps) {
     updateManualInfo,
     uploadAgreementDoc,
     deleteAgreementDoc,
-    agreementModalEnabled,
     agreementParsing,
     agreementParsingTestNumber,
-    setAgreementModalEnabled,
-    saveVerifiedAgreement,
     canProceed
   } = useTestSetupContext();
   return (
@@ -65,11 +62,8 @@ export function TestSetupView({ onStartProject }: TestSetupViewProps) {
         onUpdateManualInfo={updateManualInfo}
         onUploadAgreementDoc={uploadAgreementDoc}
         onDeleteAgreementDoc={deleteAgreementDoc}
-        showAgreementModal={agreementModalEnabled}
         isParsingAgreement={agreementParsing}
         parsingTestNumber={agreementParsingTestNumber}
-        onAgreementModalConsumed={() => setAgreementModalEnabled(false)}
-        onVerifiedSave={saveVerifiedAgreement}
         onStartProject={onStartProject}
         canProceed={canProceed}
       />

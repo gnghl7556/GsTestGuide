@@ -61,7 +61,6 @@ export function useTestSetupState({
   const [testSetup, setTestSetup] = useState<TestSetupState>(initialTestSetup || createEmptyTestSetup());
   const [currentUserId, setCurrentUserIdState] = useState(initialCurrentUserId || '');
   const [pendingAgreementFile, setPendingAgreementFile] = useState<File | null>(null);
-  const [agreementModalEnabled, setAgreementModalEnabled] = useState(false);
   const [agreementParsing, setAgreementParsing] = useState(false);
   const [agreementParsingTestNumber, setAgreementParsingTestNumber] = useState<string | null>(null);
 
@@ -442,7 +441,6 @@ export function useTestSetupState({
       window.alert('시험원을 먼저 선택해주세요.');
       return;
     }
-    setAgreementModalEnabled(true);
     setAgreementParsing(true);
     setAgreementParsingTestNumber(currentTestNumber);
     await ensureProjectSkeleton(currentTestNumber);
@@ -464,7 +462,6 @@ export function useTestSetupState({
       docs: nextDocs,
       agreementParsed: undefined
     }));
-    setAgreementModalEnabled(false);
     try {
       await setDoc(
         doc(db, 'testDocuments', currentTestNumber),
@@ -584,19 +581,6 @@ export function useTestSetupState({
     return { ok: true };
   };
 
-  const saveVerifiedAgreement = async (corrected: Record<string, string>) => {
-    if (!db || !authReady || !currentTestNumber) return;
-    try {
-      await setDoc(
-        doc(db, 'agreementDocs', currentTestNumber),
-        { parsed: corrected, userVerified: true },
-        { merge: true }
-      );
-    } catch (error) {
-      console.warn('[Firestore] 검증 결과 저장 실패:', error);
-    }
-  };
-
   const canProceed = Boolean(currentTestNumber && currentPlId && currentUserId);
 
   return {
@@ -609,8 +593,6 @@ export function useTestSetupState({
     currentTesterName,
     pendingAgreementFile,
     setPendingAgreementFile,
-    agreementModalEnabled,
-    setAgreementModalEnabled,
     agreementParsing,
     agreementParsingTestNumber,
     updatePlId,
@@ -627,7 +609,6 @@ export function useTestSetupState({
     updateTestNumber,
     createProjectFromInput,
     startProject,
-    saveVerifiedAgreement,
     canProceed
   };
 }

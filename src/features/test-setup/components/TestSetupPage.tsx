@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Building2, List, UploadCloud, User, Trash2, Eye } from 'lucide-react';
+import { Building2, List, UploadCloud, User, Trash2 } from 'lucide-react';
 import type {
   AgreementParsed,
   DocEntry,
@@ -10,7 +10,8 @@ import type {
   UserRank,
   UserUpdateInput
 } from '../../../types';
-import { AgreementVerifyModal } from './AgreementVerifyModal';
+import { CalendarInput } from './CalendarInput';
+import { TestInfoCard } from './TestInfoCard';
 import {
   AccessDeniedModal,
   AgreementDeleteConfirmModal,
@@ -59,11 +60,8 @@ interface TestSetupPageProps {
   }) => void;
   onUploadAgreementDoc: (file: File) => void | Promise<void>;
   onDeleteAgreementDoc: () => void | Promise<void>;
-  showAgreementModal: boolean;
   isParsingAgreement: boolean;
   parsingTestNumber: string | null;
-  onAgreementModalConsumed: () => void;
-  onVerifiedSave: (corrected: Record<string, string>) => Promise<void>;
   onStartProject: () => Promise<{ ok: boolean; reason?: string }>;
   canProceed: boolean;
 }
@@ -98,11 +96,8 @@ export function TestSetupPage({
   onUpdateManualInfo,
   onUploadAgreementDoc,
   onDeleteAgreementDoc,
-  showAgreementModal,
   isParsingAgreement,
   parsingTestNumber,
-  onAgreementModalConsumed,
-  onVerifiedSave,
   onStartProject,
   canProceed
 }: TestSetupPageProps) {
@@ -170,10 +165,9 @@ export function TestSetupPage({
     info: Boolean(projectName || companyName || companyContactName || companyContactPhone || companyContactEmail),
     agreement: hasAgreementDoc
   };
-  const [agreementModalOpen, setAgreementModalOpen] = useState(false);
-  const [agreementModalStatus, setAgreementModalStatus] = useState<'parsed' | 'failed' | null>(null);
-  const prevStatusRef = useRef<AgreementParsed['parseStatus']>(undefined);
   const [agreementDeleteConfirmOpen, setAgreementDeleteConfirmOpen] = useState(false);
+  const [agreementFailedOpen, setAgreementFailedOpen] = useState(false);
+  const prevStatusRef = useRef<AgreementParsed['parseStatus']>(undefined);
   const [projectListOpen, setProjectListOpen] = useState(false);
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [manageUsersOpen, setManageUsersOpen] = useState(false);
@@ -288,120 +282,19 @@ export function TestSetupPage({
         : agreementParsed?.parseStatus === 'pending'
           ? '추출 중'
           : '대기';
-  const isParsing =
-    (isParsingAgreement && parsingTestNumber === trimmedTestNumber) || showAgreementModal;
+  const isParsing = isParsingAgreement && parsingTestNumber === trimmedTestNumber;
   const parsingProgress = Math.min(100, Math.max(5, agreementParsed?.parseProgress ?? 5));
 
+  // 파싱 실패 시 모달 표시
   useEffect(() => {
     const currentStatus = agreementParsed?.parseStatus;
     if (currentStatus && currentStatus !== prevStatusRef.current) {
-      if ((showAgreementModal || isParsingAgreement) && (currentStatus === 'parsed' || currentStatus === 'failed')) {
-        setAgreementModalStatus(currentStatus);
-        setAgreementModalOpen(true);
-        onAgreementModalConsumed();
+      if (currentStatus === 'failed') {
+        setAgreementFailedOpen(true);
       }
       prevStatusRef.current = currentStatus;
     }
-  }, [agreementParsed?.parseStatus, showAgreementModal, isParsingAgreement, onAgreementModalConsumed]);
-
-  const CalendarInput = ({
-    label,
-    value,
-    onChange
-  }: {
-    label: string;
-    value: string;
-    onChange: (next: string) => void;
-  }) => {
-    const [open, setOpen] = useState(false);
-    const toLocalDateString = (date: Date) => {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    };
-    const [viewDate, setViewDate] = useState(() => (value ? new Date(`${value}T00:00:00`) : new Date()));
-
-    const startOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
-    const endOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
-    const startDay = startOfMonth.getDay();
-    const daysInMonth = endOfMonth.getDate();
-    const weeks: Array<{ label: string; date: Date | null }> = [];
-
-    for (let i = 0; i < startDay; i += 1) {
-      weeks.push({ label: '', date: null });
-    }
-    for (let d = 1; d <= daysInMonth; d += 1) {
-      weeks.push({ label: String(d), date: new Date(viewDate.getFullYear(), viewDate.getMonth(), d) });
-    }
-
-    const formatValue = value || '날짜 선택';
-    const isSelected = (date: Date) => value === toLocalDateString(date);
-
-    return (
-      <div className="relative">
-        <label className="text-xs text-white/60 block mb-1">{label}</label>
-        <button
-          type="button"
-          onClick={() => setOpen((prev) => !prev)}
-          className="w-full text-left bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 hover:border-white/20"
-        >
-          {formatValue}
-        </button>
-        {open && (
-          <div className="absolute z-30 mt-2 w-64 rounded-2xl border border-white/10 bg-[#0b1230]/90 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.45)] p-3">
-            <div className="flex items-center justify-between text-xs text-white/70 mb-2">
-              <button
-                type="button"
-                onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
-                className="px-2 py-1 rounded-md hover:bg-white/10"
-              >
-                이전
-              </button>
-              <span className="font-semibold text-white/80">
-                {viewDate.getFullYear()}년 {viewDate.getMonth() + 1}월
-              </span>
-              <button
-                type="button"
-                onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
-                className="px-2 py-1 rounded-md hover:bg-white/10"
-              >
-                다음
-              </button>
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-[10px] text-white/50 mb-1">
-              {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-                <div key={day} className="text-center">{day}</div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1 text-xs">
-              {weeks.map((cell, idx) => (
-                <button
-                  key={`${cell.label}-${idx}`}
-                  type="button"
-                  disabled={!cell.date}
-                  onClick={() => {
-                    if (!cell.date) return;
-                    onChange(toLocalDateString(cell.date));
-                    setOpen(false);
-                  }}
-                  className={`h-8 rounded-md ${
-                    cell.date
-                      ? isSelected(cell.date)
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                        : 'text-white/80 hover:bg-white/10'
-                      : 'text-white/30'
-                  }`}
-                >
-                  {cell.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
+  }, [agreementParsed?.parseStatus]);
 
   return (
     <div className="relative min-h-screen w-full bg-gradient-to-br from-[#0a0f1f] via-[#0b1230] to-[#1a0f3a] flex items-center justify-center p-6">
@@ -418,7 +311,9 @@ export function TestSetupPage({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          {/* ===== 왼쪽 컬럼 ===== */}
           <div className="space-y-6">
+            {/* 1단계: 사용자 선택 */}
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <label className="text-sm text-white/70 block">
@@ -473,6 +368,7 @@ export function TestSetupPage({
               </div>
             </div>
 
+            {/* create 모드: 담당 PL + 시험 일정 */}
             {flowMode === 'create' && (
             <div>
               <div className="mb-2 flex items-center justify-between">
@@ -520,6 +416,7 @@ export function TestSetupPage({
             </div>
             )}
 
+            {/* existing 모드: 시험 선택 */}
             {flowMode === 'existing' && (
             <div>
               <div className="mb-2 flex items-center justify-between">
@@ -654,7 +551,9 @@ export function TestSetupPage({
             )}
           </div>
 
+          {/* ===== 오른쪽 컬럼 ===== */}
           <div className="space-y-6">
+            {/* create 모드: 시험번호 입력 */}
             {flowMode === 'create' && (
             <div className="mb-2">
               <div className="mb-2 flex items-center justify-between">
@@ -722,6 +621,7 @@ export function TestSetupPage({
             </div>
             )}
 
+            {/* 합의서 업로드 (create 모드) */}
             {flowMode === 'create' && (
             <div>
               <div className="mb-2 flex items-center justify-between">
@@ -786,292 +686,49 @@ export function TestSetupPage({
             </div>
             )}
 
-            {flowMode === 'existing' ? (
-              <div className="mt-5 relative">
-                {!currentUserId && (
-                  <div className="absolute inset-0 z-10 rounded-2xl bg-[var(--overlay-backdrop)] backdrop-blur-[2px] flex items-center justify-center text-center px-4">
-                    <div>
-                      <div className="text-sm font-semibold text-white/90">사용자 선택 필요</div>
-                      <div className="mt-1 text-xs text-white/60">
-                        시험 정보 확인은 사용자 선택 후 가능합니다.
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="text-sm text-white/70">
-                    <span className="mr-2 inline-flex rounded-md border border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-100">3단계</span>
-                    시험 정보 확인
-                  </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.info ? 'border-emerald-300/50 text-emerald-200' : 'border-white/20 text-white/50'}`}>
-                    {sectionDone.info ? '완료' : '미완료'}
-                  </span>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
-                  <div className="space-y-1">
-                    <div className="text-[11px] text-white/50">시험번호</div>
-                    <div className="h-11 bg-white/5 border border-white/10 rounded-xl px-3">
-                      <input
-                        className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                        value={selectedProject?.testNumber || trimmedTestNumber || ''}
-                        readOnly
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-[11px] text-white/50">담당 PL</div>
-                    <div className="h-11 flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                      <Building2 size={16} className="text-white/50" />
-                      <select
-                        value={plId}
-                        onChange={(e) => onChangePlId(e.target.value)}
-                        className="h-full bg-transparent w-full text-sm text-white/80 focus:outline-none"
-                      >
-                        <option value="" className="text-gray-900">담당 PL 선택</option>
-                        {plDirectory.map((pl) => (
-                          <option key={pl.id} value={pl.id} className="text-gray-900">
-                            {pl.name} {pl.role ? `(${pl.role})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      
-                      <CalendarInput label="시작일" value={scheduleStartDate} onChange={onChangeScheduleStartDate} />
-                    </div>
-                    <div className="space-y-1">
-                      
-                      <CalendarInput label="종료일" value={scheduleEndDate} onChange={onChangeScheduleEndDate} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <div className="text-[11px] text-white/50">제품명</div>
-                      <div className="h-11 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                        <input
-                          className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                          placeholder="제품명"
-                          value={projectName}
-                          onChange={(e) => onUpdateManualInfo({ projectName: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[11px] text-white/50">업체명</div>
-                      <div className="h-11 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                        <input
-                          className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                          placeholder="업체명"
-                          value={companyName}
-                          onChange={(e) => onUpdateManualInfo({ companyName: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[11px] text-white/50">담당자</div>
-                      <div className="h-11 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                        <input
-                          className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                          placeholder="담당자"
-                          value={companyContactName}
-                          onChange={(e) => onUpdateManualInfo({ companyContactName: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[11px] text-white/50">연락처</div>
-                      <div className="h-11 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                        <input
-                          className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                          placeholder="연락처"
-                          value={companyContactPhone}
-                          onChange={(e) => onUpdateManualInfo({ companyContactPhone: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1 md:col-span-2">
-                      <div className="text-[11px] text-white/50">이메일</div>
-                      <div className="h-11 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                        <input
-                          className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                          placeholder="이메일"
-                          value={companyContactEmail}
-                          onChange={(e) => onUpdateManualInfo({ companyContactEmail: e.target.value })}
-                        />
-                      </div>
+            {/* TestInfoCard — 시험 정보 (9개 필드 인라인 편집) */}
+            <div className="mt-5 relative">
+              {!currentUserId && flowMode === 'existing' && (
+                <div className="absolute inset-0 z-10 rounded-2xl bg-[var(--overlay-backdrop)] backdrop-blur-[2px] flex items-center justify-center text-center px-4">
+                  <div>
+                    <div className="text-sm font-semibold text-white/90">사용자 선택 필요</div>
+                    <div className="mt-1 text-xs text-white/60">
+                      시험 정보 확인은 사용자 선택 후 가능합니다.
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-            <div className="mt-5">
+              )}
               <div className="mb-2 flex items-center justify-between">
                 <div className="text-sm text-white/70">
-                  <span className="mr-2 inline-flex rounded-md border border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-100">6단계</span>
-                  시험 정보 입력
+                  <span className="mr-2 inline-flex rounded-md border border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-100">
+                    {flowMode === 'existing' ? '3단계' : '6단계'}
+                  </span>
+                  시험 정보 {flowMode === 'existing' ? '확인' : '입력'}
                 </div>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.info ? 'border-emerald-300/50 text-emerald-200' : 'border-white/20 text-white/50'}`}>
                   {sectionDone.info ? '완료' : '미완료'}
                 </span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <div className="h-11 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                  <input
-                    className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                    placeholder="제품명"
-                    value={projectName}
-                    onChange={(e) => onUpdateManualInfo({ projectName: e.target.value })}
-                  />
-                </div>
-                <div className="h-11 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                  <input
-                    className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                    placeholder="업체명"
-                    value={companyName}
-                    onChange={(e) => onUpdateManualInfo({ companyName: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="h-11 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                  <input
-                    className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                    placeholder="담당자"
-                    value={companyContactName}
-                    onChange={(e) => onUpdateManualInfo({ companyContactName: e.target.value })}
-                  />
-                </div>
-                <div className="h-11 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                  <input
-                    className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                    placeholder="연락처"
-                    value={companyContactPhone}
-                    onChange={(e) => onUpdateManualInfo({ companyContactPhone: e.target.value })}
-                  />
-                </div>
-                <div className="h-11 md:col-span-2 bg-white/5 border border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                  <input
-                    className="h-full bg-transparent w-full text-sm text-white/80 placeholder:text-white/40 focus:outline-none"
-                    placeholder="이메일"
-                    value={companyContactEmail}
-                    onChange={(e) => onUpdateManualInfo({ companyContactEmail: e.target.value })}
-                  />
-                </div>
-              </div>
+              <TestInfoCard
+                testNumber={selectedProject?.testNumber || trimmedTestNumber || ''}
+                plId={plId}
+                scheduleStartDate={scheduleStartDate}
+                scheduleEndDate={scheduleEndDate}
+                productName={projectName}
+                companyName={companyName}
+                managerName={companyContactName}
+                managerPhone={companyContactPhone}
+                managerEmail={companyContactEmail}
+                plDirectory={plDirectory}
+                agreementStatus={agreementParsed?.parseStatus}
+                onChangePlId={onChangePlId}
+                onChangeStartDate={onChangeScheduleStartDate}
+                onChangeEndDate={onChangeScheduleEndDate}
+                onChangeField={(field, value) => onUpdateManualInfo({ [field]: value })}
+              />
             </div>
-            )}
 
-            {agreementParsed?.parseStatus === 'parsed' && (
-              <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold text-white/80">시험환경 정보</div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAgreementModalStatus('parsed');
-                      setAgreementModalOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/70 hover:text-white hover:bg-white/20"
-                  >
-                    <Eye size={12} />
-                    상세 보기
-                  </button>
-                </div>
-
-                <div>
-                  <div className="text-[11px] text-white/50 mb-2">기본 정보</div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">시험신청번호</div>
-                      <div className={`text-xs ${agreementParsed.applicationNumber ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.applicationNumber || '미추출'}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">계약 유형</div>
-                      <div className={`text-xs ${agreementParsed.contractType ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.contractType || '미추출'}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">인증 유형</div>
-                      <div className={`text-xs ${agreementParsed.certificationType ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.certificationType || '미추출'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[11px] text-white/50 mb-2">시험 정보</div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">시험 대상</div>
-                      <div className={`text-xs ${agreementParsed.testTarget ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.testTarget || '미추출'}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">시험 소요일</div>
-                      <div className={`text-xs ${agreementParsed.workingDays ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.workingDays ? `${agreementParsed.workingDays}일` : '미추출'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[11px] text-white/50 mb-2">시험환경</div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">서버 유무</div>
-                      <div className={`text-xs ${agreementParsed.hasServer ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.hasServer || '미추출'}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">필요 장비 수</div>
-                      <div className={`text-xs ${agreementParsed.requiredEquipmentCount ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.requiredEquipmentCount || '미추출'}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">운영체제</div>
-                      <div className={`text-xs ${agreementParsed.operatingSystem ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.operatingSystem || '미추출'}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">하드웨어 사양</div>
-                      <div className={`text-xs ${agreementParsed.hardwareSpec ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.hardwareSpec || '미추출'}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">네트워크 환경</div>
-                      <div className={`text-xs ${agreementParsed.networkEnvironment ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.networkEnvironment || '미추출'}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-white/40">기타 환경</div>
-                      <div className={`text-xs ${agreementParsed.otherEnvironment ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.otherEnvironment || '미추출'}
-                      </div>
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                      <div className="text-[10px] text-white/40">장비 준비</div>
-                      <div className={`text-xs ${agreementParsed.equipmentPreparation ? 'text-white/80' : 'text-white/30'}`}>
-                        {agreementParsed.equipmentPreparation || '미추출'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
+            {/* 하단 액션 버튼 */}
             <div className="mt-6 sticky bottom-0 pt-4 pb-1 flex flex-col items-center gap-2">
               <div className="flex w-full max-w-lg items-center justify-center gap-3">
                 <button
@@ -1129,6 +786,8 @@ export function TestSetupPage({
           </div>
         </div>
       </div>
+
+      {/* 모달들 */}
       <AccessDeniedModal
         open={accessDeniedOpen && !!accessDeniedInfo}
         onClose={() => setAccessDeniedOpen(false)}
@@ -1136,18 +795,9 @@ export function TestSetupPage({
         plName={accessDeniedInfo?.plName ?? ''}
       />
 
-      {agreementModalOpen && agreementModalStatus === 'parsed' && agreementParsed && (
-        <AgreementVerifyModal
-          open
-          onClose={() => setAgreementModalOpen(false)}
-          parsed={agreementParsed}
-          onSave={onVerifiedSave}
-        />
-      )}
-
       <AgreementFailedModal
-        open={agreementModalOpen && agreementModalStatus === 'failed'}
-        onClose={() => setAgreementModalOpen(false)}
+        open={agreementFailedOpen}
+        onClose={() => setAgreementFailedOpen(false)}
       />
 
       <AgreementDeleteConfirmModal
@@ -1161,8 +811,8 @@ export function TestSetupPage({
         onClose={() => setProjectListOpen(false)}
         projects={visibleProjects}
         activeTestNumber={trimmedTestNumber}
-        onSelectProject={(testNumber) => {
-          onSelectProject(testNumber);
+        onSelectProject={(tn) => {
+          onSelectProject(tn);
           setFlowMode('existing');
         }}
       />
