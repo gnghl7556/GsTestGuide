@@ -1,0 +1,517 @@
+{
+  "timestamp": "2026-02-10T07:44:20.037Z",
+  "reason": "compaction",
+  "status": {
+    "version": "2.0",
+    "lastUpdated": "2026-02-10T07:30:17.292Z",
+    "activeFeatures": [
+      "content",
+      "GsTestGuide",
+      "Layout",
+      "checklist",
+      "defects",
+      "admin",
+      "routes",
+      "어드민-계정-관리",
+      "functions",
+      "test-setup",
+      "PDF-파싱-품질-개선"
+    ],
+    "primaryFeature": "content",
+    "features": {
+      "content": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-10T04:33:31.363Z",
+          "lastUpdated": "2026-02-10T04:34:29.361Z"
+        },
+        "lastFile": "C:\\Users\\PC\\Documents\\GsTestGuide\\src\\lib\\content\\index.ts"
+      },
+      "GsTestGuide": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-10T04:35:14.281Z",
+          "lastUpdated": "2026-02-10T07:07:54.278Z"
+        },
+        "lastFile": "C:\\Users\\PC\\Documents\\GsTestGuide\\src\\types\\testSetup.ts"
+      },
+      "Layout": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-10T04:40:02.076Z",
+          "lastUpdated": "2026-02-10T04:40:02.076Z"
+        },
+        "lastFile": "C:\\Users\\PC\\Documents\\GsTestGuide\\src\\components\\Layout\\Header.tsx"
+      },
+      "checklist": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-10T04:40:03.555Z",
+          "lastUpdated": "2026-02-10T04:40:09.411Z"
+        },
+        "lastFile": "C:\\Users\\PC\\Documents\\GsTestGuide\\src\\features\\checklist\\utils\\executionGate.ts"
+      },
+      "defects": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-10T04:40:06.300Z",
+          "lastUpdated": "2026-02-10T04:40:06.300Z"
+        },
+        "lastFile": "C:\\Users\\PC\\Documents\\GsTestGuide\\src\\features\\defects\\components\\DefectReportForm.tsx"
+      },
+      "admin": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-10T05:31:25.807Z",
+          "lastUpdated": "2026-02-10T05:34:00.617Z"
+        },
+        "lastFile": "C:\\Users\\PC\\Documents\\GsTestGuide\\src\\features\\admin\\components\\ProjectManagement.tsx"
+      },
+      "routes": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-10T05:31:50.756Z",
+          "lastUpdated": "2026-02-10T06:23:50.449Z"
+        },
+        "lastFile": "C:\\Users\\PC\\Documents\\GsTestGuide\\src\\features\\test-setup\\routes\\TestSetupView.tsx"
+      },
+      "어드민-계정-관리": {
+        "phase": "act",
+        "phaseNumber": 5,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-10T05:44:20.241Z",
+          "lastUpdated": "2026-02-10T05:44:20.242Z"
+        },
+        "previousPhase": "check",
+        "autoAdvanced": true
+      },
+      "functions": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-10T06:20:21.798Z",
+          "lastUpdated": "2026-02-10T07:30:17.291Z"
+        },
+        "lastFile": "C:\\Users\\PC\\Documents\\GsTestGuide\\functions\\test-extract.js"
+      },
+      "test-setup": {
+        "phase": "do",
+        "phaseNumber": 3,
+        "matchRate": null,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {},
+        "timestamps": {
+          "started": "2026-02-10T06:21:50.415Z",
+          "lastUpdated": "2026-02-10T07:08:15.592Z"
+        },
+        "lastFile": "C:\\Users\\PC\\Documents\\GsTestGuide\\src\\features\\test-setup\\components\\AgreementVerifyModal.tsx"
+      },
+      "PDF-파싱-품질-개선": {
+        "phase": "check",
+        "phaseNumber": 4,
+        "matchRate": 95,
+        "iterationCount": 0,
+        "requirements": [],
+        "documents": {
+          "analysis": "docs/03-analysis/PDF-파싱-품질-개선.analysis.md"
+        },
+        "timestamps": {
+          "started": "2026-02-10T06:53:56.636Z",
+          "lastUpdated": "2026-02-10T08:15:00.000Z"
+        }
+      }
+    },
+    "pipeline": {
+      "currentPhase": 1,
+      "level": "Dynamic",
+      "phaseHistory": []
+    },
+    "session": {
+      "startedAt": "2026-02-09T23:38:02.634Z",
+      "onboardingCompleted": false,
+      "lastActivity": "2026-02-10T07:30:17.292Z"
+    },
+    "history": [
+      {
+        "timestamp": "2026-02-10T04:33:31.363Z",
+        "feature": "content",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:33:47.187Z",
+        "feature": "content",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:34:00.189Z",
+        "feature": "content",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:34:11.646Z",
+        "feature": "content",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:34:20.641Z",
+        "feature": "content",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:34:29.361Z",
+        "feature": "content",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:35:14.281Z",
+        "feature": "GsTestGuide",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:35:25.438Z",
+        "feature": "GsTestGuide",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:37:50.958Z",
+        "feature": "GsTestGuide",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:39:46.433Z",
+        "feature": "GsTestGuide",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:39:54.528Z",
+        "feature": "GsTestGuide",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:40:00.659Z",
+        "feature": "GsTestGuide",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:40:02.076Z",
+        "feature": "Layout",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:40:03.555Z",
+        "feature": "checklist",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:40:04.954Z",
+        "feature": "checklist",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:40:06.300Z",
+        "feature": "defects",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T04:40:09.411Z",
+        "feature": "checklist",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T05:31:25.807Z",
+        "feature": "admin",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T05:31:41.075Z",
+        "feature": "admin",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T05:31:50.756Z",
+        "feature": "routes",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T05:32:06.490Z",
+        "feature": "admin",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T05:32:20.223Z",
+        "feature": "GsTestGuide",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T05:33:26.377Z",
+        "feature": "admin",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T05:34:00.617Z",
+        "feature": "admin",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T05:35:00.272Z",
+        "feature": "routes",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T05:44:20.242Z",
+        "feature": "어드민-계정-관리",
+        "phase": "act",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:20:21.798Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:20:41.552Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:20:48.015Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:21:09.400Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:21:39.358Z",
+        "feature": "GsTestGuide",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:21:50.415Z",
+        "feature": "test-setup",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:23:32.898Z",
+        "feature": "test-setup",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:23:38.249Z",
+        "feature": "test-setup",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:23:44.597Z",
+        "feature": "routes",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:23:50.450Z",
+        "feature": "routes",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:24:21.529Z",
+        "feature": "test-setup",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:24:30.741Z",
+        "feature": "test-setup",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:24:37.251Z",
+        "feature": "test-setup",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:24:48.443Z",
+        "feature": "test-setup",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:25:03.539Z",
+        "feature": "test-setup",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T06:53:56.637Z",
+        "feature": "PDF-파싱-품질-개선",
+        "phase": "act",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:07:31.585Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:07:39.767Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:07:47.897Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:07:54.278Z",
+        "feature": "GsTestGuide",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:08:06.210Z",
+        "feature": "test-setup",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:08:15.592Z",
+        "feature": "test-setup",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:26:41.793Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:28:31.180Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:29:45.698Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:29:51.362Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:29:59.636Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:30:05.955Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:30:11.022Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      },
+      {
+        "timestamp": "2026-02-10T07:30:17.291Z",
+        "feature": "functions",
+        "phase": "do",
+        "action": "updated"
+      }
+    ]
+  }
+}

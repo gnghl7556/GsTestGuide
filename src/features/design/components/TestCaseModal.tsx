@@ -192,17 +192,17 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-6">
-      <div className="w-full max-w-6xl rounded-2xl border border-gray-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-backdrop)] p-6">
+      <div className="w-full max-w-6xl rounded-2xl border border-ln bg-surface-base shadow-xl">
+        <div className="flex items-center justify-between border-b border-ln px-6 py-4">
           <div>
-            <h2 className="text-lg font-extrabold text-gray-900">TC 관리</h2>
-            <p className="text-xs text-gray-500 mt-1">기능 리스트 기반 TC 초안 생성 및 편집</p>
+            <h2 className="text-lg font-extrabold text-tx-primary">TC 관리</h2>
+            <p className="text-xs text-tx-tertiary mt-1">기능 리스트 기반 TC 초안 생성 및 편집</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700"
+            className="inline-flex items-center gap-1 rounded-md border border-ln px-3 py-1 text-xs font-semibold text-tx-tertiary hover:text-tx-secondary"
           >
             <X size={14} />
             닫기
@@ -211,11 +211,11 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
 
         <div className="grid grid-cols-1 lg:grid-cols-[2.1fr_1fr] gap-6 p-6">
           <div className="space-y-4">
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="rounded-xl border border-ln bg-surface-raised p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-semibold text-gray-800">TC 초안 생성</div>
-                  <div className="text-xs text-gray-500">features 컬렉션 기반으로 초안을 생성합니다.</div>
+                  <div className="text-sm font-semibold text-tx-primary">TC 초안 생성</div>
+                  <div className="text-xs text-tx-tertiary">features 컬렉션 기반으로 초안을 생성합니다.</div>
                 </div>
                 <button
                   type="button"
@@ -224,39 +224,39 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
                     setTestCases(draft);
                     setDraftMessage('기능 리스트 기반 TC 초안을 다시 생성했습니다.');
                   }}
-                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 hover:border-gray-300"
+                  className="inline-flex items-center gap-2 rounded-lg border border-ln bg-surface-base px-3 py-2 text-xs font-semibold text-tx-secondary hover:border-ln-strong"
                 >
                   <RefreshCcw size={14} />
                   초안 재생성
                 </button>
               </div>
-              {draftMessage && <div className="mt-2 text-xs text-gray-500">{draftMessage}</div>}
+              {draftMessage && <div className="mt-2 text-xs text-tx-tertiary">{draftMessage}</div>}
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="rounded-xl border border-ln bg-surface-base p-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-gray-800">TC 목록</div>
-                <div className="text-xs text-gray-400">{testCases.length}개</div>
+                <div className="text-sm font-semibold text-tx-primary">TC 목록</div>
+                <div className="text-xs text-tx-muted">{testCases.length}개</div>
               </div>
               {loading ? (
-                <div className="py-12 text-center text-sm text-gray-400">불러오는 중...</div>
+                <div className="py-12 text-center text-sm text-tx-muted">불러오는 중...</div>
               ) : (
                 <div className="mt-3 space-y-3 max-h-[52vh] overflow-y-auto pr-2">
                   {testCases.map((tc, idx) => (
-                    <div key={tc.id} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div key={tc.id} className="rounded-lg border border-ln bg-surface-raised p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-xs font-semibold text-gray-700">{tc.testCaseId || `TC-${idx + 1}`}</div>
+                        <div className="text-xs font-semibold text-tx-secondary">{tc.testCaseId || `TC-${idx + 1}`}</div>
                         <button
                           type="button"
                           onClick={() => setTestCases((prev) => prev.filter((item) => item.id !== tc.id))}
-                          className="text-[11px] text-red-600"
+                          className="text-[11px] text-danger-text"
                         >
                           삭제
                         </button>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                         <select
-                          className="rounded-md border border-gray-200 px-2 py-1"
+                          className="rounded-md border border-ln px-2 py-1"
                           value={tc.featureId}
                           onChange={(e) =>
                             setTestCases((prev) =>
@@ -272,7 +272,7 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
                           ))}
                         </select>
                         <select
-                          className="rounded-md border border-gray-200 px-2 py-1"
+                          className="rounded-md border border-ln px-2 py-1"
                           value={tc.status}
                           onChange={(e) => {
                             const nextStatus = e.target.value as TestCaseItem['status'];
@@ -292,7 +292,7 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
                           ))}
                         </select>
                         <input
-                          className="rounded-md border border-gray-200 px-2 py-1 md:col-span-2"
+                          className="rounded-md border border-ln px-2 py-1 md:col-span-2"
                           value={tc.scenario}
                           onChange={(e) =>
                             setTestCases((prev) =>
@@ -302,7 +302,7 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
                           placeholder="테스트 시나리오"
                         />
                         <input
-                          className="rounded-md border border-gray-200 px-2 py-1 md:col-span-2"
+                          className="rounded-md border border-ln px-2 py-1 md:col-span-2"
                           value={tc.preCondition || ''}
                           onChange={(e) =>
                             setTestCases((prev) =>
@@ -314,7 +314,7 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
                           placeholder="사전 조건"
                         />
                         <textarea
-                          className="rounded-md border border-gray-200 px-2 py-1 md:col-span-2"
+                          className="rounded-md border border-ln px-2 py-1 md:col-span-2"
                           value={tc.steps.join('\n')}
                           onChange={(e) =>
                             setTestCases((prev) =>
@@ -327,7 +327,7 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
                           placeholder="실행 단계 (줄바꿈 구분)"
                         />
                         <textarea
-                          className="rounded-md border border-gray-200 px-2 py-1 md:col-span-2"
+                          className="rounded-md border border-ln px-2 py-1 md:col-span-2"
                           value={tc.expectedResult}
                           onChange={(e) =>
                             setTestCases((prev) =>
@@ -343,7 +343,7 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
                     </div>
                   ))}
                   {testCases.length === 0 && (
-                    <div className="py-8 text-center text-xs text-gray-400">등록된 TC가 없습니다.</div>
+                    <div className="py-8 text-center text-xs text-tx-muted">등록된 TC가 없습니다.</div>
                   )}
                 </div>
               )}
@@ -351,11 +351,11 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="text-sm font-semibold text-gray-800 mb-3">새 TC 추가</div>
+            <div className="rounded-xl border border-ln bg-surface-base p-4">
+              <div className="text-sm font-semibold text-tx-primary mb-3">새 TC 추가</div>
               <div className="space-y-2 text-xs">
                 <select
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   value={newCase.featureId}
                   onChange={(e) => setNewCase((prev) => ({ ...prev, featureId: e.target.value }))}
                 >
@@ -367,33 +367,33 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
                   ))}
                 </select>
                 <input
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   placeholder="테스트 시나리오"
                   value={newCase.scenario}
                   onChange={(e) => setNewCase((prev) => ({ ...prev, scenario: e.target.value }))}
                 />
                 <input
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   placeholder="사전 조건"
                   value={newCase.preCondition || ''}
                   onChange={(e) => setNewCase((prev) => ({ ...prev, preCondition: e.target.value }))}
                 />
                 <textarea
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   rows={3}
                   placeholder="실행 단계 (줄바꿈 구분)"
                   value={newCase.steps.join('\n')}
                   onChange={(e) => setNewCase((prev) => ({ ...prev, steps: e.target.value.split('\n') }))}
                 />
                 <textarea
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   rows={2}
                   placeholder="기대 결과"
                   value={newCase.expectedResult}
                   onChange={(e) => setNewCase((prev) => ({ ...prev, expectedResult: e.target.value }))}
                 />
                 <select
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   value={newCase.status}
                   onChange={(e) => setNewCase((prev) => ({ ...prev, status: e.target.value as TestCaseItem['status'] }))}
                 >
@@ -406,7 +406,7 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
                 <button
                   type="button"
                   onClick={addCase}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-ln bg-surface-raised px-3 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover"
                 >
                   <Plus size={14} />
                   TC 추가
@@ -414,14 +414,14 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="text-sm font-semibold text-gray-800 mb-2">저장</div>
-              <p className="text-xs text-gray-500 mb-3">변경사항을 testCases 서브 컬렉션에 저장합니다.</p>
+            <div className="rounded-xl border border-ln bg-surface-base p-4">
+              <div className="text-sm font-semibold text-tx-primary mb-2">저장</div>
+              <p className="text-xs text-tx-tertiary mb-3">변경사항을 testCases 서브 컬렉션에 저장합니다.</p>
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-white hover:bg-accent-hover disabled:opacity-60"
               >
                 <Save size={14} />
                 {saving ? '저장 중...' : '저장'}
@@ -430,11 +430,11 @@ export function TestCaseModal({ open, projectId, onClose }: TestCaseModalProps) 
           </div>
         </div>
 
-        <div className="border-t border-gray-200 px-6 py-4 flex justify-end">
+        <div className="border-t border-ln px-6 py-4 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800"
+            className="inline-flex items-center gap-2 rounded-md border border-ln px-4 py-2 text-xs font-semibold text-tx-secondary hover:text-tx-primary"
           >
             <X size={14} />
             닫기

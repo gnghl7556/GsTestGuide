@@ -113,6 +113,9 @@ export function useTestSetupState({
       const data = snap.data() as {
         parseStatus?: 'pending' | 'parsed' | 'failed';
         parseProgress?: number;
+        extractionRate?: number;
+        fieldConfidence?: Record<string, number>;
+        userVerified?: boolean;
         parsed?: {
           applicationNumber?: string;
           contractType?: string;
@@ -124,6 +127,15 @@ export function useTestSetupState({
           managerEmail?: string;
           managerDepartment?: string;
           managerJobTitle?: string;
+          workingDays?: string;
+          testTarget?: string;
+          hasServer?: string;
+          requiredEquipmentCount?: string;
+          operatingSystem?: string;
+          hardwareSpec?: string;
+          networkEnvironment?: string;
+          otherEnvironment?: string;
+          equipmentPreparation?: string;
           담당자?: string;
           연락처?: string;
           이메일?: string;
@@ -140,6 +152,9 @@ export function useTestSetupState({
         const nextAgreementParsed = {
           parseStatus: data.parseStatus,
           parseProgress: data.parseProgress,
+          extractionRate: data.extractionRate,
+          fieldConfidence: data.fieldConfidence,
+          userVerified: data.userVerified,
           ...normalizedParsed
         };
         let changed = false;
@@ -569,6 +584,19 @@ export function useTestSetupState({
     return { ok: true };
   };
 
+  const saveVerifiedAgreement = async (corrected: Record<string, string>) => {
+    if (!db || !authReady || !currentTestNumber) return;
+    try {
+      await setDoc(
+        doc(db, 'agreementDocs', currentTestNumber),
+        { parsed: corrected, userVerified: true },
+        { merge: true }
+      );
+    } catch (error) {
+      console.warn('[Firestore] 검증 결과 저장 실패:', error);
+    }
+  };
+
   const canProceed = Boolean(currentTestNumber && currentPlId && currentUserId);
 
   return {
@@ -599,6 +627,7 @@ export function useTestSetupState({
     updateTestNumber,
     createProjectFromInput,
     startProject,
+    saveVerifiedAgreement,
     canProceed
   };
 }

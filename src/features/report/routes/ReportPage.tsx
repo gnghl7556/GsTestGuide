@@ -29,7 +29,7 @@ export function ReportPage() {
 
   if (!currentTestNumber) {
     return (
-      <div className="rounded-xl border border-surface-200 bg-white p-6 text-sm text-surface-500">
+      <div className="rounded-xl border border-surface-200 bg-surface-base p-6 text-sm text-surface-500">
         시험을 먼저 선택해주세요.
       </div>
     );
@@ -37,7 +37,7 @@ export function ReportPage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-surface-200 bg-white p-6">
+      <div className="rounded-xl border border-surface-200 bg-surface-base p-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-primary-800">결함 보고 관리</h2>
@@ -49,7 +49,7 @@ export function ReportPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-surface-200 bg-white p-4 flex flex-wrap items-center gap-3 text-xs">
+      <div className="rounded-xl border border-surface-200 bg-surface-base p-4 flex flex-wrap items-center gap-3 text-xs">
         <div className="font-semibold text-surface-600">차수</div>
         {(['ALL', 1, 2, 3, 4] as const).map((value) => (
           <Button

@@ -9,7 +9,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
 import { generateDefectReport } from './utils/excelGenerator';
-import pdfParse from 'pdf-parse';
+import { parseDocumentFromBuffer } from './parsers';
 
 initializeApp();
 
@@ -44,11 +44,9 @@ const isProjectFinalized = async (projectId: string) => {
 // ==========================================
 export const onAgreementUpload = onObjectFinalized({ region: REGION }, async (event) => {
   const objectPath = event.data.name;
-  console.log('Triggered with:', objectPath);
   if (!objectPath || !isAgreementPath(objectPath)) return;
 
   const testNumber = parseTestNumber(objectPath);
-  console.log('Detected testNumber:', testNumber);
   if (!testNumber) return;
 
   const fileName = objectPath.split('/').slice(2).join('/');
@@ -75,36 +73,30 @@ export const onAgreementUpload = onObjectFinalized({ region: REGION }, async (ev
   try {
     await bucket.file(objectPath).download({ destination: localPath });
 
-    let text = '';
-    if (fileExt !== '.pdf') {
-      await db.collection('agreementDocs').doc(testNumber).set(
-        { parseStatus: 'failed', parseError: 'PDF 파일만 지원됩니다.' },
-        { merge: true }
-      );
-      return;
-    }
-
     const buffer = await fs.promises.readFile(localPath);
 
-    try {
-      const result = await pdfParse(buffer);
-      text = result.text || '';
-    } catch (error) {
-      console.error('[PDF Parse] failed:', error);
+    // 통합 파서를 사용하여 PDF 텍스트 추출 + 정제
+    const parseResult = await parseDocumentFromBuffer(buffer, fileName, {
+      removePageNumbers: true,
+      removeHeadersFooters: false,
+      removeWatermarks: true,
+      removeRepeatingPatterns: false,
+    });
+
+    if (!parseResult.success) {
       await db.collection('agreementDocs').doc(testNumber).set(
         {
           parseStatus: 'failed',
-          parseError: String(error),
+          parseError: parseResult.error || 'PDF 파싱에 실패했습니다.',
         },
         { merge: true }
       );
       return;
     }
 
-    console.log(`[DEBUG] PDF Text Start: ${text.substring(0, 500)}`);
+    const text = parseResult.cleanedText;
 
     if (!text.trim()) {
-      console.log('저장 시도 중...');
       await db.collection('agreementDocs').doc(testNumber).set(
         {
           parseStatus: 'failed',
@@ -115,28 +107,24 @@ export const onAgreementUpload = onObjectFinalized({ region: REGION }, async (ev
       return;
     }
 
-    // 추출 로직 실행
-    const parsed = extractAgreementFields(text);
-    const cleanParsed = removeUndefined(parsed);
-    const parseStatus = text.trim() ? 'parsed' : 'failed';
+    // 추출 로직 실행 (confidence 포함)
+    const { extractionRate, fieldConfidence, ...fieldValues } = extractAgreementFields(text);
+    const cleanParsed = removeUndefined(fieldValues);
 
-    // 진행 상황 업데이트 (옵션)
-    if (parseStatus === 'parsed') {
-      await db.collection('agreementDocs').doc(testNumber).set(
-        {
-          parseProgress: 50,
-          parsed: cleanParsed
-        }, 
-        { merge: true }
-      );
-    }
+    // 진행 상황 업데이트
+    await db.collection('agreementDocs').doc(testNumber).set(
+      { parseProgress: 50, parsed: cleanParsed },
+      { merge: true }
+    );
 
-    // 최종 저장
-    console.log('저장 시도 중...');
+    // 최종 저장 (confidence + extractionRate 포함)
     await db.collection('agreementDocs').doc(testNumber).set(
       {
-        parseStatus,
+        parseStatus: 'parsed',
         parsed: cleanParsed,
+        extractionRate,
+        fieldConfidence,
+        userVerified: false,
         parsedAt: FieldValue.serverTimestamp(),
         parseProgress: 100,
       },
@@ -290,11 +278,150 @@ const extractAgreementFields = (text: string) => {
 
   const cleanName = (raw: string) => {
     return raw
-      .replace(/\([^)]*\)/g, '')
       .replace(/\s*영문명[\s\S]*$/g, '')
-      .replace(/[A-Za-z]/g, '')
+      .replace(/\([^)]*\)/g, '')
       .replace(/\s{2,}/g, ' ')
       .trim();
+  };
+
+  const extractTestTarget = () => {
+    // "제품 구성" section: text between "제품 구성" and "제조자"
+    const m = execOnce(/제품\s*구성\s*\n([\s\S]+?)제조자/, normalized);
+    if (!m?.[1]) return undefined;
+    const lines = m[1].split('\n')
+      .map(l => l.trim())
+      .filter(l => l && l.length > 1 && !/^TIS-\d/.test(l) && !/한국정보통신/.test(l));
+    if (lines.length === 0) return undefined;
+    return lines.map(l => l.replace(/^-\s*/, '')).join(', ');
+  };
+
+  const extractTestEnvironment = () => {
+    // Full environment section: 2.2 시험환경 ~ 시험기간
+    const envMatch = execOnce(
+      /2\.2\s*시험환경[\s\S]+?(?=\n\s*\d+\.\s*시험기간)/,
+      normalized
+    );
+    const envSection = envMatch?.[0] || '';
+
+    // Equipment subsection: 시험용 장비 ~ 시험용 데이터 or 다중 웹브라우저
+    const equipMatch = execOnce(
+      /시험용\s*\n\s*장비[\s\S]+?(?=시험용\s*\n\s*데이터|다중\s*\n\s*웹브라우저)/,
+      normalized
+    );
+    const equipSection = equipMatch?.[0] || envSection;
+
+    // 1. hasServer: dedicated server entries "(N대)" preceded by 서버
+    const hasServer = /서버\s*\n\s*\(\s*\d+\s*대\s*\)/.test(equipSection) ? '유' : '무';
+
+    // 2. requiredEquipmentCount
+    let totalEquip = 0;
+    // Structured table: "(N대)"
+    const structuredCounts = [...equipSection.matchAll(/\(\s*(\d+)\s*대\s*\)/g)];
+    for (const mc of structuredCounts) totalEquip += parseInt(mc[1]);
+    // Free-form fallback: "N대," or "N대 " (e.g., "PC 5대, VR HMD 4대")
+    if (totalEquip === 0) {
+      const freeFormCounts = [...equipSection.matchAll(/(\d+)\s*대[,\s]/g)];
+      for (const mc of freeFormCounts) totalEquip += parseInt(mc[1]);
+    }
+    const requiredEquipmentCount = totalEquip > 0 ? String(totalEquip) : undefined;
+
+    // 3. operatingSystem: all "OS:" values
+    const osMatches = [...envSection.matchAll(/OS\s*:\s*([^\n]+)/gi)];
+    const osList = osMatches.map(om => om[1].trim()).filter(Boolean);
+    const operatingSystem = osList.length > 0 ? [...new Set(osList)].join(', ') : undefined;
+
+    // 4. hardwareSpec: first server's CPU/메모리/Storage/GPU
+    const specs: string[] = [];
+    const cpuM = execOnce(/CPU\s*:\s*([^\n]+)/i, envSection);
+    if (cpuM) specs.push(`CPU: ${cpuM[1].trim()}`);
+    const memM = execOnce(/(?:메모리|Memory)\s*:\s*([^,\n]+)/i, envSection);
+    if (memM) specs.push(`메모리: ${memM[1].trim()}`);
+    const stoM = execOnce(/(?:Storage|Stroage)\s*:\s*([^,\n]+)/i, envSection);
+    if (stoM) specs.push(`Storage: ${stoM[1].trim()}`);
+    const gpuM = execOnce(/GPU\s*:\s*([^\n]+)/i, envSection);
+    if (gpuM) specs.push(`GPU: ${gpuM[1].trim()}`);
+    const hardwareSpec = specs.length > 0 ? specs.join(', ') : undefined;
+
+    // 5. networkEnvironment
+    const netParts: string[] = [];
+    const netLine = execOnce(/Network\s*:\s*([^\n]+)/i, envSection);
+    if (netLine) netParts.push(netLine[1].trim());
+    // "<시험환경 구성에 필요한 기타 사항>" subsection content
+    const envEtcMatch = execOnce(
+      /시험환경\s*구성에\s*필요한\s*기타\s*사항[>》]?\s*\n([\s\S]+?)(?=시험용\s*\n\s*데이터|GS인증|TIS-\d)/,
+      envSection
+    );
+    if (envEtcMatch?.[1]) {
+      const etcLines = envEtcMatch[1].split('\n')
+        .map(l => l.trim())
+        .filter(l => l && l.length > 1 && !/^TIS-\d/.test(l) && !/한국정보통신/.test(l) && !/^GS인증/.test(l))
+        .map(l => l.replace(/^-\s*/, ''));
+      if (etcLines.length > 0) netParts.push(etcLines.join(' '));
+    }
+    if (netParts.length === 0 && /인터넷\s*(?:망\s*)?(?:연결\s*)?필요/.test(envSection)) {
+      netParts.push('인터넷 연결 필요');
+    }
+    const networkEnvironment = netParts.length > 0 ? netParts.join('; ') : undefined;
+
+    // 6. otherEnvironment: "기타 사항" form field
+    const etcFormMatch = execOnce(
+      /기타\s*\n\s*사항\s*\n([\s\S]+?)(?=추가\s*\n?\s*협의\s*\n?\s*내용)/,
+      envSection
+    );
+    let otherEnvironment: string | undefined;
+    if (etcFormMatch?.[1]) {
+      const cleaned = etcFormMatch[1].split('\n')
+        .map(l => l.trim())
+        .filter(l => l && l.length > 1 && !/^TIS-\d/.test(l) && !/한국정보통신/.test(l) && !/^GS인증/.test(l))
+        .join(' ')
+        .trim();
+      if (cleaned && cleaned !== '-' && !/^해당\s*없음$/.test(cleaned)) {
+        otherEnvironment = cleaned.length > 500 ? cleaned.substring(0, 500) + '...' : cleaned;
+      }
+    }
+
+    // 7. equipmentPreparation
+    const prepSet = new Set<string>();
+    if (/신청\s*\n?\s*기업/.test(equipSection)) prepSet.add('신청 기업');
+    const equipLines = equipSection.split('\n');
+    for (const line of equipLines) {
+      if (/^\s*TTA\s*$/.test(line) || /\bTTA\s*$/.test(line)) prepSet.add('TTA');
+    }
+    if (/장비\s*일체를?\s*신청\s*기업에서\s*제공/.test(equipSection)) prepSet.add('신청 기업');
+    const equipmentPreparation = prepSet.size > 0 ? [...prepSet].join(', ') : undefined;
+
+    return {
+      hasServer,
+      requiredEquipmentCount,
+      operatingSystem,
+      hardwareSpec,
+      networkEnvironment,
+      otherEnvironment,
+      equipmentPreparation,
+    };
+  };
+
+  const extractWorkingDays = () => {
+    // Primary: "시험 시작일로부터 N 일(Working Day 기준)"
+    const m1 = execOnce(/시험\s*시작일로부터\s*(\d+)\s*일/, normalized);
+    if (m1?.[1]) return m1[1];
+
+    // Fallback: "소요기간 N일"
+    const m2 = execOnce(
+      /(?:시험\s*)?소요\s*기간[\s\S]{0,100}?(\d+)\s*(?:일|영업일|근무일)/,
+      normalized
+    );
+    if (m2?.[1]) return m2[1];
+
+    return undefined;
+  };
+
+  const computeConfidence = (value: string | undefined): number => {
+    if (!value || !value.trim() || value === '확인 필요') return 0;
+    let score = 70;
+    if (value.length >= 2 && value.length <= 100) score += 15;
+    if (/[가-힣a-zA-Z0-9]/.test(value)) score += 15;
+    return Math.min(score, 100);
   };
 
   const { department, jobTitle } = extractDepartmentAndTitle(normalized);
@@ -303,6 +430,9 @@ const extractAgreementFields = (text: string) => {
   const managerEmail = findEmail() || '';
   const companyName = extractCompanyName() || '';
   const productNameKo = extractProductName() || '';
+  const workingDays = extractWorkingDays();
+  const testTarget = extractTestTarget();
+  const env = extractTestEnvironment();
 
   const applicationNumberMatch = normalized.match(/GS-A-\d{2}-\d{4}/);
   const applicationNumber = applicationNumberMatch?.[0] || findValueByLine(/시험신청번호\s*[:：]?\s*([^\n]+)/) || '-';
@@ -317,7 +447,7 @@ const extractAgreementFields = (text: string) => {
     [normalized, compact]
   );
 
-  return {
+  const fields: Record<string, string | undefined> = {
     applicationNumber,
     contractType,
     certificationType,
@@ -328,7 +458,29 @@ const extractAgreementFields = (text: string) => {
     managerJobTitle: jobTitle,
     companyName,
     productNameKo,
+    workingDays,
+    testTarget,
+    hasServer: env.hasServer,
+    requiredEquipmentCount: env.requiredEquipmentCount,
+    operatingSystem: env.operatingSystem,
+    hardwareSpec: env.hardwareSpec,
+    networkEnvironment: env.networkEnvironment,
+    otherEnvironment: env.otherEnvironment,
+    equipmentPreparation: env.equipmentPreparation,
   };
+
+  const totalFields = Object.keys(fields).length;
+  const extractedCount = Object.values(fields).filter(
+    (v) => v && v.trim() && v !== '확인 필요'
+  ).length;
+  const extractionRate = Math.round((extractedCount / totalFields) * 100);
+
+  const fieldConfidence: Record<string, number> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    fieldConfidence[key] = computeConfidence(value);
+  }
+
+  return { ...fields, extractionRate, fieldConfidence };
 };
 
 // ==========================================

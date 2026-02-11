@@ -1,8 +1,7 @@
 import type { ChecklistItem, Defect, ExecutionGateState, ExecutionItemGate, ReviewData } from '../../../types';
+import { EXECUTION_GATE_CONFIG } from 'virtual:content/rules';
 
-const REGRESSION_ITEM_ID = 'DUR-EXEC-03';
-const SECURITY_ITEM_ID = 'DUR-EXEC-04';
-const PERFORMANCE_ITEM_ID = 'DUR-EXEC-02';
+const { regressionItemId: REGRESSION_ITEM_ID, securityItemId: SECURITY_ITEM_ID, performanceItemId: PERFORMANCE_ITEM_ID } = EXECUTION_GATE_CONFIG;
 
 type ExecutionGateInput = {
   checklist: ChecklistItem[];

@@ -9,7 +9,6 @@ import type {
   QuickAnswer,
   QuickDecision,
   QuickModeItem,
-  QuickQuestionId,
   QuickReviewAnswer,
   ReviewData,
   UserProfile
@@ -125,7 +124,7 @@ export function ExecutionPage() {
 
   const quickModeItem = activeItem ? quickModeById[activeItem.id] : undefined;
   const quickReview = quickModeItem ? quickReviewById[quickModeItem.requirementId] : undefined;
-  const quickAnswers = quickReview?.answers || { Q1: 'NA', Q2: 'NA', Q3: 'NA' };
+  const quickAnswers = quickReview?.answers || {};
   const quickInputValues: QuickInputValues = quickReview?.inputValues || {};
   let recommendation: QuickDecision = quickModeItem
     ? getRecommendation(quickModeItem.quickQuestions, quickAnswers)
@@ -207,7 +206,7 @@ export function ExecutionPage() {
         [id]: {
           ...(prev[id] || {
             requirementId: id,
-            answers: { Q1: 'NA', Q2: 'NA', Q3: 'NA' },
+            answers: {},
             autoRecommendation: recommendation
           }),
           finalDecision: statusToDecision[value as ReviewData['status']]
@@ -224,7 +223,7 @@ export function ExecutionPage() {
         [id]: {
           ...(prev[id] || {
             requirementId: id,
-            answers: { Q1: 'NA', Q2: 'NA', Q3: 'NA' },
+            answers: {},
             autoRecommendation: recommendation
           }),
           note: value as string
@@ -233,14 +232,14 @@ export function ExecutionPage() {
     }
   };
 
-  const updateQuickAnswer = (itemId: string, questionId: QuickQuestionId, value: QuickAnswer) => {
+  const updateQuickAnswer = (itemId: string, questionId: string, value: QuickAnswer) => {
     if (itemGates[itemId]?.state !== 'enabled') return;
     const item = quickModeById[itemId];
     if (!item) return;
     setQuickReviewById((prev) => {
       const existing = prev[itemId] || {
         requirementId: itemId,
-        answers: { Q1: 'NA', Q2: 'NA', Q3: 'NA' },
+        answers: {},
         autoRecommendation: 'HOLD' as QuickDecision
       };
       const nextAnswers = { ...existing.answers, [questionId]: value };
@@ -270,7 +269,7 @@ export function ExecutionPage() {
     setQuickReviewById((prev) => {
       const existing = prev[itemId] || {
         requirementId: itemId,
-        answers: { Q1: 'NA', Q2: 'NA', Q3: 'NA' },
+        answers: {},
         autoRecommendation: 'HOLD' as QuickDecision
       };
       return {

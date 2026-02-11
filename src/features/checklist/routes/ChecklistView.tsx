@@ -6,7 +6,6 @@ import type {
   ExecutionItemGate,
   QuickAnswer,
   QuickModeItem,
-  QuickQuestionId,
   QuickReviewAnswer,
   ReviewData
 } from '../../../types';
@@ -25,7 +24,7 @@ type ChecklistViewProps = {
   quickModeItem?: QuickModeItem;
   quickAnswers: Record<string, QuickAnswer>;
   quickInputValues: QuickInputValues;
-  onQuickAnswer: (itemId: string, questionId: QuickQuestionId, value: QuickAnswer) => void;
+  onQuickAnswer: (itemId: string, questionId: string, value: QuickAnswer) => void;
   onInputChange: (itemId: string, fieldId: string, value: QuickInputValue) => void;
   itemGates: Record<string, ExecutionItemGate>;
   isFinalized: boolean;

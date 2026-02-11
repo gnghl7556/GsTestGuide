@@ -76,21 +76,21 @@ export function DashboardPage() {
   }, [filteredProjects]);
 
   return (
-    <div className="min-h-screen bg-slate-50/60 p-4 text-slate-800">
+    <div className="min-h-screen bg-surface-raised p-4 text-tx-primary">
       <div className="max-w-[1400px] mx-auto space-y-4">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+        <div className="bg-surface-base rounded-xl border border-ln shadow-sm p-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-extrabold text-gray-900">통합 대시보드</h1>
-              <p className="text-xs text-gray-500 mt-1">담당 프로젝트 일정 캘린더</p>
+              <h1 className="text-lg font-extrabold text-tx-primary">통합 대시보드</h1>
+              <p className="text-xs text-tx-tertiary mt-1">담당 프로젝트 일정 캘린더</p>
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-tx-tertiary">
               사용자: {currentUserId || '미선택'}
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+        <div className="bg-surface-base rounded-xl border border-ln shadow-sm p-4">
           <div className="h-[70vh]">
             <Calendar
               localizer={localizer}

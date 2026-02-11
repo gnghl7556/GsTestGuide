@@ -3,6 +3,9 @@ export type DocEntry = { docType: string; fileName?: string; url?: string; sourc
 export type AgreementParsed = {
   parseStatus?: 'pending' | 'parsed' | 'failed';
   parseProgress?: number;
+  extractionRate?: number;
+  fieldConfidence?: Record<string, number>;
+  userVerified?: boolean;
   applicationNumber?: string;
   contractType?: string;
   certificationType?: string;
@@ -14,6 +17,14 @@ export type AgreementParsed = {
   managerDepartment?: string;
   managerJobTitle?: string;
   workingDays?: string;
+  testTarget?: string;
+  hasServer?: string;
+  requiredEquipmentCount?: string;
+  operatingSystem?: string;
+  hardwareSpec?: string;
+  networkEnvironment?: string;
+  otherEnvironment?: string;
+  equipmentPreparation?: string;
 };
 
 export type TestSetupState = {

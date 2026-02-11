@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+    darkMode: 'class',
     content: [
       "./index.html",
       "./src/**/*.{js,ts,jsx,tsx}",
@@ -77,8 +78,61 @@ export default {
             600: "#475569",
             700: "#334155",
             800: "#1f2937",
-            900: "#111827"
-          }
+            900: "#111827",
+            base: 'var(--surface-base)',
+            raised: 'var(--surface-raised)',
+            sunken: 'var(--surface-sunken)',
+            overlay: 'var(--surface-overlay)',
+          },
+          tx: {
+            primary: 'var(--text-primary)',
+            secondary: 'var(--text-secondary)',
+            tertiary: 'var(--text-tertiary)',
+            muted: 'var(--text-muted)',
+          },
+          ln: {
+            DEFAULT: 'var(--border-default)',
+            subtle: 'var(--border-subtle)',
+            strong: 'var(--border-strong)',
+          },
+          accent: {
+            DEFAULT: 'var(--accent)',
+            hover: 'var(--accent-hover)',
+            subtle: 'var(--accent-subtle)',
+            text: 'var(--accent-text)',
+          },
+          interactive: {
+            bg: 'var(--interactive-bg)',
+            hover: 'var(--interactive-hover)',
+            border: 'var(--interactive-border)',
+            text: 'var(--interactive-text)',
+          },
+          danger: {
+            DEFAULT: 'var(--danger)',
+            hover: 'var(--danger-hover)',
+            subtle: 'var(--danger-subtle)',
+            text: 'var(--danger-text)',
+          },
+          input: {
+            bg: 'var(--input-bg)',
+            border: 'var(--input-border)',
+            text: 'var(--input-text)',
+            placeholder: 'var(--input-placeholder)',
+          },
+          status: {
+            'pass-bg': 'var(--status-pass-bg)',
+            'pass-text': 'var(--status-pass-text)',
+            'pass-border': 'var(--status-pass-border)',
+            'fail-bg': 'var(--status-fail-bg)',
+            'fail-text': 'var(--status-fail-text)',
+            'fail-border': 'var(--status-fail-border)',
+            'hold-bg': 'var(--status-hold-bg)',
+            'hold-text': 'var(--status-hold-text)',
+            'hold-border': 'var(--status-hold-border)',
+            'pending-bg': 'var(--status-pending-bg)',
+            'pending-text': 'var(--status-pending-text)',
+            'pending-border': 'var(--status-pending-border)',
+          },
         }
       },
     },

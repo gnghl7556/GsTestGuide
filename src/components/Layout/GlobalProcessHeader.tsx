@@ -1,5 +1,6 @@
-import { Building2, LogOut, User, List, Mail, Phone } from 'lucide-react';
+import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useTheme } from '../../providers/ThemeProvider';
 
 export type GlobalProjectInfo = {
   testNumber?: string;
@@ -27,6 +28,8 @@ const safeValue = (value?: string | number) => {
   return String(value);
 };
 
+const iconBtnCls = 'inline-flex items-center justify-center h-9 w-9 rounded-lg border border-ln text-tx-tertiary hover:text-tx-primary hover:border-ln-strong';
+
 export function GlobalProcessHeader({
   currentStep,
   projectInfo,
@@ -34,6 +37,7 @@ export function GlobalProcessHeader({
   onLogout,
   onOpenTestList
 }: GlobalProcessHeaderProps) {
+  const { theme, toggleTheme } = useTheme();
   const [companyOpen, setCompanyOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const companyPanelRef = useRef<HTMLDivElement | null>(null);
@@ -59,52 +63,61 @@ export function GlobalProcessHeader({
 
   return (
     <div className="sticky top-0 z-30 w-full">
-      <div className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 text-slate-800">
+      <div className="flex h-16 items-center justify-between border-b border-ln bg-surface-base px-6 text-tx-primary">
         <div className="text-sm font-semibold flex items-center gap-2 min-w-0">
           <button
             type="button"
             onClick={onOpenTestList}
-            className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300"
+            className={iconBtnCls}
             aria-label="시험 목록"
             title="시험 목록"
           >
             <List size={16} />
           </button>
-          <span className="font-extrabold text-slate-900">{testNumber}</span>
-          <span className="text-slate-300">|</span>
-          <span className="text-slate-700 truncate">{projectName}</span>
-          <span className="text-slate-300">|</span>
-          <span className="text-slate-600 truncate">{companyName}</span>
+          <span className="font-extrabold text-tx-primary">{testNumber}</span>
+          <span className="text-tx-muted">|</span>
+          <span className="text-tx-secondary truncate">{projectName}</span>
+          <span className="text-tx-muted">|</span>
+          <span className="text-tx-tertiary truncate">{companyName}</span>
         </div>
         {rightSlot && (
-          <div className="hidden md:flex items-center gap-5 text-[11px] text-slate-600">
+          <div className="hidden md:flex items-center gap-5 text-[11px] text-tx-tertiary">
             {rightSlot}
           </div>
         )}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={iconBtnCls}
+            aria-label={theme === 'dark' ? '라이트 모드' : '다크 모드'}
+            title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
           <div className="relative" ref={companyPanelRef}>
             <button
               type="button"
               onClick={() => setCompanyOpen((prev) => !prev)}
-              className="inline-flex items-center gap-2 h-9 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:border-slate-300"
+              className="inline-flex items-center gap-2 h-9 rounded-lg border border-ln px-3 text-xs font-semibold text-tx-secondary hover:text-tx-primary hover:border-ln-strong"
             >
               업체정보
               <Building2 size={14} />
             </button>
             {companyOpen && (
-              <div className="absolute right-0 top-10 z-20 w-56 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-xl">
-                <div className="text-[10px] font-semibold text-slate-500 mb-2">업체 담당자</div>
+              <div className="absolute right-0 top-10 z-20 w-56 rounded-lg border border-ln bg-surface-overlay p-3 text-xs text-tx-secondary shadow-xl">
+                <div className="text-[10px] font-semibold text-tx-muted mb-2">업체 담당자</div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <User size={12} className="text-slate-400" />
+                    <User size={12} className="text-tx-muted" />
                     <span>{companyContactName}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Phone size={12} className="text-slate-400" />
+                    <Phone size={12} className="text-tx-muted" />
                     <span>{companyContactPhone}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Mail size={12} className="text-slate-400" />
+                    <Mail size={12} className="text-tx-muted" />
                     <span>{companyContactEmail}</span>
                   </div>
                 </div>
@@ -114,7 +127,7 @@ export function GlobalProcessHeader({
           <button
             type="button"
             onClick={() => setLogoutConfirmOpen(true)}
-            className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200 text-slate-600 hover:text-red-600 hover:border-red-300"
+            className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-ln text-tx-tertiary hover:text-danger hover:border-danger"
             aria-label="로그아웃"
             title="로그아웃"
           >
@@ -123,19 +136,19 @@ export function GlobalProcessHeader({
         </div>
       </div>
       {logoutConfirmOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white shadow-xl">
-            <div className="border-b border-slate-200 px-4 py-3 text-sm font-extrabold text-slate-900">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[var(--overlay-backdrop)] p-4">
+          <div className="w-full max-w-sm rounded-xl border border-ln bg-surface-overlay shadow-xl">
+            <div className="border-b border-ln px-4 py-3 text-sm font-extrabold text-tx-primary">
               로그아웃 확인
             </div>
-            <div className="px-4 py-3 text-sm text-slate-600">
+            <div className="px-4 py-3 text-sm text-tx-secondary">
               현재 사용자를 로그아웃하시겠습니까?
             </div>
-            <div className="flex justify-end gap-2 border-t border-slate-200 px-4 py-3">
+            <div className="flex justify-end gap-2 border-t border-ln px-4 py-3">
               <button
                 type="button"
                 onClick={() => setLogoutConfirmOpen(false)}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800"
+                className="rounded-lg border border-ln px-3 py-1.5 text-xs font-semibold text-tx-tertiary hover:text-tx-primary"
               >
                 취소
               </button>
@@ -145,7 +158,7 @@ export function GlobalProcessHeader({
                   setLogoutConfirmOpen(false);
                   onLogout?.();
                 }}
-                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                className="rounded-lg bg-danger px-3 py-1.5 text-xs font-semibold text-white hover:bg-danger-hover"
               >
                 로그아웃
               </button>

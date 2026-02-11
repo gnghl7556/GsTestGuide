@@ -100,7 +100,7 @@ export function TestCaseManager() {
 
       <PageFilterBar>
         <select
-          className="rounded-md border border-surface-200 bg-white px-2 py-1 text-xs text-primary-700"
+          className="rounded-md border border-surface-200 bg-surface-base px-2 py-1 text-xs text-primary-700"
           value={selectedFeature}
           onChange={(e) => setSelectedFeature(e.target.value)}
         >
@@ -112,7 +112,7 @@ export function TestCaseManager() {
           ))}
         </select>
         <select
-          className="rounded-md border border-surface-200 bg-white px-2 py-1 text-xs text-primary-700"
+          className="rounded-md border border-surface-200 bg-surface-base px-2 py-1 text-xs text-primary-700"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
         >
@@ -141,7 +141,7 @@ export function TestCaseManager() {
 
       <PageContent className="p-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2.2fr_1fr]">
-          <section className="rounded-xl border border-surface-200 bg-white p-4 flex flex-col">
+          <section className="rounded-xl border border-surface-200 bg-surface-base p-4 flex flex-col">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-primary-900">TC 목록</div>
               <div className="text-xs text-primary-400">{filteredCases.length}개</div>
@@ -151,7 +151,7 @@ export function TestCaseManager() {
             ) : (
               <div className="mt-3 overflow-auto">
                 <table className="min-w-full text-xs">
-                  <thead className="bg-slate-100 text-primary-700">
+                  <thead className="bg-surface-sunken text-primary-700">
                     <tr>
                       <th className="px-3 py-2 text-left font-semibold">TC ID</th>
                       <th className="px-3 py-2 text-left font-semibold">기능</th>
@@ -164,8 +164,8 @@ export function TestCaseManager() {
                     {filteredCases.map((tc, idx) => (
                       <tr
                         key={tc.id}
-                        className={`border-b border-surface-200 hover:bg-slate-50 transition-colors ${
-                          selectedId === tc.id ? 'bg-slate-50' : ''
+                        className={`border-b border-surface-200 hover:bg-interactive-hover transition-colors ${
+                          selectedId === tc.id ? 'bg-surface-raised' : ''
                         }`}
                         onClick={() => setSelectedId(tc.id)}
                       >
@@ -205,7 +205,7 @@ export function TestCaseManager() {
             )}
 
             {selectedCase && (
-              <div className="mt-4 rounded-lg border border-surface-200 bg-white p-4">
+              <div className="mt-4 rounded-lg border border-surface-200 bg-surface-base p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-sm font-semibold text-primary-900">TC 편집</div>
                   <button
@@ -302,7 +302,7 @@ export function TestCaseManager() {
             )}
           </section>
 
-          <aside className="rounded-xl border border-surface-200 bg-white p-4 space-y-3">
+          <aside className="rounded-xl border border-surface-200 bg-surface-base p-4 space-y-3">
             <div className="text-sm font-semibold text-primary-900">새 TC 추가</div>
             <select
               className="w-full rounded-md border border-surface-200 px-2 py-1 text-xs text-primary-700"

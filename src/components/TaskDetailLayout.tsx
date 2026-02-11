@@ -71,18 +71,18 @@ export function TaskDetailLayout() {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
+    <div className="bg-surface-base rounded-xl border border-ln p-6 space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-ln pb-4">
         <div>
           <h2 className="text-lg font-bold">과제 상세</h2>
-          <p className="text-sm text-gray-500">GS-A-25-0193 / GS 시험 가이드</p>
+          <p className="text-sm text-tx-tertiary">GS-A-25-0193 / GS 시험 가이드</p>
         </div>
         <div className="flex items-center gap-3 text-xs">
-          <span className="text-gray-500">PL: 김테스터</span>
-          <a className="text-blue-600 hover:underline" href="#" onClick={(e) => e.preventDefault()}>
+          <span className="text-tx-tertiary">PL: 김테스터</span>
+          <a className="text-accent-text hover:underline" href="#" onClick={(e) => e.preventDefault()}>
             협약서
           </a>
-          <a className="text-blue-600 hover:underline" href="#" onClick={(e) => e.preventDefault()}>
+          <a className="text-accent-text hover:underline" href="#" onClick={(e) => e.preventDefault()}>
             제품 매뉴얼
           </a>
         </div>
@@ -90,25 +90,25 @@ export function TaskDetailLayout() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_2fr_1.2fr] gap-6">
         <section className="space-y-4">
-          <h3 className="text-sm font-bold text-gray-700">프로세스 타임라인</h3>
+          <h3 className="text-sm font-bold text-tx-secondary">프로세스 타임라인</h3>
           <div className="space-y-3">
             {stageData.map((stage) => (
               <div
                 key={stage.name}
                 className={`rounded-lg border px-3 py-2 ${
-                  stage.status === '진행 중' ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-white'
+                  stage.status === '진행 중' ? 'border-accent bg-accent-subtle' : 'border-ln bg-surface-base'
                 }`}
               >
-                <div className="flex items-center justify-between text-sm font-semibold text-gray-700">
+                <div className="flex items-center justify-between text-sm font-semibold text-tx-secondary">
                   <span>{stage.name}</span>
-                  <span className="text-xs text-gray-500">{stage.status}</span>
+                  <span className="text-xs text-tx-tertiary">{stage.status}</span>
                 </div>
                 {stage.status === '진행 중' && (
-                  <ul className="mt-2 space-y-1 text-xs text-gray-600">
+                  <ul className="mt-2 space-y-1 text-xs text-tx-secondary">
                     {stage.tasks.map((task) => (
                       <li key={task.id} className="flex items-center justify-between">
                         <span>{task.title}</span>
-                        <span className="text-[10px] text-gray-400">{task.status}</span>
+                        <span className="text-[10px] text-tx-muted">{task.status}</span>
                       </li>
                     ))}
                   </ul>
@@ -120,12 +120,12 @@ export function TaskDetailLayout() {
 
         <section className="space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-gray-700">과제 내용</h3>
-            <p className="text-sm text-gray-500 mt-1">설치 및 초기 구동 절차를 확인합니다.</p>
+            <h3 className="text-sm font-bold text-tx-secondary">과제 내용</h3>
+            <p className="text-sm text-tx-tertiary mt-1">설치 및 초기 구동 절차를 확인합니다.</p>
           </div>
-          <div className="rounded-lg border border-gray-200 bg-slate-50 p-4 space-y-3">
-            <h4 className="text-sm font-bold text-gray-700">체크리스트</h4>
-            <ul className="space-y-2 text-sm text-gray-600">
+          <div className="rounded-lg border border-ln bg-surface-raised p-4 space-y-3">
+            <h4 className="text-sm font-bold text-tx-secondary">체크리스트</h4>
+            <ul className="space-y-2 text-sm text-tx-secondary">
               {checklist.map((item) => (
                 <li key={item.id} className="flex items-start gap-2">
                   <input
@@ -134,7 +134,7 @@ export function TaskDetailLayout() {
                     onChange={() => toggleChecklist(item.id)}
                     className="mt-1"
                   />
-                  <span className={item.isCompleted ? 'line-through text-gray-400' : ''}>{item.content}</span>
+                  <span className={item.isCompleted ? 'line-through text-tx-muted' : ''}>{item.content}</span>
                 </li>
               ))}
             </ul>
@@ -143,15 +143,15 @@ export function TaskDetailLayout() {
 
         <section className="space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-gray-700">작업 패널</h3>
-            <p className="text-xs text-gray-500 mt-1">상태 업데이트와 증빙 관리</p>
+            <h3 className="text-sm font-bold text-tx-secondary">작업 패널</h3>
+            <p className="text-xs text-tx-tertiary mt-1">상태 업데이트와 증빙 관리</p>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {(['완료', '보류', '실패'] as TaskStatus[]).map((value) => (
               <button
                 key={value}
                 className={`rounded-lg border px-2 py-2 text-xs font-bold ${
-                  status === value ? 'border-slate-800 bg-slate-800 text-white' : 'border-gray-200 text-gray-500'
+                  status === value ? 'border-accent bg-accent text-white' : 'border-ln text-tx-tertiary'
                 }`}
                 onClick={() => setStatus(value)}
               >
@@ -159,35 +159,35 @@ export function TaskDetailLayout() {
               </button>
             ))}
           </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-2">
-            <h4 className="text-xs font-bold text-gray-700">첨부 파일</h4>
-            <input type="file" className="text-xs text-gray-500" />
-            <p className="text-[10px] text-gray-400">Firebase Storage 연동 예정</p>
+          <div className="rounded-lg border border-ln bg-surface-base p-3 space-y-2">
+            <h4 className="text-xs font-bold text-tx-secondary">첨부 파일</h4>
+            <input type="file" className="text-xs text-tx-tertiary" />
+            <p className="text-[10px] text-tx-muted">Firebase Storage 연동 예정</p>
           </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-3 space-y-3">
-            <h4 className="text-xs font-bold text-gray-700">코멘트</h4>
+          <div className="rounded-lg border border-ln bg-surface-base p-3 space-y-3">
+            <h4 className="text-xs font-bold text-tx-secondary">코멘트</h4>
             <div className="flex gap-2">
               <input
-                className="flex-1 rounded-md border border-gray-200 px-2 py-1 text-xs"
+                className="flex-1 rounded-md border border-ln px-2 py-1 text-xs"
                 placeholder="코멘트를 입력하세요"
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
               />
               <button
-                className="rounded-md bg-slate-800 px-3 py-1 text-xs font-bold text-white"
+                className="rounded-md bg-accent px-3 py-1 text-xs font-bold text-white"
                 onClick={addComment}
               >
                 추가
               </button>
             </div>
-            <ul className="space-y-2 text-xs text-gray-600">
+            <ul className="space-y-2 text-xs text-tx-secondary">
               {comments.map((comment) => (
-                <li key={comment.id} className="rounded-md bg-slate-50 p-2">
-                  <div className="flex items-center justify-between text-[10px] text-gray-400">
+                <li key={comment.id} className="rounded-md bg-surface-raised p-2">
+                  <div className="flex items-center justify-between text-[10px] text-tx-muted">
                     <span>{comment.authorName}</span>
                     <span>{comment.createdAt}</span>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">{comment.content}</p>
+                  <p className="text-xs text-tx-secondary mt-1">{comment.content}</p>
                 </li>
               ))}
             </ul>

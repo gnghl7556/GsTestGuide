@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Building2, List, UploadCloud, User, Trash2 } from 'lucide-react';
+import { Building2, List, UploadCloud, User, Trash2, Eye } from 'lucide-react';
 import type {
   AgreementParsed,
   DocEntry,
@@ -10,6 +10,18 @@ import type {
   UserRank,
   UserUpdateInput
 } from '../../../types';
+import { AgreementVerifyModal } from './AgreementVerifyModal';
+import {
+  AccessDeniedModal,
+  AgreementDeleteConfirmModal,
+  AgreementFailedModal,
+  CreateUserModal,
+  DeleteUserConfirmModal,
+  EditUserModal,
+  ManageUsersModal,
+  ParsingOverlay,
+  ProjectListModal
+} from './modals';
 
 interface TestSetupPageProps {
   testNumber: string;
@@ -51,6 +63,7 @@ interface TestSetupPageProps {
   isParsingAgreement: boolean;
   parsingTestNumber: string | null;
   onAgreementModalConsumed: () => void;
+  onVerifiedSave: (corrected: Record<string, string>) => Promise<void>;
   onStartProject: () => Promise<{ ok: boolean; reason?: string }>;
   canProceed: boolean;
 }
@@ -89,6 +102,7 @@ export function TestSetupPage({
   isParsingAgreement,
   parsingTestNumber,
   onAgreementModalConsumed,
+  onVerifiedSave,
   onStartProject,
   canProceed
 }: TestSetupPageProps) {
@@ -162,23 +176,8 @@ export function TestSetupPage({
   const [agreementDeleteConfirmOpen, setAgreementDeleteConfirmOpen] = useState(false);
   const [projectListOpen, setProjectListOpen] = useState(false);
   const [createUserOpen, setCreateUserOpen] = useState(false);
-  const [createUserLoading, setCreateUserLoading] = useState(false);
-  const [newUserForm, setNewUserForm] = useState<{
-    name: string;
-    rank: UserRank | '';
-    email: string;
-    phone: string;
-  }>({
-    name: '',
-    rank: '',
-    email: '',
-    phone: ''
-  });
-  const [createUserError, setCreateUserError] = useState<string | null>(null);
   const [manageUsersOpen, setManageUsersOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
-  const [editUserLoading, setEditUserLoading] = useState(false);
-  const [editUserError, setEditUserError] = useState<string | null>(null);
   const [editUserForm, setEditUserForm] = useState<{
     id: string;
     name: string;
@@ -641,7 +640,7 @@ export function TestSetupPage({
                   </div>
                 )}
                 {!currentUserId && (
-                  <div className="absolute inset-0 z-10 rounded-2xl bg-slate-900/55 backdrop-blur-[2px] flex items-center justify-center text-center px-4">
+                  <div className="absolute inset-0 z-10 rounded-2xl bg-[var(--overlay-backdrop)] backdrop-blur-[2px] flex items-center justify-center text-center px-4">
                     <div>
                       <div className="text-sm font-semibold text-white/90">사용자 선택 필요</div>
                       <div className="mt-1 text-xs text-white/60">
@@ -790,7 +789,7 @@ export function TestSetupPage({
             {flowMode === 'existing' ? (
               <div className="mt-5 relative">
                 {!currentUserId && (
-                  <div className="absolute inset-0 z-10 rounded-2xl bg-slate-900/55 backdrop-blur-[2px] flex items-center justify-center text-center px-4">
+                  <div className="absolute inset-0 z-10 rounded-2xl bg-[var(--overlay-backdrop)] backdrop-blur-[2px] flex items-center justify-center text-center px-4">
                     <div>
                       <div className="text-sm font-semibold text-white/90">사용자 선택 필요</div>
                       <div className="mt-1 text-xs text-white/60">
@@ -964,6 +963,115 @@ export function TestSetupPage({
             </div>
             )}
 
+            {agreementParsed?.parseStatus === 'parsed' && (
+              <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold text-white/80">시험환경 정보</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAgreementModalStatus('parsed');
+                      setAgreementModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/70 hover:text-white hover:bg-white/20"
+                  >
+                    <Eye size={12} />
+                    상세 보기
+                  </button>
+                </div>
+
+                <div>
+                  <div className="text-[11px] text-white/50 mb-2">기본 정보</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">시험신청번호</div>
+                      <div className={`text-xs ${agreementParsed.applicationNumber ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.applicationNumber || '미추출'}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">계약 유형</div>
+                      <div className={`text-xs ${agreementParsed.contractType ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.contractType || '미추출'}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">인증 유형</div>
+                      <div className={`text-xs ${agreementParsed.certificationType ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.certificationType || '미추출'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[11px] text-white/50 mb-2">시험 정보</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">시험 대상</div>
+                      <div className={`text-xs ${agreementParsed.testTarget ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.testTarget || '미추출'}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">시험 소요일</div>
+                      <div className={`text-xs ${agreementParsed.workingDays ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.workingDays ? `${agreementParsed.workingDays}일` : '미추출'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[11px] text-white/50 mb-2">시험환경</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">서버 유무</div>
+                      <div className={`text-xs ${agreementParsed.hasServer ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.hasServer || '미추출'}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">필요 장비 수</div>
+                      <div className={`text-xs ${agreementParsed.requiredEquipmentCount ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.requiredEquipmentCount || '미추출'}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">운영체제</div>
+                      <div className={`text-xs ${agreementParsed.operatingSystem ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.operatingSystem || '미추출'}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">하드웨어 사양</div>
+                      <div className={`text-xs ${agreementParsed.hardwareSpec ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.hardwareSpec || '미추출'}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">네트워크 환경</div>
+                      <div className={`text-xs ${agreementParsed.networkEnvironment ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.networkEnvironment || '미추출'}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-white/40">기타 환경</div>
+                      <div className={`text-xs ${agreementParsed.otherEnvironment ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.otherEnvironment || '미추출'}
+                      </div>
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <div className="text-[10px] text-white/40">장비 준비</div>
+                      <div className={`text-xs ${agreementParsed.equipmentPreparation ? 'text-white/80' : 'text-white/30'}`}>
+                        {agreementParsed.equipmentPreparation || '미추출'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 sticky bottom-0 pt-4 pb-1 flex flex-col items-center gap-2">
               <div className="flex w-full max-w-lg items-center justify-center gap-3">
                 <button
@@ -1021,519 +1129,96 @@ export function TestSetupPage({
           </div>
         </div>
       </div>
-      {accessDeniedOpen && accessDeniedInfo && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-6">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div className="text-sm font-extrabold text-slate-900">접근 권한 없음</div>
-              <button
-                type="button"
-                onClick={() => setAccessDeniedOpen(false)}
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700"
-              >
-                닫기
-              </button>
-            </div>
-            <div className="px-5 py-4 text-sm text-slate-700 space-y-3">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-                선택한 시험은 현재 사용자에게 할당되지 않았습니다.
-              </div>
-              <div className="space-y-2 text-xs text-slate-600">
-                <div>
-                  <span className="font-semibold text-slate-700">시험원:</span>{' '}
-                  {accessDeniedInfo.testerName}
-                </div>
-                <div>
-                  <span className="font-semibold text-slate-700">담당 PL:</span>{' '}
-                  {accessDeniedInfo.plName}
-                </div>
-              </div>
-            </div>
-            <div className="border-t border-slate-200 px-5 py-3 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setAccessDeniedOpen(false)}
-                className="rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
+      <AccessDeniedModal
+        open={accessDeniedOpen && !!accessDeniedInfo}
+        onClose={() => setAccessDeniedOpen(false)}
+        testerName={accessDeniedInfo?.testerName ?? ''}
+        plName={accessDeniedInfo?.plName ?? ''}
+      />
+
+      {agreementModalOpen && agreementModalStatus === 'parsed' && agreementParsed && (
+        <AgreementVerifyModal
+          open
+          onClose={() => setAgreementModalOpen(false)}
+          parsed={agreementParsed}
+          onSave={onVerifiedSave}
+        />
       )}
 
-      {agreementModalOpen && agreementModalStatus && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/60 p-6">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div className="text-sm font-extrabold text-slate-900">
-                {agreementModalStatus === 'parsed' ? '합의서 추출 완료' : '합의서 추출 실패'}
-              </div>
-              <button
-                type="button"
-                onClick={() => setAgreementModalOpen(false)}
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700"
-              >
-                닫기
-              </button>
-            </div>
-            <div className="px-5 py-4 text-sm text-slate-700">
-              {agreementModalStatus === 'parsed' ? (
-                <div className="text-sm text-slate-600">합의서 추출이 완료되었습니다.</div>
-              ) : (
-                <div className="text-sm text-red-600">합의서 내용을 추출하지 못했습니다. 파일을 다시 업로드하거나 형식을 확인해주세요.</div>
-              )}
-            </div>
-            <div className="border-t border-slate-200 px-5 py-3 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setAgreementModalOpen(false)}
-                className="rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AgreementFailedModal
+        open={agreementModalOpen && agreementModalStatus === 'failed'}
+        onClose={() => setAgreementModalOpen(false)}
+      />
 
-      {agreementDeleteConfirmOpen && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/60 p-6">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div className="text-sm font-extrabold text-slate-900">시험 합의서 삭제</div>
-              <button
-                type="button"
-                onClick={() => setAgreementDeleteConfirmOpen(false)}
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700"
-              >
-                닫기
-              </button>
-            </div>
-            <div className="px-5 py-5 text-sm text-slate-700">
-              기존 시험 합의서 파일을 삭제하시겠습니까?
-              <span className="block mt-2 text-xs text-slate-500">(삭제 시, 추출한 정보가 초기화됩니다.)</span>
-            </div>
-            <div className="border-t border-slate-200 px-5 py-3 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setAgreementDeleteConfirmOpen(false)}
-                className="rounded-md border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAgreementDeleteConfirmOpen(false);
-                  onDeleteAgreementDoc();
-                }}
-                className="rounded-md bg-red-600 px-4 py-2 text-xs font-semibold text-white"
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AgreementDeleteConfirmModal
+        open={agreementDeleteConfirmOpen}
+        onClose={() => setAgreementDeleteConfirmOpen(false)}
+        onConfirm={() => onDeleteAgreementDoc()}
+      />
 
-      {projectListOpen && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/60 p-6">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div className="text-sm font-extrabold text-slate-900">전체 시험 목록</div>
-              <button
-                type="button"
-                onClick={() => setProjectListOpen(false)}
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700"
-              >
-                닫기
-              </button>
-            </div>
-            <div className="max-h-[60vh] overflow-auto px-5 py-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {visibleProjects.map((project) => {
-                  const isActive = trimmedTestNumber === project.testNumber;
-                  return (
-                    <button
-                      key={project.id}
-                      type="button"
-                      onClick={() => {
-                        onSelectProject(project.testNumber);
-                        setFlowMode('existing');
-                        setProjectListOpen(false);
-                      }}
-                      className={`rounded-xl border px-3 py-3 text-left text-sm transition ${
-                        isActive
-                          ? 'border-purple-400/60 bg-slate-900 text-white'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="text-xs text-slate-400 mb-1">시험번호</div>
-                      <div className="font-semibold tracking-wide">{project.testNumber}</div>
-                      {(project.projectName || project.companyName) && (
-                        <div className="mt-1 text-xs text-slate-500 truncate">
-                          {project.projectName || '-'}
-                          {project.companyName ? ` · ${project.companyName}` : ''}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProjectListModal
+        open={projectListOpen}
+        onClose={() => setProjectListOpen(false)}
+        projects={visibleProjects}
+        activeTestNumber={trimmedTestNumber}
+        onSelectProject={(testNumber) => {
+          onSelectProject(testNumber);
+          setFlowMode('existing');
+        }}
+      />
 
-      {createUserOpen && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/70 p-6">
-          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl text-white">
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-              <div className="text-sm font-extrabold">사용자 추가</div>
-              <button
-                type="button"
-                onClick={() => {
-                  setCreateUserOpen(false);
-                  setCreateUserError(null);
-                }}
-                className="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-white/60 hover:text-white"
-              >
-                닫기
-              </button>
-            </div>
-            <div className="px-5 py-4 space-y-3">
-              <div>
-                <label className="text-xs text-white/60 block mb-1">이름</label>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
-                  value={newUserForm.name}
-                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="홍길동"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/60 block mb-1">직급</label>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
-                  value={newUserForm.rank}
-                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, rank: e.target.value as UserRank | '' }))}
-                  placeholder="선임"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/60 block mb-1">이메일</label>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
-                  value={newUserForm.email}
-                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, email: e.target.value }))}
-                  placeholder="name@company.com"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/60 block mb-1">연락처</label>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
-                  value={newUserForm.phone}
-                  onChange={(e) => setNewUserForm((prev) => ({ ...prev, phone: e.target.value }))}
-                  placeholder="010-0000-0000"
-                />
-              </div>
-              {createUserError && <div className="text-xs text-red-300">{createUserError}</div>}
-            </div>
-            <div className="border-t border-white/10 px-5 py-3 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setCreateUserOpen(false);
-                  setCreateUserError(null);
-                }}
-                className="rounded-md border border-white/10 px-4 py-2 text-xs font-semibold text-white/70 hover:text-white"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                disabled={createUserLoading}
-                onClick={async () => {
-                  if (!newUserForm.name.trim()) {
-                    setCreateUserError('이름을 입력해주세요.');
-                    return;
-                  }
-                  if (hasDuplicateUser({ name: newUserForm.name, email: newUserForm.email })) {
-                    setCreateUserError('이미 등록된 사용자입니다. 이름 또는 이메일을 확인해주세요.');
-                    return;
-                  }
-                  setCreateUserError(null);
-                  setCreateUserLoading(true);
-                  const createdId = await onCreateUser({
-                    name: newUserForm.name.trim(),
-                    rank: (newUserForm.rank.trim() || '전임') as UserRank,
-                    email: newUserForm.email.trim(),
-                    phone: newUserForm.phone.trim()
-                  });
-                  setCreateUserLoading(false);
-                  if (!createdId) {
-                    setCreateUserError('사용자 생성에 실패했습니다.');
-                    return;
-                  }
-                  onChangeUserId(createdId);
-                  setCreateUserOpen(false);
-                  setNewUserForm({ name: '', rank: '', email: '', phone: '' });
-                }}
-                className="rounded-md bg-gradient-to-r from-blue-500 to-purple-500 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_20px_rgba(88,120,255,0.4)]"
-              >
-                {createUserLoading ? '생성 중...' : '생성'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CreateUserModal
+        open={createUserOpen}
+        onClose={() => setCreateUserOpen(false)}
+        onCreateUser={onCreateUser}
+        onUserCreated={onChangeUserId}
+        hasDuplicateUser={(c) => hasDuplicateUser(c)}
+      />
 
-      {manageUsersOpen && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/70 p-6">
-          <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl text-white">
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-              <div className="text-sm font-extrabold">사용자 관리</div>
-              <button
-                type="button"
-                onClick={() => setManageUsersOpen(false)}
-                className="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-white/60 hover:text-white"
-              >
-                닫기
-              </button>
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto px-5 py-4 space-y-2">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-                >
-                  <div className="text-xs text-white/70">
-                    <div className="text-sm font-semibold text-white/90">
-                      {user.name} {user.rank ? `(${user.rank})` : ''}
-                    </div>
-                    <div>{user.email || '이메일 미등록'}</div>
-                    <div>{user.phone || '연락처 미등록'}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditUserForm({
-                          id: user.id,
-                          name: user.name || '',
-                          rank: user.rank || '',
-                          email: user.email || '',
-                          phone: user.phone || ''
-                        });
-                        setEditUserError(null);
-                        setEditUserOpen(true);
-                      }}
-                      className="rounded-md border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-white/80 hover:bg-white/20"
-                    >
-                      수정
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteTargetUser({ id: user.id, name: user.name });
-                        setDeleteUserConfirmOpen(true);
-                      }}
-                      className="rounded-md border border-red-400/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-200 hover:bg-red-500/20"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {users.length === 0 && (
-                <div className="text-xs text-white/50">등록된 사용자가 없습니다.</div>
-              )}
-            </div>
-            <div className="border-t border-white/10 px-5 py-3 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setCreateUserOpen(true)}
-                className="rounded-md border border-white/10 bg-white/10 px-4 py-2 text-xs font-semibold text-white/80 hover:bg-white/20"
-              >
-                사용자 추가
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ManageUsersModal
+        open={manageUsersOpen}
+        onClose={() => setManageUsersOpen(false)}
+        users={users}
+        onOpenCreateUser={() => setCreateUserOpen(true)}
+        onEditUser={(user) => {
+          setEditUserForm({
+            id: user.id,
+            name: user.name || '',
+            rank: user.rank || '',
+            email: user.email || '',
+            phone: user.phone || ''
+          });
+          setEditUserOpen(true);
+        }}
+        onDeleteUser={(user) => {
+          setDeleteTargetUser(user);
+          setDeleteUserConfirmOpen(true);
+        }}
+      />
 
-      {editUserOpen && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/70 p-6">
-          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl text-white">
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-              <div className="text-sm font-extrabold">사용자 수정</div>
-              <button
-                type="button"
-                onClick={() => setEditUserOpen(false)}
-                className="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-white/60 hover:text-white"
-              >
-                닫기
-              </button>
-            </div>
-            <div className="px-5 py-4 space-y-3">
-              <div>
-                <label className="text-xs text-white/60 block mb-1">이름</label>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
-                  value={editUserForm.name}
-                  onChange={(e) => setEditUserForm((prev) => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/60 block mb-1">직급</label>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
-                  value={editUserForm.rank}
-                  onChange={(e) => setEditUserForm((prev) => ({ ...prev, rank: e.target.value as UserRank | '' }))}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/60 block mb-1">이메일</label>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
-                  value={editUserForm.email}
-                  onChange={(e) => setEditUserForm((prev) => ({ ...prev, email: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-white/60 block mb-1">연락처</label>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
-                  value={editUserForm.phone}
-                  onChange={(e) => setEditUserForm((prev) => ({ ...prev, phone: e.target.value }))}
-                />
-              </div>
-              {editUserError && <div className="text-xs text-red-300">{editUserError}</div>}
-            </div>
-            <div className="border-t border-white/10 px-5 py-3 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setEditUserOpen(false)}
-                className="rounded-md border border-white/10 px-4 py-2 text-xs font-semibold text-white/70 hover:text-white"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                disabled={editUserLoading}
-                onClick={async () => {
-                  if (!editUserForm.name.trim()) {
-                    setEditUserError('이름을 입력해주세요.');
-                    return;
-                  }
-                  if (
-                    hasDuplicateUser({
-                      id: editUserForm.id,
-                      name: editUserForm.name,
-                      email: editUserForm.email
-                    })
-                  ) {
-                    setEditUserError('이미 등록된 사용자입니다. 이름 또는 이메일을 확인해주세요.');
-                    return;
-                  }
-                  setEditUserError(null);
-                  setEditUserLoading(true);
-                  const ok = await onUpdateUser(editUserForm.id, {
-                    name: editUserForm.name.trim(),
-                    rank: editUserForm.rank.trim() ? (editUserForm.rank.trim() as UserRank) : undefined,
-                    email: editUserForm.email.trim(),
-                    phone: editUserForm.phone.trim()
-                  });
-                  setEditUserLoading(false);
-                  if (!ok) {
-                    setEditUserError('사용자 수정에 실패했습니다.');
-                    return;
-                  }
-                  setEditUserOpen(false);
-                }}
-                className="rounded-md bg-gradient-to-r from-blue-500 to-purple-500 px-4 py-2 text-xs font-semibold text-white shadow-[0_0_20px_rgba(88,120,255,0.4)]"
-              >
-                {editUserLoading ? '저장 중...' : '저장'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EditUserModal
+        open={editUserOpen}
+        onClose={() => setEditUserOpen(false)}
+        initialData={editUserForm}
+        onUpdateUser={onUpdateUser}
+        hasDuplicateUser={(c) => hasDuplicateUser(c)}
+      />
 
-      {deleteUserConfirmOpen && deleteTargetUser && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-900/70 p-6">
-          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl text-white">
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-              <div className="text-sm font-extrabold">사용자 삭제</div>
-              <button
-                type="button"
-                onClick={() => setDeleteUserConfirmOpen(false)}
-                className="rounded-md border border-white/10 px-2 py-1 text-xs font-semibold text-white/60 hover:text-white"
-              >
-                닫기
-              </button>
-            </div>
-            <div className="px-5 py-5 text-sm text-white/80">
-              {deleteTargetUser.name} 사용자를 삭제하시겠습니까?
-            </div>
-            <div className="border-t border-white/10 px-5 py-3 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setDeleteUserConfirmOpen(false)}
-                className="rounded-md border border-white/10 px-4 py-2 text-xs font-semibold text-white/70 hover:text-white"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  const ok = await onDeleteUser(deleteTargetUser.id);
-                  if (!ok) return;
-                  setDeleteUserConfirmOpen(false);
-                  setDeleteTargetUser(null);
-                }}
-                className="rounded-md bg-red-600 px-4 py-2 text-xs font-semibold text-white"
-              >
-                삭제
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteUserConfirmModal
+        open={deleteUserConfirmOpen && !!deleteTargetUser}
+        onClose={() => {
+          setDeleteUserConfirmOpen(false);
+          setDeleteTargetUser(null);
+        }}
+        userName={deleteTargetUser?.name ?? ''}
+        onConfirm={async () => {
+          if (deleteTargetUser) {
+            await onDeleteUser(deleteTargetUser.id);
+          }
+        }}
+      />
 
-      {isParsing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-6 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0f172a] shadow-xl text-white">
-            <div className="px-5 py-6 text-center space-y-3">
-              <div className="text-sm font-extrabold">시험 합의서 분석 중</div>
-              <div className="text-xs text-white/70">
-                분석이 완료될 때까지 다른 작업이 잠시 제한됩니다.
-              </div>
-              <div className="mt-2 space-y-3 text-left">
-                <div className="text-[11px] text-white/50">추출 단계 진행</div>
-                <div className="h-3 rounded-full bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-500"
-                    style={{ width: `${parsingProgress}%` }}
-                  />
-                </div>
-                <div className="text-[11px] text-white/40">
-                  {parsingProgress}% 완료
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-[11px] text-white/50">
-                  <span>1) 시험신청번호</span>
-                  <span>2) 계약/인증 유형</span>
-                  <span>3) 국문명/업체명</span>
-                  <span>4) 담당자/연락처</span>
-                </div>
-              </div>
-              <div className="text-[11px] text-white/50">허용 가능한 최대 시간: 약 3분</div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ParsingOverlay visible={isParsing} progress={parsingProgress} />
     </div>
   );
 }

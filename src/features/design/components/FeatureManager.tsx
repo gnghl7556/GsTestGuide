@@ -116,7 +116,7 @@ export function FeatureManager() {
 
       <PageContent className="p-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
-          <section className="rounded-xl border border-surface-200 bg-white p-4 flex flex-col">
+          <section className="rounded-xl border border-surface-200 bg-surface-base p-4 flex flex-col">
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-primary-900">트리 뷰 편집기</div>
               <div className="text-xs text-primary-400">{features.length}개 항목</div>
@@ -139,7 +139,7 @@ export function FeatureManager() {
                                 {c4 && <div className="text-[11px] text-primary-500">{c4}</div>}
                                 <div className="space-y-2 mt-1">
                                   {items.map((item) => (
-                                    <div key={item.id} className="rounded-lg border border-surface-200 bg-white p-3">
+                                    <div key={item.id} className="rounded-lg border border-surface-200 bg-surface-base p-3">
                                       {editId === item.id && editDraft ? (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                           <Input
@@ -250,7 +250,7 @@ export function FeatureManager() {
             )}
           </section>
 
-          <aside className="rounded-xl border border-surface-200 bg-white p-4 space-y-4">
+          <aside className="rounded-xl border border-surface-200 bg-surface-base p-4 space-y-4">
             <div>
               <div className="text-sm font-semibold text-primary-900 mb-3">새 기능 추가</div>
               <div className="space-y-2">

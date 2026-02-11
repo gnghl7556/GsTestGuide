@@ -85,21 +85,21 @@ export function WorkspaceLayout() {
         content={<Outlet />}
       />
       {testListOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div className="text-sm font-extrabold text-slate-900">전체 시험 목록</div>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[var(--overlay-backdrop)] p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-ln bg-surface-overlay shadow-xl">
+            <div className="flex items-center justify-between border-b border-ln px-5 py-4">
+              <div className="text-sm font-extrabold text-tx-primary">전체 시험 목록</div>
               <button
                 type="button"
                 onClick={() => setTestListOpen(false)}
-                className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700"
+                className="rounded-md border border-ln px-2 py-1 text-xs font-semibold text-tx-tertiary hover:text-tx-primary"
               >
                 닫기
               </button>
             </div>
             <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
               {visibleProjects.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-xs text-slate-500">
+                <div className="rounded-xl border border-dashed border-ln bg-surface-sunken px-4 py-6 text-center text-xs text-tx-tertiary">
                   현재 할당된 시험이 없습니다.
                 </div>
               ) : (
@@ -117,17 +117,17 @@ export function WorkspaceLayout() {
                       }}
                       className={`rounded-xl border px-4 py-3 text-left transition ${
                         testSetup.testNumber === project.testNumber
-                          ? 'border-blue-400 bg-blue-50'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
+                          ? 'border-accent bg-accent-subtle'
+                          : 'border-ln bg-surface-base hover:border-ln-strong'
                       }`}
                     >
-                      <div className="text-[11px] text-slate-500 mb-1">시험번호</div>
-                      <div className="font-semibold text-slate-900">{project.testNumber}</div>
-                      <div className="mt-1 text-xs text-slate-600 truncate">
+                      <div className="text-[11px] text-tx-muted mb-1">시험번호</div>
+                      <div className="font-semibold text-tx-primary">{project.testNumber}</div>
+                      <div className="mt-1 text-xs text-tx-tertiary truncate">
                         {project.projectName || project.productName || '-'}
                         {project.companyName ? ` (${project.companyName})` : ''}
                       </div>
-                      <div className="mt-2 text-[10px] text-slate-500">
+                      <div className="mt-2 text-[10px] text-tx-muted">
                         진행율 {project.progress}%
                       </div>
                     </button>

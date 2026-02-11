@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Copy, Search } from 'lucide-react';
 import { Button, Input } from '../../../components/ui';
 import { useDefectForm } from '../hooks/useDefectForm';
-import { DEFECT_REFERENCES } from '../data/defectReferences';
+import { DEFECT_REFERENCES } from 'virtual:content/defects';
 
 type DefectReportFormProps = {
   projectId: string;
@@ -57,7 +57,7 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
   const formLocked = saving || isFinalized;
 
   return (
-    <div className="h-full bg-white rounded-xl border border-surface-200 shadow-sm flex flex-col overflow-hidden">
+    <div className="h-full bg-surface-base rounded-xl border border-surface-200 shadow-sm flex flex-col overflow-hidden">
       <div className="px-6 py-4 border-b border-surface-200 bg-surface-50">
         <div className="flex items-center justify-between">
           <div>
@@ -87,7 +87,7 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
 
       <div className="flex-1 overflow-hidden flex flex-col">
         <fieldset disabled={formLocked} className="contents">
-        <div className="flex-none border-b border-surface-200 bg-white p-6 space-y-5 text-sm text-surface-700">
+        <div className="flex-none border-b border-surface-200 bg-surface-base p-6 space-y-5 text-sm text-surface-700">
           {errorMsg && (
             <div className="rounded-lg border border-error-200 bg-error-50/40 px-4 py-2 text-xs text-error-600">
               {errorMsg}
@@ -205,7 +205,7 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
             <div className="space-y-1 lg:col-span-2">
               <label className="block text-xs font-semibold text-surface-600">결함 상세 설명</label>
               <textarea
-                className="w-full min-h-[110px] rounded-lg border border-surface-200 bg-white px-3 py-2 text-sm text-primary-800"
+                className="w-full min-h-[110px] rounded-lg border border-surface-200 bg-surface-base px-3 py-2 text-sm text-primary-800"
                 value={state.description}
                 onChange={(e) => update('description', e.target.value)}
                 placeholder="관찰된 현상과 기대 동작을 구체적으로 작성"
@@ -214,14 +214,14 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
             <div className="space-y-1 lg:col-span-2">
               <label className="block text-xs font-semibold text-surface-600">TTA 의견</label>
               <textarea
-                className="w-full min-h-[90px] rounded-lg border border-surface-200 bg-white px-3 py-2 text-sm text-primary-800"
+                className="w-full min-h-[90px] rounded-lg border border-surface-200 bg-surface-base px-3 py-2 text-sm text-primary-800"
                 value={state.ttaComment}
                 onChange={(e) => update('ttaComment', e.target.value)}
               />
             </div>
             <div className="space-y-2 lg:col-span-2">
               <label className="block text-xs font-semibold text-surface-600">증빙 자료</label>
-              <label className="inline-flex items-center gap-2 rounded-lg border border-surface-200 bg-white px-3 py-2 text-xs font-semibold text-surface-600 hover:text-surface-800">
+              <label className="inline-flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-base px-3 py-2 text-xs font-semibold text-surface-600 hover:text-surface-800">
                 파일 추가
                 <input
                   type="file"
@@ -240,7 +240,7 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
         </div>
 
         <div className="flex-1 bg-surface-50/50 flex flex-col min-h-0">
-          <div className="px-6 py-3 bg-white border-b border-surface-200 flex items-center gap-4 shadow-sm">
+          <div className="px-6 py-3 bg-surface-base border-b border-surface-200 flex items-center gap-4 shadow-sm">
             <div className="flex items-center gap-2 text-surface-500 font-bold text-xs">
               <Search size={14} />
               <span>품질 특성별 사례</span>
@@ -253,7 +253,7 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
                   className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
                     activeTab === key
                       ? 'bg-primary-800 text-white border-primary-800'
-                      : 'bg-white text-surface-600 border-surface-200 hover:border-surface-300 hover:bg-surface-50'
+                      : 'bg-surface-base text-surface-600 border-surface-200 hover:border-surface-300 hover:bg-surface-50'
                   }`}
                 >
                   {key}
@@ -267,7 +267,7 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
               {(DEFECT_REFERENCES[activeTab] || []).map((item: DefectReferenceItem, idx: number) => (
                 <div
                   key={`${activeTab}-${idx}`}
-                  className="group bg-white rounded-xl border border-surface-200 p-4 hover:border-primary-300 hover:shadow-md transition-all flex flex-col"
+                  className="group bg-surface-base rounded-xl border border-surface-200 p-4 hover:border-primary-300 hover:shadow-md transition-all flex flex-col"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex gap-2">

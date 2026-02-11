@@ -102,19 +102,19 @@ export function ExportModal({ open, projectId, onClose }: ExportModalProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-6">
-      <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-extrabold text-gray-900">산출물 내보내기</div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-backdrop)] p-6">
+      <div className="w-full max-w-lg rounded-2xl border border-ln bg-surface-base shadow-xl">
+        <div className="flex items-center justify-between border-b border-ln px-5 py-4">
+          <div className="text-sm font-extrabold text-tx-primary">산출물 내보내기</div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700"
+            className="rounded-md border border-ln px-2 py-1 text-xs font-semibold text-tx-tertiary hover:text-tx-secondary"
           >
             <X size={14} />
           </button>
         </div>
-        <div className="px-5 py-4 space-y-3 text-sm text-gray-700">
+        <div className="px-5 py-4 space-y-3 text-sm text-tx-secondary">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={exportFeatures} onChange={(e) => setExportFeatures(e.target.checked)} />
             기능 리스트 (features)
@@ -128,11 +128,11 @@ export function ExportModal({ open, projectId, onClose }: ExportModalProps) {
             결함 보고서 (defects)
           </label>
         </div>
-        <div className="border-t border-gray-200 px-5 py-4 flex justify-end gap-2">
+        <div className="border-t border-ln px-5 py-4 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800"
+            className="rounded-md border border-ln px-4 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover"
           >
             취소
           </button>
@@ -140,7 +140,7 @@ export function ExportModal({ open, projectId, onClose }: ExportModalProps) {
             type="button"
             onClick={handleExport}
             disabled={exporting}
-            className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+            className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-xs font-semibold text-white"
           >
             <Download size={14} />
             {exporting ? '내보내는 중...' : '내보내기'}

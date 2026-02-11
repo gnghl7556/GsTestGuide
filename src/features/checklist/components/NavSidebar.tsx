@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Check, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Check, X, BookOpen } from 'lucide-react';
 
-import type { ChecklistItem, ExecutionItemGate, QuickReviewAnswer, QuickQuestionId, ReviewData } from '../../../types';
-import { CATEGORIES, CATEGORY_THEMES } from '../../../data/constants';
+import type { ChecklistItem, ExecutionItemGate, QuickReviewAnswer, ReviewData } from '../../../types';
+import { CATEGORIES, CATEGORY_THEMES } from 'virtual:content/categories';
+import { ReferenceGuideModal } from './ReferenceGuideModal';
 
 
 interface NavSidebarProps {
@@ -29,6 +30,7 @@ export function NavSidebar({
   const [expandedCats, setExpandedCats] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'HOLD' | 'FAIL'>('ALL');
   const [evidenceOnly, setEvidenceOnly] = useState(false);
+  const [showRefGuide, setShowRefGuide] = useState(false);
   const shortLabelMap: Record<string, string> = {
     '담당 PL 및 시험 배정 안내 메일을 확인했는가?': '시험 배정 안내',
     '시험 합의서, 제품 설명서, 사용자 매뉴얼 및 시험 공유 폴더를 확인했는가?': '시험 자료 확인'
@@ -60,9 +62,9 @@ export function NavSidebar({
   }, []);
 
   const toggleCategory = (catId: string) => {
-    setExpandedCats(prev => 
-      prev.includes(catId) 
-        ? prev.filter(id => id !== catId) 
+    setExpandedCats(prev =>
+      prev.includes(catId)
+        ? prev.filter(id => id !== catId)
         : [...prev, catId]
     );
   };
@@ -70,15 +72,15 @@ export function NavSidebar({
   // getStatusIcon removed (unused)
 
   return (
-    <nav className="h-full bg-white rounded-xl border border-gray-200 flex flex-col overflow-hidden shadow-sm">
-      <div className="p-4 border-b border-gray-100 bg-white flex justify-between items-center">
+    <nav className="h-full bg-surface-base rounded-xl border border-ln flex flex-col overflow-hidden shadow-sm">
+      <div className="p-4 border-b border-ln-subtle bg-surface-base flex justify-between items-center">
         <div>
-          <h2 className="text-sm font-extrabold text-gray-800 tracking-wider flex items-center gap-2">
+          <h2 className="text-sm font-extrabold text-tx-primary tracking-wider flex items-center gap-2">
             점검 항목 목록
-            <span className="text-[10px] text-gray-400 font-medium tracking-normal inline-flex items-center gap-2">
+            <span className="text-[10px] text-tx-muted font-medium tracking-normal inline-flex items-center gap-2">
               <span>{completedItems.length}/{applicableItems.length}</span>
-              <span className="h-1.5 w-14 bg-gray-100 rounded-full overflow-hidden">
-                <span className="block h-full bg-blue-500" style={{ width: `${completionRate}%` }} />
+              <span className="h-1.5 w-14 bg-surface-sunken rounded-full overflow-hidden">
+                <span className="block h-full bg-accent" style={{ width: `${completionRate}%` }} />
               </span>
             </span>
           </h2>
@@ -87,21 +89,23 @@ export function NavSidebar({
           onClick={() => setExpandedCats(expandedCats.length > 0 ? [] : CATEGORIES.map(c => c.id))}
           aria-label={expandedCats.length > 0 ? '모두 접기' : '모두 펼치기'}
           title={expandedCats.length > 0 ? '모두 접기' : '모두 펼치기'}
-          className="h-7 w-7 rounded-md border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors inline-flex items-center justify-center"
+          className="h-7 w-7 rounded-md border border-ln bg-surface-base text-tx-muted hover:text-tx-secondary hover:border-ln-strong transition-colors inline-flex items-center justify-center"
         >
           {expandedCats.length > 0 ? <ChevronsUp size={14} /> : <ChevronsDown size={14} />}
         </button>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
-        <div className="px-1 pb-1 flex items-center gap-1 text-[10px] font-semibold text-gray-500">
+        <div className="px-1 pb-1 flex items-center gap-1 text-[10px] font-semibold text-tx-tertiary">
           {(['ALL', 'PENDING', 'HOLD', 'FAIL'] as const).map((key) => (
             <button
               key={key}
               type="button"
               onClick={() => setStatusFilter(key)}
               className={`px-2 py-1 rounded-md border ${
-                statusFilter === key ? 'bg-gray-100 border-gray-300 text-gray-700' : 'border-gray-200 hover:border-gray-300'
+                statusFilter === key
+                  ? 'bg-surface-sunken border-ln-strong text-tx-secondary'
+                  : 'border-ln hover:border-ln-strong'
               }`}
             >
               {key === 'ALL' && '전체'}
@@ -114,7 +118,9 @@ export function NavSidebar({
             type="button"
             onClick={() => setEvidenceOnly(!evidenceOnly)}
             className={`px-2 py-1 rounded-md border ${
-              evidenceOnly ? 'bg-gray-100 border-gray-300 text-gray-700' : 'border-gray-200 hover:border-gray-300'
+              evidenceOnly
+                ? 'bg-surface-sunken border-ln-strong text-tx-secondary'
+                : 'border-ln hover:border-ln-strong'
             }`}
           >
             증빙 미매핑
@@ -143,12 +149,12 @@ export function NavSidebar({
           return (
             <div key={cat.id} className="select-none">
               {/* 카테고리 헤더: 숫자 표시 제거됨 */}
-              <button 
+              <button
                 onClick={() => toggleCategory(cat.id)}
                 className={`w-full pl-2 pr-3 py-2 mb-0.5 text-sm font-bold rounded-lg flex items-center gap-2 transition-colors relative ${
                   isExpanded
                     ? `${theme.lightBg} ${theme.text}`
-                    : `bg-white hover:bg-gray-50 ${theme.text} ${hasActiveItem ? `${theme.lightBg}` : ''}`
+                    : `bg-surface-base hover:bg-surface-raised ${theme.text} ${hasActiveItem ? `${theme.lightBg}` : ''}`
                 } ${isActiveCategory ? `${theme.bg} ${theme.text} ring-1 ring-inset ${theme.ring}` : ''}`}
               >
                 {!isExpanded && hasActiveItem && (
@@ -166,7 +172,7 @@ export function NavSidebar({
                         const status = reviewData[item.id]?.status ?? 'None';
                         if (item.status === 'Not_Applicable') {
                           return (
-                            <span key={item.id} className="h-3 w-3 rounded-full bg-gray-200" aria-hidden="true" />
+                            <span key={item.id} className="h-3 w-3 rounded-full bg-surface-sunken" aria-hidden="true" />
                           );
                         }
                         if (status === 'Verified') {
@@ -191,14 +197,14 @@ export function NavSidebar({
                           );
                         }
                         return (
-                          <span key={item.id} className="h-3 w-3 rounded-full bg-gray-200" aria-hidden="true" />
+                          <span key={item.id} className="h-3 w-3 rounded-full bg-surface-sunken" aria-hidden="true" />
                         );
                       })}
                     </span>
                   </span>
                 </span>
               </button>
-              
+
               {isExpanded && (
                 <ul className="space-y-2 pl-2 ml-1 my-1 animate-in slide-in-from-top-1 duration-200">
                   {catItems.map((item, index) => {
@@ -215,9 +221,9 @@ export function NavSidebar({
                       ) : status === 'Hold' ? (
                         <Clock size={16} className="text-yellow-600" />
                       ) : (
-                        <Circle size={14} className="text-gray-300" />
+                        <Circle size={14} className="text-tx-muted" />
                       );
-                    
+
                     const isFeatureList = item.id === 'DUR-PLAN-01';
                     const isTestCase = item.id === 'DUR-DESIGN-01';
                     return (
@@ -232,31 +238,31 @@ export function NavSidebar({
                             disabled={isBlocked}
                             title={isBlocked ? gate?.reason : undefined}
                             className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all flex items-start justify-between gap-2 border shadow-sm
-                              ${isActive 
-                                ? `bg-white ${theme.text} font-bold ${theme.border} border-l-2 ${theme.activeBorder}` 
-                                : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                              ${isActive
+                                ? `bg-surface-base ${theme.text} font-bold ${theme.border} border-l-2 ${theme.activeBorder}`
+                                : 'border-ln text-tx-secondary hover:bg-surface-raised'
                               }
-                              ${isBlocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}
-                              ${isNA && !isActive ? 'opacity-50 line-through decoration-gray-300' : ''}
+                              ${isBlocked ? 'opacity-60 cursor-not-allowed bg-surface-raised' : ''}
+                              ${isNA && !isActive ? 'opacity-50 line-through decoration-ln-strong' : ''}
                             `}
                           >
                             <div className="flex items-start gap-2 min-w-0">
                               <span className="mt-0.5 shrink-0">{statusIcon}</span>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : 'text-gray-400'}`}>
+                                  <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : 'text-tx-muted'}`}>
                                     {String(index + 1).padStart(2, '0')}
                                   </span>
                                   <span className="block truncate flex-1">{toShortLabel(item.title)}</span>
                                   {isBlocked && (
-                                    <span className="shrink-0 rounded-full border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600">
+                                    <span className="shrink-0 rounded-full border border-ln bg-surface-sunken px-1.5 py-0.5 text-[9px] font-semibold text-tx-tertiary">
                                       잠금
                                     </span>
                                   )}
                                   {item.checkPoints && item.checkPoints.length > 0 && (
                                     <span className="hidden lg:flex items-center gap-1 ml-auto">
                                       {item.checkPoints.slice(0, 3).map((point, idx) => {
-                                        const qid = (`Q${idx + 1}` as QuickQuestionId);
+                                        const qid = `Q${idx + 1}`;
                                         const answer = quickReviewById[item.id]?.answers?.[qid];
                                         const icon =
                                           answer === 'YES' ? (
@@ -264,22 +270,22 @@ export function NavSidebar({
                                           ) : answer === 'NO' ? (
                                             <X size={9} className="text-red-500" />
                                           ) : answer === 'NA' ? (
-                                            <span className="text-[9px] font-bold leading-none text-gray-400">–</span>
+                                            <span className="text-[9px] font-bold leading-none text-tx-muted">–</span>
                                           ) : (
-                                            <span className="text-[9px] font-bold leading-none text-gray-300">·</span>
+                                            <span className="text-[9px] font-bold leading-none text-tx-muted">·</span>
                                           );
                                         return (
                                           <span
                                             key={`${item.id}-mini-${idx}`}
                                             title={point}
-                                            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-gray-200 bg-white"
+                                            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ln bg-surface-base"
                                           >
                                             {icon}
                                           </span>
                                         );
                                       })}
                                       {item.checkPoints.length > 3 && (
-                                        <span className="text-[9px] font-semibold text-gray-400">+{item.checkPoints.length - 3}</span>
+                                        <span className="text-[9px] font-semibold text-tx-muted">+{item.checkPoints.length - 3}</span>
                                       )}
                                     </span>
                                   )}
@@ -295,7 +301,7 @@ export function NavSidebar({
                                     e.stopPropagation();
                                     navigate('/design', { state: { tab: 'feature' } });
                                   }}
-                                className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-2 py-1 text-[10px] font-semibold text-gray-600 hover:text-gray-800"
+                                className="inline-flex items-center gap-2 rounded-md border border-ln bg-surface-base px-2 py-1 text-[10px] font-semibold text-tx-tertiary hover:text-tx-primary"
                               >
                                 기능 리스트 관리
                               </button>
@@ -309,7 +315,7 @@ export function NavSidebar({
                                     e.stopPropagation();
                                     navigate('/design', { state: { tab: 'testcase' } });
                                   }}
-                                className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-2 py-1 text-[10px] font-semibold text-gray-600 hover:text-gray-800"
+                                className="inline-flex items-center gap-2 rounded-md border border-ln bg-surface-base px-2 py-1 text-[10px] font-semibold text-tx-tertiary hover:text-tx-primary"
                               >
                                 TC 관리
                               </button>
@@ -325,6 +331,17 @@ export function NavSidebar({
           );
         })}
       </div>
+      <div className="p-3 border-t border-ln-subtle">
+        <button
+          type="button"
+          onClick={() => setShowRefGuide(true)}
+          className="w-full flex items-center justify-center gap-2 rounded-lg border border-ln bg-surface-base px-3 py-2 text-xs font-semibold text-tx-tertiary hover:bg-surface-raised hover:text-tx-primary transition-colors"
+        >
+          <BookOpen size={14} />
+          참조 가이드
+        </button>
+      </div>
+      <ReferenceGuideModal open={showRefGuide} onClose={() => setShowRefGuide(false)} />
     </nav>
   );
 }

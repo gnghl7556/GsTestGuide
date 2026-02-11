@@ -1,6 +1,6 @@
 import type { DocEntry, AgreementParsed } from './testSetup';
 
-export type RequirementCategory = 'SETUP' | 'DESIGN' | 'EXECUTION' | 'COMPLETION';
+export type RequirementCategory = 'SETUP' | 'EXECUTION' | 'COMPLETION';
 
 export interface Requirement {
   id: string;
@@ -68,7 +68,7 @@ export interface ReviewData {
 
 export type QuickAnswer = 'YES' | 'NO' | 'NA';
 export type QuickDecision = 'PASS' | 'HOLD' | 'FAIL';
-export type QuickQuestionId = 'Q1' | 'Q2' | 'Q3';
+export type QuickQuestionId = string;
 export type QuestionImportance = 'MUST' | 'SHOULD';
 
 export interface QuickQuestion {
@@ -96,10 +96,13 @@ export interface QuickModeItem {
   expertDetails: ExpertDetails;
 }
 
+export type IpEntry = { label: string; lastOctet: string };
+
 export type QuickInputValue =
   | string
   | number
   | { name: string; ip?: string }[]
+  | IpEntry[]
   | DocEntry[]
   | AgreementParsed;
 

@@ -198,17 +198,17 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-6">
-      <div className="w-full max-w-6xl rounded-2xl border border-gray-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-backdrop)] p-6">
+      <div className="w-full max-w-6xl rounded-2xl border border-ln bg-surface-base shadow-xl">
+        <div className="flex items-center justify-between border-b border-ln px-6 py-4">
           <div>
-            <h2 className="text-lg font-extrabold text-gray-900">기능 리스트 관리</h2>
-            <p className="text-xs text-gray-500 mt-1">AI 초안 생성 및 트리 구조 편집</p>
+            <h2 className="text-lg font-extrabold text-tx-primary">기능 리스트 관리</h2>
+            <p className="text-xs text-tx-tertiary mt-1">AI 초안 생성 및 트리 구조 편집</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700"
+            className="inline-flex items-center gap-1 rounded-md border border-ln px-3 py-1 text-xs font-semibold text-tx-tertiary hover:text-tx-secondary"
           >
             <X size={14} />
             닫기
@@ -217,13 +217,13 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
 
         <div className="grid grid-cols-1 lg:grid-cols-[2.1fr_1fr] gap-6 p-6">
           <div className="space-y-4">
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <div className="rounded-xl border border-ln bg-surface-raised p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-semibold text-gray-800">AI 초안 생성</div>
-                  <div className="text-xs text-gray-500">제품 매뉴얼(PDF) 업로드 후 기능 리스트 초안 생성</div>
+                  <div className="text-sm font-semibold text-tx-primary">AI 초안 생성</div>
+                  <div className="text-xs text-tx-tertiary">제품 매뉴얼(PDF) 업로드 후 기능 리스트 초안 생성</div>
                 </div>
-                <label className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 hover:border-gray-300">
+                <label className="inline-flex items-center gap-2 rounded-lg border border-ln bg-surface-base px-3 py-2 text-xs font-semibold text-tx-secondary hover:border-ln-strong">
                   <UploadCloud size={14} />
                   PDF 업로드
                   <input
@@ -238,7 +238,7 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
                   />
                 </label>
               </div>
-              <div className="mt-2 text-xs text-gray-500">
+              <div className="mt-2 text-xs text-tx-tertiary">
                 {aiStatus === 'uploading' && '업로드 중...'}
                 {aiStatus === 'generating' && 'AI 초안 생성 중...'}
                 {aiStatus === 'done' && (aiMessage || 'AI 초안이 적용되었습니다.')}
@@ -246,58 +246,58 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="rounded-xl border border-ln bg-surface-base p-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-gray-800">트리 뷰 편집기</div>
-                <div className="text-xs text-gray-400">{features.length}개 항목</div>
+                <div className="text-sm font-semibold text-tx-primary">트리 뷰 편집기</div>
+                <div className="text-xs text-tx-muted">{features.length}개 항목</div>
               </div>
               {loading ? (
-                <div className="py-12 text-center text-sm text-gray-400">불러오는 중...</div>
+                <div className="py-12 text-center text-sm text-tx-muted">불러오는 중...</div>
               ) : (
                 <div className="mt-3 space-y-3 max-h-[52vh] overflow-y-auto pr-2">
                   {Object.entries(grouped).map(([c1, level2]) => (
-                    <div key={c1} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                      <div className="text-sm font-semibold text-gray-800">{c1}</div>
+                    <div key={c1} className="rounded-lg border border-ln bg-surface-raised p-3">
+                      <div className="text-sm font-semibold text-tx-primary">{c1}</div>
                       {Object.entries(level2).map(([c2, level3]) => (
                         <div key={`${c1}-${c2}`} className="mt-2 ml-3">
-                          <div className="text-xs font-semibold text-gray-700">{c2}</div>
+                          <div className="text-xs font-semibold text-tx-secondary">{c2}</div>
                           {Object.entries(level3).map(([c3, level4]) => (
                             <div key={`${c1}-${c2}-${c3}`} className="mt-2 ml-3">
-                              <div className="text-xs text-gray-600">{c3}</div>
+                              <div className="text-xs text-tx-secondary">{c3}</div>
                               {Object.entries(level4).map(([c4, items]) => (
                                 <div key={`${c1}-${c2}-${c3}-${c4}`} className="mt-2 ml-3">
-                                  {c4 && <div className="text-[11px] text-gray-500">{c4}</div>}
+                                  {c4 && <div className="text-[11px] text-tx-tertiary">{c4}</div>}
                                   <div className="space-y-2 mt-1">
                                     {items.map((item) => (
-                                      <div key={item.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                                      <div key={item.id} className="rounded-lg border border-ln bg-surface-base p-3">
                                         {editId === item.id && editDraft ? (
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                                             <input
-                                              className="rounded-md border border-gray-200 px-2 py-1"
+                                              className="rounded-md border border-ln px-2 py-1"
                                               value={editDraft.category1}
                                               onChange={(e) => setEditDraft({ ...editDraft, category1: e.target.value })}
                                               placeholder="대분류"
                                             />
                                             <input
-                                              className="rounded-md border border-gray-200 px-2 py-1"
+                                              className="rounded-md border border-ln px-2 py-1"
                                               value={editDraft.category2}
                                               onChange={(e) => setEditDraft({ ...editDraft, category2: e.target.value })}
                                               placeholder="중분류"
                                             />
                                             <input
-                                              className="rounded-md border border-gray-200 px-2 py-1"
+                                              className="rounded-md border border-ln px-2 py-1"
                                               value={editDraft.category3}
                                               onChange={(e) => setEditDraft({ ...editDraft, category3: e.target.value })}
                                               placeholder="소분류"
                                             />
                                             <input
-                                              className="rounded-md border border-gray-200 px-2 py-1"
+                                              className="rounded-md border border-ln px-2 py-1"
                                               value={editDraft.category4 || ''}
                                               onChange={(e) => setEditDraft({ ...editDraft, category4: e.target.value })}
                                               placeholder="소소분류"
                                             />
                                             <input
-                                              className="rounded-md border border-gray-200 px-2 py-1 md:col-span-2"
+                                              className="rounded-md border border-ln px-2 py-1 md:col-span-2"
                                               value={editDraft.description}
                                               onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value })}
                                               placeholder="기능 설명"
@@ -313,7 +313,7 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
                                                   setEditId(null);
                                                   setEditDraft(null);
                                                 }}
-                                                className="rounded-md bg-gray-900 px-3 py-1 text-xs font-semibold text-white"
+                                                className="rounded-md bg-accent px-3 py-1 text-xs font-semibold text-white"
                                               >
                                                 저장
                                               </button>
@@ -323,7 +323,7 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
                                                   setEditId(null);
                                                   setEditDraft(null);
                                                 }}
-                                                className="rounded-md border border-gray-200 px-3 py-1 text-xs text-gray-500"
+                                                className="rounded-md border border-ln px-3 py-1 text-xs text-tx-tertiary"
                                               >
                                                 취소
                                               </button>
@@ -331,7 +331,7 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
                                           </div>
                                         ) : (
                                           <div className="flex items-start justify-between gap-3">
-                                            <div className="text-xs text-gray-700">
+                                            <div className="text-xs text-tx-secondary">
                                               {item.description || '설명 없음'}
                                             </div>
                                             <div className="flex gap-2">
@@ -341,14 +341,14 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
                                                   setEditId(item.id);
                                                   setEditDraft({ ...item });
                                                 }}
-                                                className="rounded-md border border-gray-200 px-2 py-1 text-[11px] text-gray-600 hover:text-gray-800"
+                                                className="rounded-md border border-ln px-2 py-1 text-[11px] text-tx-secondary hover:text-tx-primary"
                                               >
                                                 수정
                                               </button>
                                               <button
                                                 type="button"
                                                 onClick={() => setFeatures((prev) => prev.filter((f) => f.id !== item.id))}
-                                                className="rounded-md border border-red-200 px-2 py-1 text-[11px] text-red-600 hover:text-red-700"
+                                                className="rounded-md border border-danger px-2 py-1 text-[11px] text-danger-text hover:text-danger-text"
                                               >
                                                 삭제
                                               </button>
@@ -367,7 +367,7 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
                     </div>
                   ))}
                   {features.length === 0 && (
-                    <div className="py-8 text-center text-xs text-gray-400">
+                    <div className="py-8 text-center text-xs text-tx-muted">
                       등록된 기능 리스트가 없습니다.
                     </div>
                   )}
@@ -377,42 +377,42 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="text-sm font-semibold text-gray-800 mb-3">새 기능 추가</div>
+            <div className="rounded-xl border border-ln bg-surface-base p-4">
+              <div className="text-sm font-semibold text-tx-primary mb-3">새 기능 추가</div>
               <div className="space-y-2 text-xs">
                 <input
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   placeholder="대분류"
                   value={newFeature.category1}
                   onChange={(e) => setNewFeature((prev) => ({ ...prev, category1: e.target.value }))}
                 />
                 <input
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   placeholder="중분류"
                   value={newFeature.category2}
                   onChange={(e) => setNewFeature((prev) => ({ ...prev, category2: e.target.value }))}
                 />
                 <input
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   placeholder="소분류"
                   value={newFeature.category3}
                   onChange={(e) => setNewFeature((prev) => ({ ...prev, category3: e.target.value }))}
                 />
                 <input
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   placeholder="소소분류 (선택)"
                   value={newFeature.category4 || ''}
                   onChange={(e) => setNewFeature((prev) => ({ ...prev, category4: e.target.value }))}
                 />
                 <input
-                  className="w-full rounded-md border border-gray-200 px-2 py-1"
+                  className="w-full rounded-md border border-ln px-2 py-1"
                   placeholder="기능 설명"
                   value={newFeature.description}
                   onChange={(e) => setNewFeature((prev) => ({ ...prev, description: e.target.value }))}
                 />
                 <div className="flex gap-2">
                   <input
-                    className="w-full rounded-md border border-gray-200 px-2 py-1"
+                    className="w-full rounded-md border border-ln px-2 py-1"
                     placeholder="버전 (예: 1.0)"
                     value={String(newFeature.version ?? 1)}
                     onChange={(e) =>
@@ -420,7 +420,7 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
                     }
                   />
                   <input
-                    className="w-full rounded-md border border-gray-200 px-2 py-1"
+                    className="w-full rounded-md border border-ln px-2 py-1"
                     placeholder="변경 유형"
                     value={newFeature.changeType || ''}
                     onChange={(e) => setNewFeature((prev) => ({ ...prev, changeType: e.target.value }))}
@@ -429,7 +429,7 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
                 <button
                   type="button"
                   onClick={handleAddFeature}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-ln bg-surface-raised px-3 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover"
                 >
                   <Plus size={14} />
                   기능 추가
@@ -437,16 +437,16 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <div className="text-sm font-semibold text-gray-800 mb-2">저장</div>
-              <p className="text-xs text-gray-500 mb-3">
+            <div className="rounded-xl border border-ln bg-surface-base p-4">
+              <div className="text-sm font-semibold text-tx-primary mb-2">저장</div>
+              <p className="text-xs text-tx-tertiary mb-3">
                 변경사항을 프로젝트의 features 서브 컬렉션에 저장합니다.
               </p>
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-white hover:bg-accent-hover disabled:opacity-60"
               >
                 <Save size={14} />
                 {saving ? '저장 중...' : '저장'}
@@ -455,11 +455,11 @@ export function FeatureListModal({ open, projectId, onClose }: FeatureListModalP
           </div>
         </div>
 
-        <div className="border-t border-gray-200 px-6 py-4 flex justify-end">
+        <div className="border-t border-ln px-6 py-4 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800"
+            className="inline-flex items-center gap-2 rounded-md border border-ln px-4 py-2 text-xs font-semibold text-tx-secondary hover:text-tx-primary"
           >
             <X size={14} />
             닫기

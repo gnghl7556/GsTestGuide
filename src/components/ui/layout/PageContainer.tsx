@@ -8,7 +8,7 @@ type PageHeaderProps = {
 
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
-    <header className="flex flex-col gap-3 border-b border-surface-200 bg-white px-6 py-4">
+    <header className="flex flex-col gap-3 border-b border-surface-200 bg-surface-base px-6 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-extrabold text-primary-900">{title}</h1>
@@ -26,7 +26,7 @@ type PageFilterBarProps = {
 
 export function PageFilterBar({ children }: PageFilterBarProps) {
   return (
-    <div className="bg-slate-50 px-6 py-3">
+    <div className="bg-surface-raised px-6 py-3">
       <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
   );

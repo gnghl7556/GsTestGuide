@@ -1,6 +1,7 @@
 import { BrowserRouter } from 'react-router-dom';
 import { AppRoutes } from './routes';
 import { TestSetupProvider } from './providers/TestSetupProvider';
+import { ThemeProvider } from './providers/ThemeProvider';
 import { auth, db, storage } from './lib/firebase';
 import { useAuthReady } from './hooks/useAuthReady';
 import { usePlDirectory } from './features/pl-directory/hooks/usePlDirectory';
@@ -17,18 +18,20 @@ export default function App() {
   const progressByTestNumber = useProgressByTestNumber(db, authReady, projects, [] as ChecklistItem[]);
 
   return (
-    <TestSetupProvider
-      db={db}
-      storage={storage}
-      authReady={authReady}
-      projects={projects}
-      plDirectory={plDirectory}
-      users={users}
-      progressByTestNumber={progressByTestNumber}
-    >
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </TestSetupProvider>
+    <ThemeProvider>
+      <TestSetupProvider
+        db={db}
+        storage={storage}
+        authReady={authReady}
+        projects={projects}
+        plDirectory={plDirectory}
+        users={users}
+        progressByTestNumber={progressByTestNumber}
+      >
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </TestSetupProvider>
+    </ThemeProvider>
   );
 }

@@ -2,7 +2,6 @@ import type {
   Requirement,
   QuickAnswer,
   QuickDecision,
-  QuickQuestionId,
   QuestionImportance,
   QuickQuestion,
   QuickModeItem
@@ -31,13 +30,14 @@ const CATEGORY_TAGS: Record<Requirement['category'], string[]> = {
     '설치',
     '네트워크'
   ],
-  DESIGN: ['기능 목록', '테스트 케이스', '시나리오', '설계 검토'],
   EXECUTION: [
+    '기능 목록',
     '기능 테스트',
     '성능 테스트',
     '회귀 테스트',
     '결함 리포트',
-    'RawData'
+    'RawData',
+    '테스트 케이스'
   ],
   COMPLETION: ['최종 산출물', '반입/반출', '정리', '종료']
 };
@@ -80,30 +80,19 @@ const inferImportance = (text: string): QuestionImportance => {
 
 const buildQuestions = (source: string[], description: string): QuickQuestion[] => {
   const pool = source.filter(Boolean).map(toQuestion);
-  const must = pool.filter((text) => inferImportance(text) === 'MUST');
-  const should = pool.filter((text) => inferImportance(text) === 'SHOULD');
-  const picked: string[] = [];
-  for (const text of must) {
-    if (picked.length < 3) picked.push(text);
-  }
-  for (const text of should) {
-    if (picked.length < 3) picked.push(text);
-  }
 
-  if (picked.length < 3) {
+  if (pool.length === 0) {
     const descParts = description.split(/[.?!]/).map((part) => part.trim()).filter(Boolean);
-    for (const part of descParts) {
-      if (picked.length >= 3) break;
-      picked.push(toQuestion(part));
-    }
+    const fallback = descParts.length > 0 ? descParts.map(toQuestion) : [toQuestion(description)];
+    return fallback.map((text, index) => ({
+      id: `Q${index + 1}`,
+      text,
+      importance: inferImportance(text)
+    }));
   }
 
-  while (picked.length < 3) {
-    picked.push(toQuestion(description));
-  }
-
-  return picked.slice(0, 3).map((text, index) => ({
-    id: (`Q${index + 1}` as QuickQuestionId),
+  return pool.map((text, index) => ({
+    id: `Q${index + 1}`,
     text,
     importance: inferImportance(text)
   }));
@@ -149,7 +138,7 @@ export const toQuickModeItem = (req: Requirement): QuickModeItem => {
 
 export const getRecommendation = (
   questions: QuickQuestion[],
-  answers: Record<QuickQuestionId, QuickAnswer>
+  answers: Record<string, QuickAnswer>
 ): QuickDecision => {
   const mustQuestions = questions.filter((q) => q.importance === 'MUST');
   const shouldQuestions = questions.filter((q) => q.importance === 'SHOULD');

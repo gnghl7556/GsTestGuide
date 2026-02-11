@@ -41,7 +41,7 @@ function StatusButton({
     Verified: 'border-2 border-green-400 shadow-[0_0_8px_rgba(34,197,94,0.25)]',
     Cannot_Verify: 'border-2 border-red-400 shadow-[0_0_8px_rgba(239,68,68,0.25)]',
     Hold: 'border-2 border-yellow-400 shadow-[0_0_8px_rgba(245,158,11,0.25)]',
-    None: 'border-2 border-gray-300'
+    None: 'border-2 border-ln-strong'
   };
 
   return (
@@ -49,11 +49,11 @@ function StatusButton({
       disabled={isDisabled}
       onClick={() => onSelect(isActive ? 'None' : type)}
       className={`flex-1 py-3 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all ${
-        isDisabled ? 'opacity-40 cursor-not-allowed bg-gray-50' : ''
+        isDisabled ? 'opacity-40 cursor-not-allowed bg-surface-raised' : ''
       } ${
         isActive
           ? activeClass
-          : `bg-white text-gray-400 hover:bg-gray-50 ${isRecommended ? recommendClass[type] : 'border-gray-200'}`
+          : `bg-surface-base text-tx-muted hover:bg-surface-raised ${isRecommended ? recommendClass[type] : 'border-ln'}`
       }`}
     >
       <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
@@ -64,9 +64,9 @@ function StatusButton({
 
 export function RightActionPanel({ activeItem, reviewData, updateReviewData, evidenceChips, recommendation, canReview }: RightActionPanelProps) {
   const [isEvidenceOpen, setIsEvidenceOpen] = useState(true);
-  
+
   if (!activeItem) return <div className="lg:col-span-3" />;
-  
+
   const currentReview = reviewData[activeItem.id] || { docName: '', page: '', status: 'None', comment: '' };
   const isDisabled = activeItem.status === 'Not_Applicable' || !canReview;
   const recommendationLabel: Record<QuickDecision, string> = {
@@ -75,15 +75,15 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
     HOLD: '보류'
   };
   const recommendationClass: Record<QuickDecision, string> = {
-    PASS: 'bg-green-50 text-green-700 border-green-100',
-    FAIL: 'bg-red-50 text-red-600 border-red-100',
-    HOLD: 'bg-yellow-50 text-yellow-700 border-yellow-100'
+    PASS: 'bg-status-pass-bg text-status-pass-text border-status-pass-border',
+    FAIL: 'bg-status-fail-bg text-status-fail-text border-status-fail-border',
+    HOLD: 'bg-status-hold-bg text-status-hold-text border-status-hold-border'
   };
 
   return (
-    <div className="h-full bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-gray-200 bg-white">
-        <h3 className="text-sm font-extrabold text-gray-800 tracking-wider flex items-center gap-2 mb-2">
+    <div className="h-full bg-surface-base rounded-xl border border-ln shadow-sm flex flex-col overflow-hidden">
+      <div className="p-4 border-b border-ln bg-surface-base">
+        <h3 className="text-sm font-extrabold text-tx-primary tracking-wider flex items-center gap-2 mb-2">
           검토 결과 판정
           <span className="h-2 w-2 rounded-full bg-emerald-500" aria-label="필수" />
         </h3>
@@ -132,30 +132,30 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* 의견 작성란 */}
         <div>
-           <label className="text-sm font-extrabold text-gray-800 tracking-wider mb-1.5 flex items-center gap-2">
+           <label className="text-sm font-extrabold text-tx-primary tracking-wider mb-1.5 flex items-center gap-2">
              검토 의견 / 메모
-             <span className="h-2 w-2 rounded-full bg-gray-300" aria-label="선택" />
+             <span className="h-2 w-2 rounded-full bg-ln" aria-label="선택" />
            </label>
-           <textarea 
+           <textarea
              disabled={isDisabled}
-             value={currentReview.comment} 
-             onChange={(e) => updateReviewData(activeItem.id, 'comment', e.target.value)} 
+             value={currentReview.comment}
+             onChange={(e) => updateReviewData(activeItem.id, 'comment', e.target.value)}
              placeholder={isDisabled ? "미적용 항목입니다." : "검토 의견을 입력하세요..."}
-             className="w-full text-sm p-3 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none bg-white min-h-[120px] resize-none transition-all disabled:bg-gray-100" 
+             className="w-full text-sm p-3 border border-input-border rounded-lg focus:border-[var(--focus-ring)] focus:ring-1 focus:ring-[var(--focus-ring)]/20 outline-none bg-input-bg text-input-text placeholder-input-placeholder min-h-[120px] resize-none transition-all disabled:bg-surface-raised disabled:opacity-60"
            />
         </div>
 
         {/* 증빙 자료 섹션 */}
-        <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
-           <button onClick={() => setIsEvidenceOpen(!isEvidenceOpen)} className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left border-b border-gray-100">
+        <div className="border border-ln rounded-lg bg-surface-base overflow-hidden">
+           <button onClick={() => setIsEvidenceOpen(!isEvidenceOpen)} className="w-full flex items-center justify-between p-3 bg-surface-sunken hover:bg-surface-raised transition-colors text-left border-b border-ln-subtle">
              <div className="flex items-center gap-2">
-               <FileText size={14} className="text-gray-500" />
-               <span className="font-extrabold text-gray-800 text-sm tracking-wider">증빙 문서 매핑</span>
-               <span className="h-2 w-2 rounded-full bg-gray-300" aria-label="선택" />
+               <FileText size={14} className="text-tx-tertiary" />
+               <span className="font-extrabold text-tx-primary text-sm tracking-wider">증빙 문서 매핑</span>
+               <span className="h-2 w-2 rounded-full bg-ln" aria-label="선택" />
              </div>
-             {isEvidenceOpen ? <ChevronUp size={14} className="text-gray-400" /> : <ChevronDown size={14} className="text-gray-400" />}
+             {isEvidenceOpen ? <ChevronUp size={14} className="text-tx-muted" /> : <ChevronDown size={14} className="text-tx-muted" />}
            </button>
-           
+
            {isEvidenceOpen && (
              <div className="p-3 space-y-2 animate-in slide-in-from-top-1">
               {evidenceChips.length > 0 && (
@@ -172,26 +172,26 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
                           : chip;
                         updateReviewData(activeItem.id, 'docName', next);
                       }}
-                      className="text-[10px] font-semibold px-2 py-1 rounded-full border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-800 bg-white"
+                      className="text-[10px] font-semibold px-2 py-1 rounded-full border border-ln text-tx-tertiary hover:border-ln-strong hover:text-tx-primary bg-surface-base"
                     >
                       {chip}
                     </button>
                   ))}
                 </div>
               )}
-               <input 
+               <input
                  disabled={isDisabled}
-                 type="text" value={currentReview.docName} 
-                 onChange={(e) => updateReviewData(activeItem.id, 'docName', e.target.value)} 
-                 placeholder="문서명 (예: SRS)" 
-                 className="w-full text-xs p-2.5 border border-gray-200 rounded outline-none focus:border-blue-500 transition-all disabled:bg-gray-100" 
+                 type="text" value={currentReview.docName}
+                 onChange={(e) => updateReviewData(activeItem.id, 'docName', e.target.value)}
+                 placeholder="문서명 (예: SRS)"
+                 className="w-full text-xs p-2.5 border border-input-border rounded outline-none bg-input-bg text-input-text placeholder-input-placeholder focus:border-[var(--focus-ring)] transition-all disabled:bg-surface-raised disabled:opacity-60"
                />
-               <input 
+               <input
                  disabled={isDisabled}
-                 type="text" value={currentReview.page} 
-                 onChange={(e) => updateReviewData(activeItem.id, 'page', e.target.value)} 
-                 placeholder="페이지/섹션 (예: p.42)" 
-                 className="w-full text-xs p-2.5 border border-gray-200 rounded outline-none focus:border-blue-500 transition-all disabled:bg-gray-100" 
+                 type="text" value={currentReview.page}
+                 onChange={(e) => updateReviewData(activeItem.id, 'page', e.target.value)}
+                 placeholder="페이지/섹션 (예: p.42)"
+                 className="w-full text-xs p-2.5 border border-input-border rounded outline-none bg-input-bg text-input-text placeholder-input-placeholder focus:border-[var(--focus-ring)] transition-all disabled:bg-surface-raised disabled:opacity-60"
                />
              </div>
            )}

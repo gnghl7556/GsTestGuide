@@ -1,4 +1,4 @@
-import { REQUIREMENTS_DB } from '../data/requirements';
+import { REQUIREMENTS_DB } from 'virtual:content/process';
 import type { ChecklistItem, UserProfile } from '../types';
 
 // ✅ export function 필수

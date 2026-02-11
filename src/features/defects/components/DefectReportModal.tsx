@@ -102,35 +102,35 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-6">
-      <div className="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <div className="text-sm font-extrabold text-gray-900">결함 보고</div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-backdrop)] p-6">
+      <div className="w-full max-w-2xl rounded-2xl border border-ln bg-surface-base shadow-xl">
+        <div className="flex items-center justify-between border-b border-ln px-5 py-4">
+          <div className="text-sm font-extrabold text-tx-primary">결함 보고</div>
           <button
             type="button"
             onClick={() => {
               resetForm();
               onClose();
             }}
-            className="rounded-md border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-500 hover:text-gray-700"
+            className="rounded-md border border-ln px-2 py-1 text-xs font-semibold text-tx-tertiary hover:text-tx-secondary"
           >
             <X size={14} />
           </button>
         </div>
-        <div className="px-5 py-4 space-y-3 text-xs text-gray-700">
+        <div className="px-5 py-4 space-y-3 text-xs text-tx-secondary">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] text-gray-500 mb-1">요약 *</label>
+              <label className="block text-[11px] text-tx-tertiary mb-1">요약 *</label>
               <input
-                className="w-full rounded-md border border-gray-200 px-2 py-1"
+                className="w-full rounded-md border border-ln px-2 py-1"
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-[11px] text-gray-500 mb-1">결함 리포트 차수</label>
+              <label className="block text-[11px] text-tx-tertiary mb-1">결함 리포트 차수</label>
               <select
-                className="w-full rounded-md border border-gray-200 px-2 py-1"
+                className="w-full rounded-md border border-ln px-2 py-1"
                 value={reportVersion}
                 onChange={(e) => setReportVersion(Number(e.target.value) as 1 | 2 | 3 | 4)}
               >
@@ -141,9 +141,9 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
               </select>
             </div>
             <div>
-              <label className="block text-[11px] text-gray-500 mb-1">시험 환경</label>
+              <label className="block text-[11px] text-tx-tertiary mb-1">시험 환경</label>
               <input
-                className="w-full rounded-md border border-gray-200 px-2 py-1"
+                className="w-full rounded-md border border-ln px-2 py-1"
                 value={testEnvironment}
                 onChange={(e) => setTestEnvironment(e.target.value)}
               />
@@ -154,16 +154,16 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
                 type="checkbox"
                 checked={isDerived}
                 onChange={(e) => setIsDerived(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-primary-700 focus:ring-primary-500"
+                className="h-4 w-4 rounded border-ln-strong text-primary-700 focus:ring-primary-500"
               />
-              <label htmlFor="defect-derived" className="text-[11px] text-gray-600">
+              <label htmlFor="defect-derived" className="text-[11px] text-tx-secondary">
                 파생 결함 (회귀/패치 후 파생)
               </label>
             </div>
             <div>
-              <label className="block text-[11px] text-gray-500 mb-1">결함 정도 *</label>
+              <label className="block text-[11px] text-tx-tertiary mb-1">결함 정도 *</label>
               <select
-                className="w-full rounded-md border border-gray-200 px-2 py-1"
+                className="w-full rounded-md border border-ln px-2 py-1"
                 value={severity}
                 onChange={(e) => setSeverity(e.target.value as 'H' | 'M' | 'L' | '')}
               >
@@ -174,9 +174,9 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
               </select>
             </div>
             <div>
-              <label className="block text-[11px] text-gray-500 mb-1">발생 빈도</label>
+              <label className="block text-[11px] text-tx-tertiary mb-1">발생 빈도</label>
               <select
-                className="w-full rounded-md border border-gray-200 px-2 py-1"
+                className="w-full rounded-md border border-ln px-2 py-1"
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value as 'A' | 'I' | '')}
               >
@@ -186,26 +186,26 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
               </select>
             </div>
             <div>
-              <label className="block text-[11px] text-gray-500 mb-1">품질 특성 *</label>
+              <label className="block text-[11px] text-tx-tertiary mb-1">품질 특성 *</label>
               <input
-                className="w-full rounded-md border border-gray-200 px-2 py-1"
+                className="w-full rounded-md border border-ln px-2 py-1"
                 value={qualityCharacteristic}
                 onChange={(e) => setQualityCharacteristic(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-[11px] text-gray-500 mb-1">기능 접근 경로</label>
+              <label className="block text-[11px] text-tx-tertiary mb-1">기능 접근 경로</label>
               <input
-                className="w-full rounded-md border border-gray-200 px-2 py-1"
+                className="w-full rounded-md border border-ln px-2 py-1"
                 value={accessPath}
                 onChange={(e) => setAccessPath(e.target.value)}
               />
             </div>
           </div>
           <div>
-            <label className="block text-[11px] text-gray-500 mb-1">재현 절차</label>
+            <label className="block text-[11px] text-tx-tertiary mb-1">재현 절차</label>
             <textarea
-              className="w-full rounded-md border border-gray-200 px-2 py-1"
+              className="w-full rounded-md border border-ln px-2 py-1"
               rows={3}
               value={stepsToReproduce}
               onChange={(e) => setStepsToReproduce(e.target.value)}
@@ -213,26 +213,26 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
             />
           </div>
           <div>
-            <label className="block text-[11px] text-gray-500 mb-1">결함 상세 설명</label>
+            <label className="block text-[11px] text-tx-tertiary mb-1">결함 상세 설명</label>
             <textarea
-              className="w-full rounded-md border border-gray-200 px-2 py-1"
+              className="w-full rounded-md border border-ln px-2 py-1"
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-[11px] text-gray-500 mb-1">TTA 의견</label>
+            <label className="block text-[11px] text-tx-tertiary mb-1">TTA 의견</label>
             <textarea
-              className="w-full rounded-md border border-gray-200 px-2 py-1"
+              className="w-full rounded-md border border-ln px-2 py-1"
               rows={2}
               value={ttaComment}
               onChange={(e) => setTtaComment(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-[11px] text-gray-500 mb-1">증빙 자료</label>
-            <label className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-[11px] font-semibold text-gray-600 hover:text-gray-800">
+            <label className="block text-[11px] text-tx-tertiary mb-1">증빙 자료</label>
+            <label className="inline-flex items-center gap-2 rounded-md border border-ln bg-surface-base px-3 py-2 text-[11px] font-semibold text-tx-secondary hover:bg-interactive-hover">
               <UploadCloud size={14} />
               파일 추가
               <input
@@ -246,21 +246,21 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
               />
             </label>
             {evidenceFiles.length > 0 && (
-              <div className="mt-2 text-[11px] text-gray-500">
+              <div className="mt-2 text-[11px] text-tx-tertiary">
                 {evidenceFiles.map((file) => file.name).join(', ')}
               </div>
             )}
           </div>
-          {errorMsg && <div className="text-[11px] text-red-500">{errorMsg}</div>}
+          {errorMsg && <div className="text-[11px] text-danger-text">{errorMsg}</div>}
         </div>
-        <div className="border-t border-gray-200 px-5 py-4 flex justify-end gap-2">
+        <div className="border-t border-ln px-5 py-4 flex justify-end gap-2">
           <button
             type="button"
             onClick={() => {
               resetForm();
               onClose();
             }}
-            className="rounded-md border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800"
+            className="rounded-md border border-ln px-4 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover"
           >
             취소
           </button>
@@ -268,7 +268,7 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="rounded-md bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+            className="rounded-md bg-accent px-4 py-2 text-xs font-semibold text-white"
           >
             {saving ? '저장 중...' : '결함 저장'}
           </button>
