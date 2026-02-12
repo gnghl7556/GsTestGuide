@@ -48,7 +48,7 @@ function StatusButton({
     <button
       disabled={isDisabled}
       onClick={() => onSelect(isActive ? 'None' : type)}
-      className={`flex-1 py-3 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all ${
+      className={`flex-1 py-2 rounded-md border flex flex-col items-center justify-center gap-0.5 transition-all ${
         isDisabled ? 'opacity-40 cursor-not-allowed bg-surface-raised' : ''
       } ${
         isActive
@@ -56,8 +56,8 @@ function StatusButton({
           : `bg-surface-base text-tx-muted hover:bg-surface-raised ${isRecommended ? recommendClass[type] : 'border-ln'}`
       }`}
     >
-      <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-      <span className="text-[10px] font-bold">{label}</span>
+      <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+      <span className="text-[9px] font-bold">{label}</span>
     </button>
   );
 }
@@ -82,25 +82,24 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
 
   return (
     <div className="h-full bg-surface-base rounded-xl border border-ln shadow-sm flex flex-col overflow-hidden">
-      <div className="p-4 border-b border-ln bg-surface-base">
-        <h3 className="text-sm font-extrabold text-tx-primary tracking-wider flex items-center gap-2 mb-2">
-          검토 결과 판정
-          <span className="h-2 w-2 rounded-full bg-emerald-500" aria-label="필수" />
-        </h3>
-        <div className={`inline-flex items-center gap-2 text-[10px] font-bold px-2 py-1 rounded border mb-3 ${recommendationClass[recommendation]}`}>
-          추천: {recommendationLabel[recommendation]}
+      <div className="px-3.5 py-3 border-b border-ln-subtle">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-bold text-tx-primary tracking-wide">검토 결과 판정</h3>
+          <div className={`inline-flex items-center gap-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded border ${recommendationClass[recommendation]}`}>
+            추천: {recommendationLabel[recommendation]}
+          </div>
         </div>
         {!canReview && (
-          <div className="mb-2 text-[11px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded">
-            질문에 대한 답변을 모두 입력한 후 판정할 수 있습니다.
+          <div className="mb-2 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2 py-1 rounded-md">
+            답변을 모두 입력한 후 판정할 수 있습니다.
           </div>
         )}
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           <StatusButton
             type="Verified"
             label="적합"
             icon={Check}
-            activeClass="bg-green-600 border-green-600 text-white shadow-md shadow-green-200"
+            activeClass="bg-green-600 border-green-600 text-white shadow-sm"
             isDisabled={isDisabled}
             currentStatus={currentReview.status}
             recommendation={recommendation}
@@ -110,7 +109,7 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
             type="Cannot_Verify"
             label="불가"
             icon={AlertCircle}
-            activeClass="bg-red-50 border-red-500 text-red-600 ring-1 ring-red-200"
+            activeClass="bg-red-50 dark:bg-red-500/15 border-red-500 text-red-600 dark:text-red-400"
             isDisabled={isDisabled}
             currentStatus={currentReview.status}
             recommendation={recommendation}
@@ -120,7 +119,7 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
             type="Hold"
             label="보류"
             icon={Clock}
-            activeClass="bg-yellow-50 border-yellow-500 text-yellow-700 ring-1 ring-yellow-200"
+            activeClass="bg-yellow-50 dark:bg-yellow-500/15 border-yellow-500 text-yellow-700 dark:text-yellow-400"
             isDisabled={isDisabled}
             currentStatus={currentReview.status}
             recommendation={recommendation}
@@ -129,37 +128,35 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-3.5 py-3 space-y-3">
         {/* 의견 작성란 */}
         <div>
-           <label className="text-sm font-extrabold text-tx-primary tracking-wider mb-1.5 flex items-center gap-2">
-             검토 의견 / 메모
-             <span className="h-2 w-2 rounded-full bg-ln" aria-label="선택" />
+           <label className="text-[10px] font-bold text-tx-muted uppercase tracking-wide mb-1 block">
+             검토 의견
            </label>
            <textarea
              disabled={isDisabled}
              value={currentReview.comment}
              onChange={(e) => updateReviewData(activeItem.id, 'comment', e.target.value)}
              placeholder={isDisabled ? "미적용 항목입니다." : "검토 의견을 입력하세요..."}
-             className="w-full text-sm p-3 border border-input-border rounded-lg focus:border-[var(--focus-ring)] focus:ring-1 focus:ring-[var(--focus-ring)]/20 outline-none bg-input-bg text-input-text placeholder-input-placeholder min-h-[120px] resize-none transition-all disabled:bg-surface-raised disabled:opacity-60"
+             className="w-full text-xs p-2.5 border border-input-border rounded-md focus:border-[var(--focus-ring)] focus:ring-1 focus:ring-[var(--focus-ring)]/20 outline-none bg-input-bg text-input-text placeholder-input-placeholder min-h-[90px] resize-none transition-all disabled:bg-surface-raised disabled:opacity-60"
            />
         </div>
 
         {/* 증빙 자료 섹션 */}
-        <div className="border border-ln rounded-lg bg-surface-base overflow-hidden">
-           <button onClick={() => setIsEvidenceOpen(!isEvidenceOpen)} className="w-full flex items-center justify-between p-3 bg-surface-sunken hover:bg-surface-raised transition-colors text-left border-b border-ln-subtle">
-             <div className="flex items-center gap-2">
-               <FileText size={14} className="text-tx-tertiary" />
-               <span className="font-extrabold text-tx-primary text-sm tracking-wider">증빙 문서 매핑</span>
-               <span className="h-2 w-2 rounded-full bg-ln" aria-label="선택" />
+        <div className="border border-ln rounded-md bg-surface-base overflow-hidden">
+           <button onClick={() => setIsEvidenceOpen(!isEvidenceOpen)} className="w-full flex items-center justify-between px-3 py-2 bg-surface-sunken hover:bg-surface-raised transition-colors text-left border-b border-ln-subtle">
+             <div className="flex items-center gap-1.5">
+               <FileText size={12} className="text-tx-muted" />
+               <span className="font-bold text-tx-secondary text-[11px]">증빙 문서 매핑</span>
              </div>
-             {isEvidenceOpen ? <ChevronUp size={14} className="text-tx-muted" /> : <ChevronDown size={14} className="text-tx-muted" />}
+             {isEvidenceOpen ? <ChevronUp size={12} className="text-tx-muted" /> : <ChevronDown size={12} className="text-tx-muted" />}
            </button>
 
            {isEvidenceOpen && (
-             <div className="p-3 space-y-2 animate-in slide-in-from-top-1">
+             <div className="p-2.5 space-y-2 animate-in slide-in-from-top-1">
               {evidenceChips.length > 0 && (
-                <div className={`flex flex-wrap gap-2 ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className={`flex flex-wrap gap-1.5 ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
                   {evidenceChips.map((chip) => (
                     <button
                       key={chip}
@@ -172,7 +169,7 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
                           : chip;
                         updateReviewData(activeItem.id, 'docName', next);
                       }}
-                      className="text-[10px] font-semibold px-2 py-1 rounded-full border border-ln text-tx-tertiary hover:border-ln-strong hover:text-tx-primary bg-surface-base"
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-md border border-ln text-tx-tertiary hover:border-ln-strong hover:text-tx-primary bg-surface-base transition-colors"
                     >
                       {chip}
                     </button>
@@ -184,14 +181,14 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
                  type="text" value={currentReview.docName}
                  onChange={(e) => updateReviewData(activeItem.id, 'docName', e.target.value)}
                  placeholder="문서명 (예: SRS)"
-                 className="w-full text-xs p-2.5 border border-input-border rounded outline-none bg-input-bg text-input-text placeholder-input-placeholder focus:border-[var(--focus-ring)] transition-all disabled:bg-surface-raised disabled:opacity-60"
+                 className="w-full text-[11px] px-2.5 py-1.5 border border-input-border rounded-md outline-none bg-input-bg text-input-text placeholder-input-placeholder focus:border-[var(--focus-ring)] transition-all disabled:bg-surface-raised disabled:opacity-60"
                />
                <input
                  disabled={isDisabled}
                  type="text" value={currentReview.page}
                  onChange={(e) => updateReviewData(activeItem.id, 'page', e.target.value)}
                  placeholder="페이지/섹션 (예: p.42)"
-                 className="w-full text-xs p-2.5 border border-input-border rounded outline-none bg-input-bg text-input-text placeholder-input-placeholder focus:border-[var(--focus-ring)] transition-all disabled:bg-surface-raised disabled:opacity-60"
+                 className="w-full text-[11px] px-2.5 py-1.5 border border-input-border rounded-md outline-none bg-input-bg text-input-text placeholder-input-placeholder focus:border-[var(--focus-ring)] transition-all disabled:bg-surface-raised disabled:opacity-60"
                />
              </div>
            )}

@@ -57,7 +57,7 @@ const TAG_PATTERNS: Array<{ pattern: RegExp; tag: string }> = [
   { pattern: /백업|복구|DR|RTO|RPO/i, tag: '백업/복구' }
 ];
 
-const normalizeLabel = (text: string) => text.replace(/\([^)]*\)/g, '').trim();
+const normalizeLabel = (text: string) => text.trim();
 
 const toQuestion = (text: string) => {
   const trimmed = text.trim();
@@ -122,12 +122,9 @@ const buildTargetTags = (req: Requirement): string[] => {
     : merged.slice(0, 10);
 };
 
-const buildEvidenceChips = (examples?: string[], suggestions?: string[]) => {
-  const labels = [...(examples || []), ...(suggestions || [])].map(normalizeLabel).filter(Boolean);
-  const unique = Array.from(new Set(labels));
-  return unique.slice(0, 6).length < 3
-    ? unique.concat(unique).slice(0, 3)
-    : unique.slice(0, 6);
+const buildEvidenceChips = (examples?: string[]) => {
+  const labels = (examples || []).map(normalizeLabel).filter(Boolean);
+  return Array.from(new Set(labels));
 };
 
 export const toQuickModeItem = (req: Requirement): QuickModeItem => {
@@ -138,7 +135,7 @@ export const toQuickModeItem = (req: Requirement): QuickModeItem => {
     summary: toSummary(req.description),
     targetTags: buildTargetTags(req),
     quickQuestions: buildQuestions(req.checkPoints || [], req.description),
-    evidenceChips: buildEvidenceChips(req.evidenceExamples, req.testSuggestions),
+    evidenceChips: buildEvidenceChips(req.evidenceExamples),
     expertDetails: {
       description: req.description,
       checkPoints: req.checkPoints || [],
