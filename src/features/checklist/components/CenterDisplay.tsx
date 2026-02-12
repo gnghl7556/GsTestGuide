@@ -16,6 +16,7 @@ import { Setup04Evidence } from './Setup04Evidence';
 import { useEffect, useState } from 'react';
 import { storage } from '../../../lib/firebase';
 import { getDownloadURL, ref } from 'firebase/storage';
+import { DefectRefBoardModal } from '../../defects/components/DefectRefBoardModal';
 
 
 
@@ -47,6 +48,7 @@ export function CenterDisplay({
 }: CenterDisplayProps) {
   const [selectedDoc, setSelectedDoc] = useState<RequiredDoc | null>(null);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  const [showDefectBoard, setShowDefectBoard] = useState(false);
   const { currentTestNumber, testSetup } = useTestSetupContext();
   const agreement = testSetup.agreementParsed;
   useEffect(() => {
@@ -81,6 +83,14 @@ export function CenterDisplay({
     storageBucket
       ? `https://firebasestorage.googleapis.com/v0/b/${storageBucket}/o/${encodeURIComponent(storagePath)}?alt=media`
       : '';
+  const DEFECT_BOARD_LABEL = '결함 분류 기준표';
+  const handleDocClick = (doc: RequiredDoc) => {
+    if (doc.label === DEFECT_BOARD_LABEL) {
+      setShowDefectBoard(true);
+      return;
+    }
+    setSelectedDoc(doc);
+  };
   const resolveDocPreviewUrl = (doc: RequiredDoc) => {
     const byLabel = previewUrls[doc.label];
     if (byLabel) return byLabel;
@@ -184,7 +194,7 @@ export function CenterDisplay({
                   toneClass={theme.text}
                   borderClass={theme.border}
                   isActive={selectedDoc?.label === doc.label}
-                  onClick={() => setSelectedDoc(doc)}
+                  onClick={() => handleDocClick(doc)}
                 />
               ))}
             </div>
@@ -242,7 +252,7 @@ export function CenterDisplay({
                   {refItems.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                       {refItems.map((doc, i) => (
-                        <button key={`ref-${i}`} type="button" onClick={() => setSelectedDoc(doc)} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-surface-sunken border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors">
+                        <button key={`ref-${i}`} type="button" onClick={() => handleDocClick(doc)} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-surface-sunken border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors">
                           <Paperclip size={10} />
                           {doc.label}
                         </button>
@@ -469,7 +479,7 @@ export function CenterDisplay({
                               <button
                                 key={`qref-${i}`}
                                 type="button"
-                                onClick={(e) => { e.stopPropagation(); setSelectedDoc(doc); }}
+                                onClick={(e) => { e.stopPropagation(); handleDocClick(doc); }}
                                 className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-surface-base border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors"
                               >
                                 <Paperclip size={9} />
@@ -652,6 +662,7 @@ export function CenterDisplay({
           })()}
         </div>
       )}
+      <DefectRefBoardModal open={showDefectBoard} onClose={() => setShowDefectBoard(false)} />
     </div>
   );
 }
