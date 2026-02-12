@@ -13,11 +13,11 @@ export function RequiredDocChip({ label, toneClass, borderClass, onClick, isActi
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-base font-semibold bg-surface-base ${borderClass} ${toneClass} ${
-        isActive ? 'ring-2 ring-offset-2 ring-ln' : ''
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold bg-surface-base hover:bg-surface-raised transition-colors ${borderClass} ${toneClass} ${
+        isActive ? 'ring-1 ring-offset-1 ring-ln' : ''
       }`}
     >
-      <FileText size={18} />
+      <FileText size={12} />
       {label}
     </button>
   );

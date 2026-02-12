@@ -19,6 +19,11 @@ declare module 'virtual:content/categories' {
     ring: string;
     badgeBg: string;
     badgeText: string;
+    idleBg: string;
+    idleBorder: string;
+    idleText: string;
+    idleHoverBg: string;
+    idleHoverBorder: string;
   }>;
 }
 

@@ -78,8 +78,20 @@ const inferImportance = (text: string): QuestionImportance => {
   return 'MUST';
 };
 
+const REF_PATTERN = /\s*\[ref:\s*(.+?)\]\s*$/;
+
+const parseRefs = (text: string): { clean: string; refs?: string[] } => {
+  const match = text.match(REF_PATTERN);
+  if (!match) return { clean: text };
+  const refs = match[1].split(',').map((r) => r.trim()).filter(Boolean);
+  return { clean: text.replace(REF_PATTERN, '').trim(), refs };
+};
+
 const buildQuestions = (source: string[], description: string): QuickQuestion[] => {
-  const pool = source.filter(Boolean).map(toQuestion);
+  const pool = source.filter(Boolean).map((raw) => {
+    const { clean, refs } = parseRefs(raw);
+    return { text: toQuestion(clean), refs };
+  });
 
   if (pool.length === 0) {
     const descParts = description.split(/[.?!]/).map((part) => part.trim()).filter(Boolean);
@@ -91,10 +103,11 @@ const buildQuestions = (source: string[], description: string): QuickQuestion[] 
     }));
   }
 
-  return pool.map((text, index) => ({
+  return pool.map(({ text, refs }, index) => ({
     id: `Q${index + 1}`,
     text,
-    importance: inferImportance(text)
+    importance: inferImportance(text),
+    ...(refs ? { refs } : {})
   }));
 };
 

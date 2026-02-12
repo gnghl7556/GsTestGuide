@@ -206,7 +206,7 @@ export function NavSidebar({
               </button>
 
               {isExpanded && (
-                <ul className="space-y-2 pl-2 ml-1 my-1 animate-in slide-in-from-top-1 duration-200">
+                <ul className="space-y-0.5 pl-2 ml-1 my-1 animate-in slide-in-from-top-1 duration-200">
                   {catItems.map((item, index) => {
                     const isActive = selectedReqId === item.id;
                     const isNA = item.status === 'Not_Applicable';
@@ -215,13 +215,13 @@ export function NavSidebar({
                     const status = reviewData[item.id]?.status ?? 'None';
                     const statusIcon =
                       status === 'Verified' ? (
-                        <CheckCircle2 size={16} className="text-emerald-600" />
+                        <CheckCircle2 size={12} className="text-emerald-600" />
                       ) : status === 'Cannot_Verify' ? (
-                        <AlertCircle size={16} className="text-red-500" />
+                        <AlertCircle size={12} className="text-red-500" />
                       ) : status === 'Hold' ? (
-                        <Clock size={16} className="text-yellow-600" />
+                        <Clock size={12} className="text-yellow-600" />
                       ) : (
-                        <Circle size={14} className="text-tx-muted" />
+                        <Circle size={10} className="text-tx-muted" />
                       );
 
                     const isFeatureList = item.id === 'DUR-PLAN-01';
@@ -237,20 +237,20 @@ export function NavSidebar({
                             }}
                             disabled={isBlocked}
                             title={isBlocked ? gate?.reason : undefined}
-                            className={`w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all flex items-start justify-between gap-2 border shadow-sm
+                            className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all duration-150 flex items-start justify-between gap-2
                               ${isActive
-                                ? `bg-surface-base ${theme.text} font-bold ${theme.border} border-l-2 ${theme.activeBorder}`
-                                : 'border-ln text-tx-secondary hover:bg-surface-raised'
+                                ? `${theme.lightBg} ${theme.text} font-bold border-l-[3px] ${theme.activeBorder} border border-r-transparent border-y-transparent shadow-sm`
+                                : `${theme.idleBg} border ${theme.idleBorder} ${theme.idleText} ${theme.idleHoverBg} ${theme.idleHoverBorder}`
                               }
-                              ${isBlocked ? 'opacity-60 cursor-not-allowed bg-surface-raised' : ''}
-                              ${isNA && !isActive ? 'opacity-50 line-through decoration-ln-strong' : ''}
+                              ${isBlocked ? 'opacity-50 cursor-not-allowed' : ''}
+                              ${isNA && !isActive ? 'opacity-40 line-through decoration-ln-strong' : ''}
                             `}
                           >
                             <div className="flex items-start gap-2 min-w-0">
                               <span className="mt-0.5 shrink-0">{statusIcon}</span>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : 'text-tx-muted'}`}>
+                                  <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : theme.idleText}`}>
                                     {String(index + 1).padStart(2, '0')}
                                   </span>
                                   <span className="block truncate flex-1">{toShortLabel(item.title)}</span>
@@ -260,33 +260,23 @@ export function NavSidebar({
                                     </span>
                                   )}
                                   {item.checkPoints && item.checkPoints.length > 0 && (
-                                    <span className="hidden lg:flex items-center gap-1 ml-auto">
-                                      {item.checkPoints.slice(0, 3).map((point, idx) => {
+                                    <span className="hidden lg:flex items-center gap-0.5 ml-auto">
+                                      {item.checkPoints.map((point, idx) => {
                                         const qid = `Q${idx + 1}`;
                                         const answer = quickReviewById[item.id]?.answers?.[qid];
-                                        const icon =
-                                          answer === 'YES' ? (
-                                            <Check size={9} className="text-emerald-600" />
-                                          ) : answer === 'NO' ? (
-                                            <X size={9} className="text-red-500" />
-                                          ) : answer === 'NA' ? (
-                                            <span className="text-[9px] font-bold leading-none text-tx-muted">–</span>
-                                          ) : (
-                                            <span className="text-[9px] font-bold leading-none text-tx-muted">·</span>
-                                          );
                                         return (
                                           <span
                                             key={`${item.id}-mini-${idx}`}
                                             title={point}
-                                            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-ln bg-surface-base"
-                                          >
-                                            {icon}
-                                          </span>
+                                            className={`inline-block h-2 w-2 rounded-full ${
+                                              answer === 'YES' ? 'bg-emerald-500'
+                                              : answer === 'NO' ? 'bg-red-500'
+                                              : answer === 'NA' ? 'bg-yellow-400'
+                                              : 'bg-gray-300 dark:bg-white/15'
+                                            }`}
+                                          />
                                         );
                                       })}
-                                      {item.checkPoints.length > 3 && (
-                                        <span className="text-[9px] font-semibold text-tx-muted">+{item.checkPoints.length - 3}</span>
-                                      )}
                                     </span>
                                   )}
                                 </div>

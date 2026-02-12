@@ -15,6 +15,11 @@ export interface CategoryTheme {
   ring: string;
   badgeBg: string;
   badgeText: string;
+  idleBg: string;
+  idleBorder: string;
+  idleText: string;
+  idleHoverBg: string;
+  idleHoverBorder: string;
 }
 
 const PHASE_IDS: Record<string, string> = {
@@ -47,6 +52,11 @@ export function parseCategories(fileContent: string): {
       ring: kv['ring'] ?? '',
       badgeBg: kv['badgeBg'] ?? '',
       badgeText: kv['badgeText'] ?? '',
+      idleBg: kv['idleBg'] ?? '',
+      idleBorder: kv['idleBorder'] ?? '',
+      idleText: kv['idleText'] ?? '',
+      idleHoverBg: kv['idleHoverBg'] ?? '',
+      idleHoverBorder: kv['idleHoverBorder'] ?? '',
     };
   }
 

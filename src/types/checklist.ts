@@ -75,6 +75,7 @@ export interface QuickQuestion {
   id: QuickQuestionId;
   text: string;
   importance: QuestionImportance;
+  refs?: string[];
 }
 
 export interface ExpertDetails {
