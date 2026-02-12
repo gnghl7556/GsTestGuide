@@ -7,7 +7,7 @@ import type {
   RequiredDoc
 } from '../../../types';
 import { CATEGORY_THEMES } from 'virtual:content/categories';
-import { Ban } from 'lucide-react';
+import { Ban, Paperclip } from 'lucide-react';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 import { DefectReportForm } from '../../defects/components/DefectReportForm';
 import { RequiredDocChip } from '../../../components/ui';
@@ -33,8 +33,6 @@ interface CenterDisplayProps {
 
 /* ── Shared input class (token-based, no dark: prefix) ── */
 const inputCls = 'w-full rounded-xl border border-input-border bg-input-bg px-3 py-2 text-sm text-input-text placeholder-input-placeholder focus:border-[var(--focus-ring)] focus:ring-2 focus:ring-[var(--focus-ring)]/20 outline-none';
-const textareaCls = `${inputCls} min-h-[96px]`;
-const textareaSmCls = `${inputCls} min-h-[60px] rounded-lg resize-y`;
 
 export function CenterDisplay({
   activeItem,
@@ -119,10 +117,6 @@ export function CenterDisplay({
       canceled = true;
     };
   }, [refItems]);
-  const isEquipmentItem = (item: unknown): item is { name: string; ip?: string } =>
-    Boolean(item && typeof item === 'object' && 'name' in (item as Record<string, unknown>));
-  const toEquipmentList = (value: unknown) =>
-    Array.isArray(value) && value.every(isEquipmentItem) ? value : [{ name: '', ip: '' }];
   const isSeatAssignment = activeItem.id === 'ENV-01';
   const seatValue = typeof inputValues.seatLocation === 'string' ? inputValues.seatLocation : '';
   const requirementId = quickModeItem?.requirementId ?? activeItem.id;
@@ -239,8 +233,6 @@ export function CenterDisplay({
                   agreement={agreement}
                   quickAnswers={quickAnswers}
                   onQuickAnswer={onQuickAnswer}
-                  inputValues={inputValues}
-                  onInputChange={onInputChange}
                   itemId={activeItem.id}
                 />
               ) : activeItem.id === 'SETUP-04' ? (
@@ -248,113 +240,30 @@ export function CenterDisplay({
                   agreement={agreement}
                   quickAnswers={quickAnswers}
                   onQuickAnswer={onQuickAnswer}
-                  inputValues={inputValues}
-                  onInputChange={onInputChange}
                   itemId={activeItem.id}
                 />
               ) : activeItem.inputFields && activeItem.inputFields.length > 0 ? (
                 <div className="space-y-4">
-                  {activeItem.inputFields.map((field) => {
-                    const value = inputValues[field.id];
-                    if (field.type === 'textarea') {
-                      return (
-                        <label key={field.id} className="block">
-                          <div className="text-sm font-semibold text-tx-secondary mb-1">{field.label}</div>
-                          <textarea
-                            value={typeof value === 'string' ? value : ''}
-                            onChange={(e) => onInputChange(activeItem.id, field.id, e.target.value)}
-                            placeholder={field.placeholder}
-                            className={textareaCls}
-                          />
-                        </label>
-                      );
-                    }
-
-                    if (field.type === 'equipmentList') {
-                      const list = toEquipmentList(value);
-                      return (
-                        <div key={field.id} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-sm font-semibold text-tx-secondary">{field.label}</div>
-                              {field.helper && (
-                                <div className="text-xs text-tx-muted mt-0.5">{field.helper}</div>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const next = [...list, { name: '', ip: '' }];
-                                onInputChange(activeItem.id, field.id, next);
-                              }}
-                              className="text-xs font-semibold px-2.5 py-1 rounded-full border border-ln text-tx-tertiary hover:border-ln-strong"
-                            >
-                              + 장비 추가
-                            </button>
-                          </div>
-                          <div className="space-y-2">
-                            {list.map((item, idx) => (
-                              <div key={`${field.id}-${idx}`} className="grid grid-cols-[2fr_1fr_auto] gap-2 items-center">
-                                <input
-                                  type="text"
-                                  value={item.name}
-                                  onChange={(e) => {
-                                    const next = list.map((row, rowIdx) =>
-                                      rowIdx === idx ? { ...row, name: e.target.value } : row
-                                    );
-                                    onInputChange(activeItem.id, field.id, next);
-                                  }}
-                                  placeholder="장비명"
-                                  className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-input-text focus:border-[var(--focus-ring)] focus:ring-2 focus:ring-[var(--focus-ring)]/20 outline-none"
-                                />
-                                <input
-                                  type="text"
-                                  value={item.ip || ''}
-                                  onChange={(e) => {
-                                    const next = list.map((row, rowIdx) =>
-                                      rowIdx === idx ? { ...row, ip: e.target.value } : row
-                                    );
-                                    onInputChange(activeItem.id, field.id, next);
-                                  }}
-                                  placeholder="IP (옵션)"
-                                  className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-input-text focus:border-[var(--focus-ring)] focus:ring-2 focus:ring-[var(--focus-ring)]/20 outline-none"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const next = list.filter((_, rowIdx) => rowIdx !== idx);
-                                    onInputChange(activeItem.id, field.id, next.length ? next : [{ name: '', ip: '' }]);
-                                  }}
-                                  className="text-xs font-semibold px-2 py-1 rounded-md border border-ln text-tx-tertiary hover:text-tx-secondary"
-                                >
-                                  삭제
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <label key={field.id} className="block">
-                        <div className="text-sm font-semibold text-tx-secondary mb-1">{field.label}</div>
-                        <input
-                          type={field.type === 'number' ? 'number' : field.type === 'email' ? 'email' : field.type === 'tel' ? 'tel' : 'text'}
-                          value={typeof value === 'string' || typeof value === 'number' ? value : ''}
-                          onChange={(e) =>
-                            onInputChange(
-                              activeItem.id,
-                              field.id,
-                              field.type === 'number' ? Number(e.target.value) : e.target.value
-                            )
-                          }
-                          placeholder={field.placeholder}
-                          className={inputCls}
-                        />
-                      </label>
-                    );
-                  })}
+                  {refItems.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {refItems.map((doc, i) => (
+                        <span key={`ref-${i}`} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-surface-sunken border border-ln text-tx-secondary">
+                          <Paperclip size={11} />
+                          {doc.label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {activeItem.evidenceExamples && activeItem.evidenceExamples.length > 0 && (
+                    <div className="rounded-lg border border-ln bg-surface-sunken px-4 py-3">
+                      <div className="text-xs font-semibold text-tx-muted mb-2">증빙 안내</div>
+                      <div className="text-xs text-tx-tertiary space-y-1">
+                        {activeItem.evidenceExamples.map((example, i) => (
+                          <div key={i}>• {example}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -543,14 +452,14 @@ export function CenterDisplay({
                           )}
                         </div>
                       )}
-                      {!isSeatAssignment && (quickAnswers[question.id] === 'YES' || quickAnswers[question.id] === 'NO') && (
-                        <div className="mt-3">
-                          <textarea
-                            value={typeof inputValues[`evidence_${question.id}`] === 'string' ? (inputValues[`evidence_${question.id}`] as string) : ''}
-                            onChange={(e) => onInputChange(requirementId, `evidence_${question.id}`, e.target.value)}
-                            placeholder="증빙 기록을 입력하세요..."
-                            className={textareaSmCls}
-                          />
+                      {!isSeatAssignment && refItems.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {refItems.map((doc, i) => (
+                            <span key={`qref-${i}`} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-surface-base border border-ln text-tx-secondary">
+                              <Paperclip size={11} />
+                              {doc.label}
+                            </span>
+                          ))}
                         </div>
                       )}
                     </div>

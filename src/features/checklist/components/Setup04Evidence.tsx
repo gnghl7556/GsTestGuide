@@ -1,6 +1,5 @@
-import type { AgreementParsed, IpEntry, QuickAnswer, QuickInputValue } from '../../../types';
-
-const IP_PREFIX = '210.104.181.';
+import type { AgreementParsed, QuickAnswer } from '../../../types';
+import { Paperclip } from 'lucide-react';
 
 const QUESTIONS = [
   { id: 'Q1', text: 'IP를 수령했나요?', importance: 'MUST' as const },
@@ -25,41 +24,28 @@ const NO_GUIDES: Record<string, string[]> = {
   ],
 };
 
-function isIpEntryArray(value: unknown): value is IpEntry[] {
-  return (
-    Array.isArray(value) &&
-    value.length > 0 &&
-    typeof value[0] === 'object' &&
-    value[0] !== null &&
-    'label' in value[0] &&
-    'lastOctet' in value[0]
-  );
-}
-
-function toIpEntryList(value: QuickInputValue | undefined, equipmentCount: number): IpEntry[] {
-  if (isIpEntryArray(value)) return value;
-  const count = Math.max(equipmentCount, 1);
-  return Array.from({ length: count }, (_, i) => ({
-    label: `장비 ${i + 1}`,
-    lastOctet: '',
-  }));
-}
-
-function validateOctet(value: string): boolean {
-  if (value === '') return true;
-  const num = Number(value);
-  return /^\d{1,3}$/.test(value) && num >= 0 && num <= 255;
-}
-
-const inputCls = 'w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-input-text placeholder-input-placeholder focus:border-[var(--focus-ring)] focus:ring-2 focus:ring-[var(--focus-ring)]/20 outline-none';
-const textareaSmCls = `${inputCls} min-h-[60px] resize-y`;
+const YES_GUIDES: Record<string, { refs: string[]; guides: string[] }> = {
+  Q1: {
+    refs: ['환경구성 파일'],
+    guides: ['환경구성 파일에 각 장비에 부여된 IP 주소를 입력하세요.'],
+  },
+  Q2: {
+    refs: ['환경구성 파일'],
+    guides: [
+      '서브넷: 255.255.255.0 / 게이트웨이: 210.104.181.1',
+      'DNS: 168.126.63.1',
+    ],
+  },
+  Q3: {
+    refs: [],
+    guides: ['ping 8.8.8.8 또는 브라우저 접속으로 인터넷 연결을 확인하세요.'],
+  },
+};
 
 interface Setup04EvidenceProps {
   agreement: AgreementParsed | undefined;
   quickAnswers: Record<string, QuickAnswer>;
   onQuickAnswer: (itemId: string, questionId: string, value: QuickAnswer) => void;
-  inputValues: Record<string, QuickInputValue>;
-  onInputChange: (itemId: string, fieldId: string, value: QuickInputValue) => void;
   itemId: string;
 }
 
@@ -67,37 +53,8 @@ export function Setup04Evidence({
   agreement,
   quickAnswers,
   onQuickAnswer,
-  inputValues,
-  onInputChange,
   itemId,
 }: Setup04EvidenceProps) {
-  const equipmentCount = Number(agreement?.requiredEquipmentCount) || 1;
-  const ipEntries = toIpEntryList(inputValues.evidence_Q1, equipmentCount);
-
-  const getStringInput = (key: string) =>
-    typeof inputValues[key] === 'string' ? (inputValues[key] as string) : '';
-
-  const handleIpChange = (index: number, lastOctet: string) => {
-    if (!validateOctet(lastOctet)) return;
-    const next = ipEntries.map((entry, i) =>
-      i === index ? { ...entry, lastOctet } : entry
-    );
-    onInputChange(itemId, 'evidence_Q1', next);
-  };
-
-  const addEquipment = () => {
-    const next = [...ipEntries, { label: `장비 ${ipEntries.length + 1}`, lastOctet: '' }];
-    onInputChange(itemId, 'evidence_Q1', next);
-  };
-
-  const removeEquipment = (index: number) => {
-    if (ipEntries.length <= 1) return;
-    const next = ipEntries
-      .filter((_, i) => i !== index)
-      .map((entry, i) => ({ ...entry, label: `장비 ${i + 1}` }));
-    onInputChange(itemId, 'evidence_Q1', next);
-  };
-
   const renderAnswerButtons = (questionId: string) => {
     const currentAnswer = quickAnswers[questionId] ?? 'NA';
     return (
@@ -143,6 +100,7 @@ export function Setup04Evidence({
     <div className="space-y-3">
       {QUESTIONS.map((question, index) => {
         const answer = quickAnswers[question.id] ?? 'NA';
+        const yesGuide = YES_GUIDES[question.id];
         return (
           <div
             key={question.id}
@@ -165,74 +123,33 @@ export function Setup04Evidence({
               {renderAnswerButtons(question.id)}
             </div>
 
-            {/* YES: 상세 입력 영역 */}
-            {answer === 'YES' && question.id === 'Q1' && (
+            {/* YES: 참조 태그 + 가이드 */}
+            {answer === 'YES' && (
               <div className="mt-4 space-y-3">
-                {agreement?.requiredEquipmentCount && (
+                {question.id === 'Q1' && agreement?.requiredEquipmentCount && (
                   <div className="px-3 py-2 rounded-lg bg-accent-subtle border border-accent text-sm text-accent-text">
                     <span className="font-semibold">합의서 장비 수:</span> {agreement.requiredEquipmentCount}대
                   </div>
                 )}
-                <div className="space-y-2">
-                  {ipEntries.map((entry, idx) => (
-                    <div key={`ip-${idx}`} className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-tx-tertiary min-w-[56px]">{entry.label}</span>
-                      <span className="text-sm text-tx-muted font-mono">{IP_PREFIX}</span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={entry.lastOctet}
-                        onChange={(e) => handleIpChange(idx, e.target.value)}
-                        placeholder="0~255"
-                        maxLength={3}
-                        className="w-20 rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-input-text font-mono text-center placeholder-input-placeholder focus:border-[var(--focus-ring)] focus:ring-2 focus:ring-[var(--focus-ring)]/20 outline-none"
-                      />
-                      {ipEntries.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeEquipment(idx)}
-                          className="text-xs font-semibold px-2 py-1 rounded-md border border-ln text-tx-tertiary hover:text-tx-secondary"
-                        >
-                          삭제
-                        </button>
-                      )}
-                      {entry.lastOctet && (
-                        <span className="text-xs text-tx-muted font-mono">
-                          {IP_PREFIX}{entry.lastOctet}
-                        </span>
-                      )}
+                {yesGuide && (
+                  <div className="rounded-lg border border-ln bg-surface-base px-4 py-3">
+                    {yesGuide.refs.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {yesGuide.refs.map((r) => (
+                          <span key={r} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-surface-sunken border border-ln text-tx-secondary">
+                            <Paperclip size={11} />
+                            {r}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="text-xs text-tx-tertiary space-y-1">
+                      {yesGuide.guides.map((guide, i) => (
+                        <div key={i}>• {guide}</div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={addEquipment}
-                  className="text-xs font-semibold px-2.5 py-1 rounded-full border border-ln text-tx-tertiary hover:border-ln-strong"
-                >
-                  + 장비 추가
-                </button>
-              </div>
-            )}
-
-            {answer === 'YES' && question.id === 'Q2' && (
-              <div className="mt-4">
-                <textarea
-                  value={getStringInput('evidence_Q2')}
-                  onChange={(e) => onInputChange(itemId, 'evidence_Q2', e.target.value)}
-                  placeholder="네트워크 설정 내용을 입력하세요 (예: 각 장비 IP 설정 완료, 게이트웨이/DNS 확인)"
-                  className={textareaSmCls}
-                />
-              </div>
-            )}
-
-            {answer === 'YES' && question.id === 'Q3' && (
-              <div className="mt-4">
-                <textarea
-                  value={getStringInput('evidence_Q3')}
-                  onChange={(e) => onInputChange(itemId, 'evidence_Q3', e.target.value)}
-                  placeholder="인터넷 연결 확인 내용을 입력하세요 (예: ping 테스트 정상, 브라우저 접속 확인)"
-                  className={textareaSmCls}
-                />
+                  </div>
+                )}
               </div>
             )}
 

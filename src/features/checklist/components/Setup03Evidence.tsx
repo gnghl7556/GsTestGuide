@@ -1,14 +1,5 @@
-import { useState } from 'react';
-import type { AgreementParsed, QuickAnswer, QuickInputValue } from '../../../types';
-
-const OS_DATABASE = [
-  'Windows 11 Pro', 'Windows 11 Home', 'Windows 10 Pro', 'Windows 10 Home',
-  'Windows Server 2022', 'Windows Server 2019', 'Windows Server 2016',
-  'Ubuntu 24.04 LTS', 'Ubuntu 22.04 LTS', 'Ubuntu 20.04 LTS',
-  'CentOS 7', 'CentOS Stream 9',
-  'Rocky Linux 9', 'Rocky Linux 8',
-  'macOS Sonoma', 'macOS Ventura',
-];
+import type { AgreementParsed, QuickAnswer } from '../../../types';
+import { Paperclip } from 'lucide-react';
 
 const QUESTIONS = [
   { id: 'Q1', text: 'OS 종류/버전을 확인했나요?', importance: 'MUST' as const },
@@ -36,16 +27,32 @@ const NO_GUIDES: Record<string, string[]> = {
   ],
 };
 
-const inputCls = 'w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-input-text placeholder-input-placeholder focus:border-[var(--focus-ring)] focus:ring-2 focus:ring-[var(--focus-ring)]/20 outline-none';
-const textareaSmCls = `${inputCls} min-h-[60px] resize-y`;
-const selectCls = inputCls;
+const YES_GUIDES: Record<string, { refs: string[]; guides: string[] }> = {
+  Q1: {
+    refs: ['시험 합의서'],
+    guides: ['합의서의 "운영체제" 항목에서 OS 정보를 확인하세요.'],
+  },
+  Q2: {
+    refs: ['IODD 담당자'],
+    guides: ['IODD 대여 후 환경구성 파일에 기록하세요.'],
+  },
+  Q3: {
+    refs: ['환경구성 파일'],
+    guides: ['환경구성 파일에 OS 설치 정보(Role, OS, CPU, Mem, Storage)를 입력하세요.'],
+  },
+  Q4: {
+    refs: ['시험 합의서', '환경구성 파일'],
+    guides: [
+      '합의서의 "기타 환경" 항목에서 필요 SW를 확인하세요.',
+      '환경구성 파일의 Pre-Requisite 항목에 설치한 SW를 기록하세요.',
+    ],
+  },
+};
 
 interface Setup03EvidenceProps {
   agreement: AgreementParsed | undefined;
   quickAnswers: Record<string, QuickAnswer>;
   onQuickAnswer: (itemId: string, questionId: string, value: QuickAnswer) => void;
-  inputValues: Record<string, QuickInputValue>;
-  onInputChange: (itemId: string, fieldId: string, value: QuickInputValue) => void;
   itemId: string;
 }
 
@@ -53,21 +60,10 @@ export function Setup03Evidence({
   agreement,
   quickAnswers,
   onQuickAnswer,
-  inputValues,
-  onInputChange,
   itemId,
 }: Setup03EvidenceProps) {
-  const [showCustomOs, setShowCustomOs] = useState(false);
-
   const agreementOs = agreement?.operatingSystem || '';
   const agreementOtherEnv = agreement?.otherEnvironment || '';
-
-  const getStringInput = (key: string) =>
-    typeof inputValues[key] === 'string' ? (inputValues[key] as string) : '';
-
-  const handleInput = (fieldId: string, value: string) => {
-    onInputChange(itemId, fieldId, value);
-  };
 
   const renderAnswerButtons = (questionId: string) => {
     const currentAnswer = quickAnswers[questionId] ?? 'NA';
@@ -114,6 +110,7 @@ export function Setup03Evidence({
     <div className="space-y-3">
       {QUESTIONS.map((question, index) => {
         const answer = quickAnswers[question.id] ?? 'NA';
+        const yesGuide = YES_GUIDES[question.id];
         return (
           <div
             key={question.id}
@@ -136,92 +133,38 @@ export function Setup03Evidence({
               {renderAnswerButtons(question.id)}
             </div>
 
-            {/* YES: 상세 입력 영역 */}
-            {answer === 'YES' && question.id === 'Q1' && (
+            {/* YES: 참조 태그 + 가이드 */}
+            {answer === 'YES' && (
               <div className="mt-4 space-y-3">
-                {agreementOs && (
+                {question.id === 'Q1' && agreementOs && (
                   <div className="px-3 py-2 rounded-lg bg-accent-subtle border border-accent text-sm text-accent-text">
                     <span className="font-semibold">합의서 OS:</span> {agreementOs}
                   </div>
                 )}
-                {!showCustomOs ? (
-                  <select
-                    value={getStringInput('evidence_Q1')}
-                    onChange={(e) => {
-                      if (e.target.value === '__custom__') {
-                        setShowCustomOs(true);
-                        handleInput('evidence_Q1', '');
-                      } else {
-                        handleInput('evidence_Q1', e.target.value);
-                      }
-                    }}
-                    className={selectCls}
-                  >
-                    <option value="">OS 선택...</option>
-                    {OS_DATABASE.map((os) => (
-                      <option key={os} value={os}>{os}</option>
-                    ))}
-                    <option value="__custom__">직접 입력...</option>
-                  </select>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={getStringInput('evidence_Q1')}
-                      onChange={(e) => handleInput('evidence_Q1', e.target.value)}
-                      placeholder="OS 이름 및 버전 직접 입력"
-                      className={`flex-1 ${inputCls}`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowCustomOs(false);
-                        handleInput('evidence_Q1', '');
-                      }}
-                      className="text-xs font-semibold px-3 py-2 rounded-lg border border-ln text-tx-tertiary hover:border-ln-strong whitespace-nowrap"
-                    >
-                      목록 선택
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {answer === 'YES' && question.id === 'Q2' && (
-              <div className="mt-4">
-                <textarea
-                  value={getStringInput('evidence_Q2')}
-                  onChange={(e) => handleInput('evidence_Q2', e.target.value)}
-                  placeholder="대여 정보를 입력하세요 (예: IODD 1개 대여완료)"
-                  className={textareaSmCls}
-                />
-              </div>
-            )}
-
-            {answer === 'YES' && question.id === 'Q3' && (
-              <div className="mt-4">
-                <textarea
-                  value={getStringInput('evidence_Q3')}
-                  onChange={(e) => handleInput('evidence_Q3', e.target.value)}
-                  placeholder="설치 완료 내용을 입력하세요 (예: Windows 11 Pro 설치 완료, 정상 부팅 확인)"
-                  className={textareaSmCls}
-                />
-              </div>
-            )}
-
-            {answer === 'YES' && question.id === 'Q4' && (
-              <div className="mt-4 space-y-3">
-                {agreementOtherEnv && (
+                {question.id === 'Q4' && agreementOtherEnv && (
                   <div className="px-3 py-2 rounded-lg bg-accent-subtle border border-accent text-sm text-accent-text">
                     <span className="font-semibold">합의서 환경 정보:</span> {agreementOtherEnv}
                   </div>
                 )}
-                <textarea
-                  value={getStringInput('evidence_Q4')}
-                  onChange={(e) => handleInput('evidence_Q4', e.target.value)}
-                  placeholder="설치한 SW 목록을 입력하세요 (예: Java 11, Tomcat 9, MariaDB 10.5)"
-                  className={`${textareaSmCls} min-h-[80px]`}
-                />
+                {yesGuide && (
+                  <div className="rounded-lg border border-ln bg-surface-base px-4 py-3">
+                    {yesGuide.refs.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {yesGuide.refs.map((r) => (
+                          <span key={r} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-surface-sunken border border-ln text-tx-secondary">
+                            <Paperclip size={11} />
+                            {r}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <div className="text-xs text-tx-tertiary space-y-1">
+                      {yesGuide.guides.map((guide, i) => (
+                        <div key={i}>• {guide}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
