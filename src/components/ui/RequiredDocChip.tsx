@@ -1,14 +1,16 @@
-import { FileText } from 'lucide-react';
+import { FileDown, ExternalLink } from 'lucide-react';
 
 export type RequiredDocChipProps = {
   label: string;
+  kind?: 'file' | 'external';
   toneClass: string;
   borderClass: string;
   onClick?: () => void;
   isActive?: boolean;
 };
 
-export function RequiredDocChip({ label, toneClass, borderClass, onClick, isActive = false }: RequiredDocChipProps) {
+export function RequiredDocChip({ label, kind = 'file', toneClass, borderClass, onClick, isActive = false }: RequiredDocChipProps) {
+  const Icon = kind === 'external' ? ExternalLink : FileDown;
   return (
     <button
       type="button"
@@ -17,7 +19,7 @@ export function RequiredDocChip({ label, toneClass, borderClass, onClick, isActi
         isActive ? 'ring-1 ring-offset-1 ring-ln' : ''
       }`}
     >
-      <FileText size={12} />
+      <Icon size={12} />
       {label}
     </button>
   );

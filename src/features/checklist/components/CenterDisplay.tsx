@@ -7,7 +7,7 @@ import type {
   RequiredDoc
 } from '../../../types';
 import { CATEGORY_THEMES } from 'virtual:content/categories';
-import { Ban, Paperclip } from 'lucide-react';
+import { Ban, FileDown, ExternalLink, Download, User, Phone, Mail } from 'lucide-react';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 import { DefectReportForm } from '../../defects/components/DefectReportForm';
 import { RequiredDocChip } from '../../../components/ui';
@@ -15,7 +15,7 @@ import { Setup03Evidence } from './Setup03Evidence';
 import { Setup04Evidence } from './Setup04Evidence';
 import { useEffect, useState } from 'react';
 import { storage } from '../../../lib/firebase';
-import { getDownloadURL, ref } from 'firebase/storage';
+import { getDownloadURL, ref, listAll } from 'firebase/storage';
 import { DefectRefBoardModal } from '../../defects/components/DefectRefBoardModal';
 
 
@@ -49,6 +49,7 @@ export function CenterDisplay({
   const [selectedDoc, setSelectedDoc] = useState<RequiredDoc | null>(null);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const [showDefectBoard, setShowDefectBoard] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const { currentTestNumber, testSetup } = useTestSetupContext();
   const agreement = testSetup.agreementParsed;
   useEffect(() => {
@@ -58,6 +59,20 @@ export function CenterDisplay({
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
+  }, [selectedDoc]);
+  useEffect(() => {
+    setDownloadUrl(null);
+    if (!selectedDoc || !storage) return;
+    let canceled = false;
+    const folderRef = ref(storage, `sample-downloads/${selectedDoc.label}`);
+    void listAll(folderRef)
+      .then(async (result) => {
+        if (canceled || result.items.length === 0) return;
+        const url = await getDownloadURL(result.items[0]);
+        if (!canceled) setDownloadUrl(url);
+      })
+      .catch(() => {});
+    return () => { canceled = true; };
   }, [selectedDoc]);
   if (!activeItem) return <div className="h-full bg-surface-base rounded-xl border border-ln" />;
 
@@ -191,6 +206,7 @@ export function CenterDisplay({
                 <RequiredDocChip
                   key={`${doc.label}-${index}`}
                   label={doc.label}
+                  kind={doc.kind}
                   toneClass={theme.text}
                   borderClass={theme.border}
                   isActive={selectedDoc?.label === doc.label}
@@ -253,7 +269,7 @@ export function CenterDisplay({
                     <div className="flex flex-wrap gap-1.5">
                       {refItems.map((doc, i) => (
                         <button key={`ref-${i}`} type="button" onClick={() => handleDocClick(doc)} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-surface-sunken border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors">
-                          <Paperclip size={10} />
+                          {doc.kind === 'external' ? <ExternalLink size={10} /> : <FileDown size={10} />}
                           {doc.label}
                         </button>
                       ))}
@@ -415,57 +431,51 @@ export function CenterDisplay({
                         <div className="mt-3 space-y-2.5">
                           <div className="rounded-md border border-ln bg-surface-base px-3 py-2 text-[11px] text-tx-tertiary space-y-0.5">
                             <div>• 시험에 필요한 장비 확인: <span className="font-semibold">시험 합의서</span>를 확인하세요.</div>
-                            <div>• 사용 가능한 시험 자리: <span className="font-semibold">관련 정보</span>에서 담당자 정보를 확인하세요.</div>
+                            <div>• 사용 가능한 시험 자리: 아래 <span className="font-semibold">담당자</span> 정보를 확인하세요.</div>
                           </div>
+                          {activeItem.contacts && activeItem.contacts.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {activeItem.contacts.map((c) => (
+                                <div key={c.role} className="rounded-lg border border-ln bg-surface-base px-3 py-2.5 flex items-start gap-2.5 min-w-[200px]">
+                                  <div className="h-7 w-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                                    <User size={13} className="text-accent" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-[10px] text-tx-muted">{c.role}</div>
+                                    <div className="text-[11px] font-bold text-tx-primary">{c.name}</div>
+                                    {c.phone && (
+                                      <div className="flex items-center gap-1 mt-0.5 text-[10px] text-tx-tertiary">
+                                        <Phone size={9} />
+                                        {c.phone}
+                                      </div>
+                                    )}
+                                    {c.email && (
+                                      <div className="flex items-center gap-1 text-[10px] text-tx-tertiary">
+                                        <Mail size={9} />
+                                        {c.email}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           {activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
                             <div className="rounded-md border border-ln bg-surface-base px-3 py-2.5 text-[11px] text-tx-tertiary">
-                              <div className="text-[10px] font-bold text-tx-muted mb-1.5 uppercase tracking-wide">관련 정보</div>
+                              <div className="text-[10px] font-bold text-tx-muted mb-1.5 uppercase tracking-wide">참조 정보</div>
                               <div className="space-y-1.5">
-                                {(() => {
-                                  const contact = activeItem.relatedInfo.find((info) => info.label === '연락처');
-                                  const email = activeItem.relatedInfo.find((info) => info.label === '이메일');
-                                  const manager = activeItem.relatedInfo.find((info) => info.label === '자리 배정 담당자');
-                                  const others = activeItem.relatedInfo.filter(
-                                    (info) => info.label !== '연락처' && info.label !== '이메일' && info.label !== '자리 배정 담당자'
-                                  );
-                                  const ordered = [manager, ...others].filter(Boolean) as typeof activeItem.relatedInfo;
-                                  return ordered.map((info) => (
-                                    <div
-                                      key={info.label}
-                                      className="flex flex-wrap items-center gap-2"
-                                    >
-                                      <span className="text-tx-muted min-w-[120px]">{info.label}</span>
-                                      {info.href ? (
-                                        <a
-                                          href={info.href}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="text-accent-text hover:text-accent-hover underline"
-                                        >
-                                          {info.value}
-                                        </a>
-                                      ) : (
-                                        <span className={`text-tx-primary ${info.label === '자리 배정 담당자' ? 'font-bold' : 'font-semibold'}`}>
-                                          {info.value}
-                                        </span>
-                                      )}
-                                      {info.label === '자리 배정 담당자' && (contact || email) && (
-                                        <span className="flex flex-wrap gap-2">
-                                          {contact && (
-                                            <span className="text-tx-secondary font-semibold bg-surface-base px-2 py-0.5 rounded-full border border-ln">
-                                              {contact.value}
-                                            </span>
-                                          )}
-                                          {email && (
-                                            <span className="text-tx-secondary font-semibold bg-surface-base px-2 py-0.5 rounded-full border border-ln">
-                                              {email.value}
-                                            </span>
-                                          )}
-                                        </span>
-                                      )}
-                                    </div>
-                                  ));
-                                })()}
+                                {activeItem.relatedInfo.map((info) => (
+                                  <div key={info.label} className="flex flex-wrap items-center gap-2">
+                                    <span className="text-tx-muted min-w-[120px]">{info.label}</span>
+                                    {info.href ? (
+                                      <a href={info.href} target="_blank" rel="noreferrer" className="text-accent-text hover:text-accent-hover underline">
+                                        {info.value}
+                                      </a>
+                                    ) : (
+                                      <span className="text-tx-secondary font-semibold">{info.value}</span>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           )}
@@ -482,7 +492,7 @@ export function CenterDisplay({
                                 onClick={(e) => { e.stopPropagation(); handleDocClick(doc); }}
                                 className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-surface-base border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors"
                               >
-                                <Paperclip size={9} />
+                                {doc.kind === 'external' ? <ExternalLink size={9} /> : <FileDown size={9} />}
                                 {doc.label}
                               </button>
                             ))}
@@ -493,49 +503,52 @@ export function CenterDisplay({
                 </div>
               )}
             </div>
-            {!isSeatAssignment && activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
-              <div className="mt-5 rounded-lg border border-ln bg-surface-sunken px-3.5 py-2.5 text-xs text-tx-tertiary">
-                <div className="text-[10px] font-bold text-tx-muted mb-1.5 uppercase tracking-wide">관련 정보</div>
-                <div className="space-y-1.5">
-                  {(() => {
-                    const contact = activeItem.relatedInfo.find((info) => info.label === '연락처');
-                    const email = activeItem.relatedInfo.find((info) => info.label === '이메일');
-                    return activeItem.relatedInfo
-                      .filter((info) => info.label !== '연락처' && info.label !== '이메일')
-                      .map((info) => {
-                        return (
-                          <div key={info.label} className="flex flex-wrap items-center gap-2">
-                            <span className="text-tx-muted min-w-[120px]">{info.label}</span>
-                            {info.href ? (
-                              <a
-                                href={info.href}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-accent-text hover:text-accent-hover underline"
-                              >
-                                {info.value}
-                              </a>
-                            ) : (
-                              <span className="text-tx-secondary font-semibold">{info.value}</span>
-                            )}
-                            {info.label === '자리 배정 담당자' && (contact || email) && (
-                              <span className="flex flex-wrap gap-2">
-                                {contact && (
-                                  <span className="text-tx-secondary font-semibold bg-surface-base px-2 py-0.5 rounded-full border border-ln">
-                                    {contact.value}
-                                  </span>
-                                )}
-                                {email && (
-                                  <span className="text-tx-secondary font-semibold bg-surface-base px-2 py-0.5 rounded-full border border-ln">
-                                    {email.value}
-                                  </span>
-                                )}
-                              </span>
-                            )}
+            {!isSeatAssignment && activeItem.contacts && activeItem.contacts.length > 0 && (
+              <div className="mt-5">
+                <div className="text-[10px] font-bold text-tx-muted mb-2 uppercase tracking-wide">담당자</div>
+                <div className="flex flex-wrap gap-2">
+                  {activeItem.contacts.map((c) => (
+                    <div key={c.role} className="rounded-lg border border-ln bg-surface-sunken px-3.5 py-2.5 flex items-start gap-2.5 min-w-[200px]">
+                      <div className="h-7 w-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                        <User size={13} className="text-accent" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[10px] text-tx-muted">{c.role}</div>
+                        <div className="text-[11px] font-bold text-tx-primary">{c.name}</div>
+                        {c.phone && (
+                          <div className="flex items-center gap-1 mt-0.5 text-[10px] text-tx-tertiary">
+                            <Phone size={9} />
+                            {c.phone}
                           </div>
-                        );
-                      });
-                  })()}
+                        )}
+                        {c.email && (
+                          <div className="flex items-center gap-1 text-[10px] text-tx-tertiary">
+                            <Mail size={9} />
+                            {c.email}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!isSeatAssignment && activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
+              <div className="mt-4 rounded-lg border border-ln bg-surface-sunken px-3.5 py-2.5 text-xs text-tx-tertiary">
+                <div className="text-[10px] font-bold text-tx-muted mb-1.5 uppercase tracking-wide">참조 정보</div>
+                <div className="space-y-1.5">
+                  {activeItem.relatedInfo.map((info) => (
+                    <div key={info.label} className="flex flex-wrap items-center gap-2">
+                      <span className="text-tx-muted min-w-[120px]">{info.label}</span>
+                      {info.href ? (
+                        <a href={info.href} target="_blank" rel="noreferrer" className="text-accent-text hover:text-accent-hover underline">
+                          {info.value}
+                        </a>
+                      ) : (
+                        <span className="text-tx-secondary font-semibold">{info.value}</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -601,13 +614,26 @@ export function CenterDisplay({
           <div className="w-full max-w-5xl rounded-2xl border border-ln bg-surface-overlay shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between border-b border-ln px-5 py-4">
               <div className="text-sm font-bold text-tx-primary">{selectedDoc.label}</div>
-              <button
-                type="button"
-                onClick={() => setSelectedDoc(null)}
-                className="rounded-lg border border-ln px-3 py-1.5 text-xs font-semibold text-tx-tertiary hover:text-tx-primary"
-              >
-                닫기
-              </button>
+              <div className="flex items-center gap-2">
+                {downloadUrl && (
+                  <a
+                    href={downloadUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-accent bg-accent text-white px-3 py-1.5 text-xs font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    <Download size={13} />
+                    샘플 다운로드
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedDoc(null)}
+                  className="rounded-lg border border-ln px-3 py-1.5 text-xs font-semibold text-tx-tertiary hover:text-tx-primary"
+                >
+                  닫기
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-[7fr_3fr] gap-0 min-h-[60vh]" onClick={(e) => e.stopPropagation()}>
               <div className="border-r border-ln-subtle bg-surface-sunken p-4">

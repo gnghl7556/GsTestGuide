@@ -36,6 +36,17 @@ function parseRelatedInfo(section: string | undefined): Array<{ label: string; v
   }));
 }
 
+function parseContacts(section: string | undefined): Array<{ role: string; name: string; phone?: string; email?: string }> {
+  if (!section) return [];
+  const rows = parseTable(section);
+  return rows.map((row) => ({
+    role: row['역할'] ?? '',
+    name: row['이름'] ?? '',
+    ...(row['연락처'] ? { phone: row['연락처'] } : {}),
+    ...(row['이메일'] ? { email: row['이메일'] } : {}),
+  }));
+}
+
 export function parseProcessItem(fileContent: string): Requirement {
   const { data, content } = matter(fileContent);
   const sections = extractSections(content);
@@ -53,6 +64,7 @@ export function parseProcessItem(fileContent: string): Requirement {
     passCriteria: findSection(sections, '합격 기준')?.content?.trim() ?? '',
     requiredDocs: parseRequiredDocs(findSection(sections, '참조 문서')?.content),
     relatedInfo: parseRelatedInfo(findSection(sections, '참조 정보')?.content),
+    contacts: parseContacts(findSection(sections, '담당자')?.content),
     keywords: data.keywords ?? [],
   };
 }

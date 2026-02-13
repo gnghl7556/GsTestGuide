@@ -9,6 +9,7 @@ export interface Requirement {
   description: string;
   keywords?: string[];
   relatedInfo?: Array<{ label: string; value: string; href?: string }>;
+  contacts?: Array<{ role: string; name: string; phone?: string; email?: string }>;
   requiredDocs?: RequiredDoc[];
   docRequirements?: {
     must?: string[];

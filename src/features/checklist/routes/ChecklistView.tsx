@@ -1,6 +1,7 @@
 import { NavSidebar } from '../components/NavSidebar';
 import { CenterDisplay } from '../components/CenterDisplay';
 import { RightActionPanel } from '../components/RightActionPanel';
+import { HelperToolsPopup } from '../components/HelperToolsPopup';
 import type {
   ChecklistItem,
   ExecutionItemGate,
@@ -54,16 +55,21 @@ export function ChecklistView({
 }: ChecklistViewProps) {
   return (
     <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)_clamp(280px,24vw,380px)] gap-5 min-h-0 pb-2">
-      <div className="h-full overflow-hidden">
-        <NavSidebar
-          checklist={checklist}
-          reviewData={reviewData}
-          quickReviewById={quickReviewById}
-          selectedReqId={selectedReqId}
-          setSelectedReqId={setSelectedReqId}
-          activeCategory={activeItem?.category || 'SETUP'}
-          itemGates={itemGates}
-        />
+      <div className="h-full overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <NavSidebar
+            checklist={checklist}
+            reviewData={reviewData}
+            quickReviewById={quickReviewById}
+            selectedReqId={selectedReqId}
+            setSelectedReqId={setSelectedReqId}
+            activeCategory={activeItem?.category || 'SETUP'}
+            itemGates={itemGates}
+          />
+        </div>
+        <div className="shrink-0 pt-2">
+          <HelperToolsPopup />
+        </div>
       </div>
 
       <div className="h-full overflow-hidden">
