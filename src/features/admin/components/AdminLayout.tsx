@@ -1,10 +1,12 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Users, FolderKanban, ArrowLeft, LogOut } from 'lucide-react';
+import { Users, FolderKanban, ArrowLeft, LogOut, Contact, FileBox } from 'lucide-react';
 import { useAdminAuth } from '../hooks/useAdminAuth';
 
 const NAV_ITEMS = [
   { path: '/admin/users', label: '사용자 관리', icon: Users },
   { path: '/admin/projects', label: '프로젝트 관리', icon: FolderKanban },
+  { path: '/admin/contacts', label: '담당자 관리', icon: Contact },
+  { path: '/admin/materials', label: '자료 관리', icon: FileBox },
 ] as const;
 
 export function AdminLayout() {

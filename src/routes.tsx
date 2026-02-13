@@ -8,6 +8,8 @@ import { AdminGuard } from './features/admin/routes/AdminGuard';
 import { AdminLayout } from './features/admin/components/AdminLayout';
 import { UserManagement } from './features/admin/components/UserManagement';
 import { ProjectManagement } from './features/admin/components/ProjectManagement';
+import { ContactManagement } from './features/admin/components/ContactManagement';
+import { MaterialManagement } from './features/admin/components/MaterialManagement';
 
 export function AppRoutes() {
   return (
@@ -26,6 +28,8 @@ export function AppRoutes() {
           <Route index element={<Navigate to="users" replace />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="projects" element={<ProjectManagement />} />
+          <Route path="contacts" element={<ContactManagement />} />
+          <Route path="materials" element={<MaterialManagement />} />
         </Route>
       </Route>
 

@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { storage } from '../../../lib/firebase';
 import { getDownloadURL, ref, listAll } from 'firebase/storage';
 import { DefectRefBoardModal } from '../../defects/components/DefectRefBoardModal';
+import { useStepContacts } from '../../admin/hooks/useStepContacts';
 
 
 
@@ -52,6 +53,7 @@ export function CenterDisplay({
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const { currentTestNumber, testSetup } = useTestSetupContext();
   const agreement = testSetup.agreementParsed;
+  const contacts = useStepContacts(activeItem?.id, activeItem?.contacts);
   useEffect(() => {
     if (!selectedDoc) return;
     const handleEsc = (event: KeyboardEvent) => {
@@ -433,9 +435,9 @@ export function CenterDisplay({
                             <div>• 시험에 필요한 장비 확인: <span className="font-semibold">시험 합의서</span>를 확인하세요.</div>
                             <div>• 사용 가능한 시험 자리: 아래 <span className="font-semibold">담당자</span> 정보를 확인하세요.</div>
                           </div>
-                          {activeItem.contacts && activeItem.contacts.length > 0 && (
+                          {contacts.length > 0 && (
                             <div className="flex flex-wrap gap-2">
-                              {activeItem.contacts.map((c) => (
+                              {contacts.map((c) => (
                                 <div key={c.role} className="rounded-lg border border-ln bg-surface-base px-3 py-2.5 flex items-start gap-2.5 min-w-[200px]">
                                   <div className="h-7 w-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                                     <User size={13} className="text-accent" />
@@ -503,11 +505,11 @@ export function CenterDisplay({
                 </div>
               )}
             </div>
-            {!isSeatAssignment && activeItem.contacts && activeItem.contacts.length > 0 && (
+            {!isSeatAssignment && contacts.length > 0 && (
               <div className="mt-5">
                 <div className="text-[10px] font-bold text-tx-muted mb-2 uppercase tracking-wide">담당자</div>
                 <div className="flex flex-wrap gap-2">
-                  {activeItem.contacts.map((c) => (
+                  {contacts.map((c) => (
                     <div key={c.role} className="rounded-lg border border-ln bg-surface-sunken px-3.5 py-2.5 flex items-start gap-2.5 min-w-[200px]">
                       <div className="h-7 w-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                         <User size={13} className="text-accent" />
