@@ -7,7 +7,7 @@ import type {
   RequiredDoc
 } from '../../../types';
 import { CATEGORY_THEMES } from 'virtual:content/categories';
-import { Ban, FileDown, ExternalLink, Download, User, Phone, Mail } from 'lucide-react';
+import { Ban, FileDown, ExternalLink, Download, User, Phone, Mail, MessageSquare } from 'lucide-react';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 import { DefectReportForm } from '../../defects/components/DefectReportForm';
 import { RequiredDocChip } from '../../../components/ui';
@@ -53,7 +53,7 @@ export function CenterDisplay({
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const { currentTestNumber, testSetup } = useTestSetupContext();
   const agreement = testSetup.agreementParsed;
-  const contacts = useStepContacts(activeItem?.contacts);
+  const contacts = useStepContacts(activeItem?.id, activeItem?.contacts);
   useEffect(() => {
     if (!selectedDoc) return;
     const handleEsc = (event: KeyboardEvent) => {
@@ -182,12 +182,12 @@ export function CenterDisplay({
     <div className="h-full bg-surface-base rounded-xl border border-ln shadow-sm flex flex-col overflow-hidden relative">
       <div className={`px-6 py-4 border-b border-ln-subtle ${isNA ? 'bg-surface-sunken' : theme.lightBg}`}>
         <div className="flex items-center gap-2.5 mb-1.5">
-          <span className={`text-[11px] font-bold tracking-wide uppercase ${isNA ? 'text-tx-muted' : theme.text}`}>{activeItem.category === 'SETUP' ? '시험준비' : activeItem.category === 'EXECUTION' ? '시험수행' : '시험종료'}</span>
-          <span className="text-tx-muted text-[11px]">/</span>
-          <span className={`text-[11px] font-mono font-bold px-1.5 py-0.5 rounded ${isNA ? 'bg-surface-sunken text-tx-tertiary' : `${theme.lightBg} ${theme.text}`}`}>#{displayLabel}</span>
+          <span className={`text-xs font-bold tracking-wide uppercase ${isNA ? 'text-tx-muted' : theme.text}`}>{activeItem.category === 'SETUP' ? '시험준비' : activeItem.category === 'EXECUTION' ? '시험수행' : '시험종료'}</span>
+          <span className="text-tx-muted text-xs">/</span>
+          <span className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded ${isNA ? 'bg-surface-sunken text-tx-tertiary' : `${theme.lightBg} ${theme.text}`}`}>#{displayLabel}</span>
           {itemGate && itemGate.state !== 'enabled' && (
             <span
-              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                 itemGate.state === 'blockedByFinalization'
                   ? 'bg-status-hold-bg text-status-hold-text border border-status-hold-border'
                   : 'bg-surface-sunken text-tx-tertiary border border-ln'
@@ -199,7 +199,7 @@ export function CenterDisplay({
           )}
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <h2 className={`text-3xl font-bold leading-snug ${isNA ? 'text-tx-muted' : 'text-tx-primary'}`}>
+          <h2 className={`text-2xl font-bold leading-snug ${isNA ? 'text-tx-muted' : 'text-tx-primary'}`}>
             {activeItem.title}
           </h2>
           {refItems.length > 0 && !isNA && (
@@ -220,37 +220,37 @@ export function CenterDisplay({
         </div>
       </div>
 
-      <div className="px-6 py-5 flex-1 overflow-y-auto">
+      <div className="px-6 py-6 flex-1 overflow-y-auto">
 
         {isNA ? (
-          <div className="p-3.5 bg-surface-sunken rounded-lg border border-dashed border-ln-strong flex items-start gap-2.5 text-tx-tertiary mb-5">
-            <Ban className="mt-0.5 shrink-0" size={16} />
+          <div className="p-4 bg-surface-sunken rounded-lg border border-dashed border-ln-strong flex items-start gap-3 text-tx-tertiary mb-5">
+            <Ban className="mt-0.5 shrink-0" size={18} />
             <div>
-              <strong className="block text-tx-secondary text-xs font-bold mb-0.5">검토 제외 대상</strong>
-              <span className="text-xs">{activeItem.autoReason}</span>
+              <strong className="block text-tx-secondary text-base font-bold mb-0.5">검토 제외 대상</strong>
+              <span className="text-base">{activeItem.autoReason}</span>
             </div>
           </div>
         ) : (
           <div className="max-w-none">
             {quickModeItem ? (
               <>
-                <p className="text-sm text-tx-primary leading-relaxed font-semibold">
+                <p className="text-lg text-tx-primary leading-relaxed font-semibold">
                   {quickModeItem.summary}
                 </p>
                 {activeItem.description && (
-                  <p className="text-xs text-tx-tertiary leading-relaxed mt-1.5">
+                  <p className="text-base text-tx-tertiary leading-relaxed mt-2">
                     {activeItem.description}
                   </p>
                 )}
               </>
             ) : (
               activeItem.description && (
-                <p className="text-xs text-tx-tertiary leading-relaxed">
+                <p className="text-base text-tx-tertiary leading-relaxed">
                   {activeItem.description}
                 </p>
               )
             )}
-            <div className="mt-4 space-y-3">
+            <div className="mt-5 space-y-4">
               {activeItem.id === 'SETUP-03' ? (
                 <Setup03Evidence
                   agreement={agreement}
@@ -266,21 +266,21 @@ export function CenterDisplay({
                   itemId={activeItem.id}
                 />
               ) : activeItem.inputFields && activeItem.inputFields.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {refItems.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                       {refItems.map((doc, i) => (
-                        <button key={`ref-${i}`} type="button" onClick={() => handleDocClick(doc)} className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-surface-sunken border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors">
-                          {doc.kind === 'external' ? <ExternalLink size={10} /> : <FileDown size={10} />}
+                        <button key={`ref-${i}`} type="button" onClick={() => handleDocClick(doc)} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-surface-sunken border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors">
+                          {doc.kind === 'external' ? <ExternalLink size={11} /> : <FileDown size={11} />}
                           {doc.label}
                         </button>
                       ))}
                     </div>
                   )}
                   {activeItem.evidenceExamples && activeItem.evidenceExamples.length > 0 && (
-                    <div className="rounded-md border border-ln bg-surface-sunken px-3 py-2.5">
-                      <div className="text-[10px] font-bold text-tx-muted mb-1.5 uppercase tracking-wide">증빙 안내</div>
-                      <div className="text-[11px] text-tx-tertiary space-y-0.5">
+                    <div className="rounded-md border border-ln bg-surface-sunken px-3.5 py-3">
+                      <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">증빙 안내</div>
+                      <div className="text-sm text-tx-tertiary space-y-1">
                         {activeItem.evidenceExamples.map((example, i) => (
                           <div key={i}>• {example}</div>
                         ))}
@@ -289,12 +289,12 @@ export function CenterDisplay({
                   )}
                 </div>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {seatQuestions.map((question, index) => (
                     <div
                       key={question.id}
                       id={`question-${requirementId}-${question.id}`}
-                      className={`px-3.5 py-3 rounded-lg border transition-colors ${
+                      className={`p-4 rounded-xl border shadow-sm transition-colors ${
                         isSeatAssignment && question.id === 'Q2' && (q1Answer === 'NA' || q1Answer === 'YES')
                           ? 'border-ln-subtle bg-surface-raised opacity-50 pointer-events-none'
                           : quickAnswers[question.id] === 'YES'
@@ -307,29 +307,50 @@ export function CenterDisplay({
                       {(() => {
                         const currentAnswer = quickAnswers[question.id] ?? 'NA';
                         return (
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className={`inline-flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-bold shrink-0 ${
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
                             currentAnswer === 'YES'
                               ? 'bg-status-pass-bg text-status-pass-text border border-status-pass-border'
                               : currentAnswer === 'NO'
                                 ? 'bg-status-fail-bg text-status-fail-text border border-status-fail-border'
-                                : 'bg-surface-base text-tx-muted border border-ln'
+                                : 'bg-surface-base text-tx-tertiary border border-ln'
                           }`}>
                             {index + 1}
                           </span>
                           <div className="min-w-0">
-                            <span className="text-xs text-tx-primary leading-snug font-medium">{question.text}</span>
-                            <span className={`ml-1.5 text-[9px] font-bold px-1 py-px rounded ${
-                              question.importance === 'MUST'
-                                ? 'bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400'
-                                : 'bg-surface-sunken text-tx-muted'
-                            }`}>
+                            <div className="text-xs font-bold text-tx-muted mb-0.5">
                               {question.importance === 'MUST' ? '필수' : '권고'}
-                            </span>
+                            </div>
+                            {!isSeatAssignment && (() => {
+                              const questionRefs = question.refs && question.refs.length > 0
+                                ? refItems.filter((d) => question.refs!.includes(d.label))
+                                : refItems;
+                              if (questionRefs.length === 0) return null;
+                              return (
+                                <div className="flex items-center gap-1 mb-1 flex-wrap">
+                                  {questionRefs.map((d, i) => (
+                                    <button
+                                      key={`qref-${question.id}-${i}`}
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); handleDocClick(d); }}
+                                      className={`inline-flex items-center gap-0.5 text-[11px] px-1.5 py-0.5 rounded-md border transition-colors ${
+                                        selectedDoc?.label === d.label
+                                          ? `${theme.text} ${theme.border} bg-white/50`
+                                          : 'bg-surface-base border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary'
+                                      }`}
+                                    >
+                                      {d.kind === 'external' ? <ExternalLink size={9} /> : <FileDown size={9} />}
+                                      {d.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              );
+                            })()}
+                            <span className="text-[15px] text-tx-primary leading-snug font-semibold">{question.text}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
                             onClick={() => {
@@ -340,10 +361,10 @@ export function CenterDisplay({
                               }
                               onQuickAnswer(requirementId, question.id, 'YES');
                             }}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold border transition-colors ${
+                            className={`px-4 py-2 rounded-lg text-base font-bold border transition-colors ${
                               currentAnswer === 'YES'
-                                ? 'bg-status-pass-bg text-status-pass-text border-status-pass-border shadow-sm'
-                                : 'bg-surface-base text-tx-muted border-ln hover:border-status-pass-border hover:text-status-pass-text'
+                                ? 'bg-status-pass-bg text-status-pass-text border-status-pass-border'
+                                : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
                             }`}
                           >
                             예
@@ -358,10 +379,10 @@ export function CenterDisplay({
                               }
                               onQuickAnswer(requirementId, question.id, 'NO');
                             }}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold border transition-colors ${
+                            className={`px-4 py-2 rounded-lg text-base font-bold border transition-colors ${
                               currentAnswer === 'NO'
-                                ? 'bg-status-fail-bg text-status-fail-text border-status-fail-border shadow-sm'
-                                : 'bg-surface-base text-tx-muted border-ln hover:border-status-fail-border hover:text-status-fail-text'
+                                ? 'bg-status-fail-bg text-status-fail-text border-status-fail-border'
+                                : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
                             }`}
                           >
                             아니오
@@ -372,21 +393,21 @@ export function CenterDisplay({
                               if (!quickModeItem && !isSeatAssignment) return;
                               onQuickAnswer(requirementId, question.id, 'NA');
                             }}
-                            className={`px-3 py-1.5 rounded-md text-xs font-bold border transition-colors ${
+                            className={`px-4 py-2 rounded-lg text-base font-bold border transition-colors ${
                               currentAnswer === 'NA'
-                                ? 'bg-status-pending-bg text-tx-tertiary border-status-pending-border shadow-sm'
-                                : 'bg-surface-base text-tx-muted border-ln hover:border-ln-strong'
+                                ? 'bg-status-pending-bg text-tx-tertiary border-status-pending-border'
+                                : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
                             }`}
                           >
-                            N/A
+                            해당없음
                           </button>
                         </div>
                       </div>
                         );
                       })()}
                       {isSeatAssignment && question.id === 'Q1' && q1Answer === 'YES' && (
-                        <div className="mt-3 space-y-1.5">
-                          <div className="text-[10px] font-bold text-tx-tertiary">시험 자리</div>
+                        <div className="mt-3.5 space-y-2">
+                          <div className="text-xs font-bold text-tx-tertiary">시험 자리</div>
                           <input
                             type="text"
                             value={seatValue}
@@ -394,29 +415,29 @@ export function CenterDisplay({
                             placeholder="예: 9-L/R, 10-L/R"
                             className={inputCls}
                           />
-                          <p className="text-[10px] text-status-pass-text">
+                          <p className="text-xs text-status-pass-text">
                             자리 정보 입력 후 다음 항목을 건너뛰고 판정에 참고하세요.
                           </p>
                         </div>
                       )}
                       {isSeatAssignment && question.id === 'Q1' && q1Answer === 'NO' && (
-                        <div className="mt-3 text-[11px] text-tx-tertiary">
+                        <div className="mt-3.5 text-xs text-tx-tertiary">
                           다음 질문을 진행하세요.
                         </div>
                       )}
                       {isSeatAssignment && question.id === 'Q2' && q1Answer === 'NA' && (
-                        <div className="mt-3 text-[11px] text-tx-muted">
+                        <div className="mt-3.5 text-xs text-tx-muted">
                           먼저 1번 질문에 답해주세요.
                         </div>
                       )}
                       {isSeatAssignment && question.id === 'Q2' && q1Answer === 'YES' && (
-                        <div className="mt-3 text-[11px] text-tx-muted">
+                        <div className="mt-3.5 text-xs text-tx-muted">
                           1번에서 자리 배정을 확인했으므로 다음 항목으로 이동하세요.
                         </div>
                       )}
                       {isSeatAssignment && question.id === 'Q2' && q2Answer === 'YES' && (
-                        <div className="mt-3 space-y-1.5">
-                          <div className="text-[10px] font-bold text-tx-tertiary">시험 자리</div>
+                        <div className="mt-3.5 space-y-2">
+                          <div className="text-xs font-bold text-tx-tertiary">시험 자리</div>
                           <input
                             type="text"
                             value={seatValue}
@@ -424,37 +445,47 @@ export function CenterDisplay({
                             placeholder="예: 9-L/R, 10-L/R"
                             className={inputCls}
                           />
-                          <p className="text-[10px] text-status-pass-text">
+                          <p className="text-xs text-status-pass-text">
                             자리 정보 입력 후 다음 항목을 건너뛰고 판정에 참고하세요.
                           </p>
                         </div>
                       )}
                       {isSeatAssignment && question.id === 'Q2' && q1Answer === 'NO' && q2Answer === 'NO' && (
-                        <div className="mt-3 space-y-2.5">
-                          <div className="rounded-md border border-ln bg-surface-base px-3 py-2 text-[11px] text-tx-tertiary space-y-0.5">
+                        <div className="mt-3.5 space-y-3">
+                          <div className="rounded-md border border-ln bg-surface-base px-3.5 py-2.5 text-sm text-tx-tertiary space-y-1">
                             <div>• 시험에 필요한 장비 확인: <span className="font-semibold">시험 합의서</span>를 확인하세요.</div>
                             <div>• 사용 가능한 시험 자리: 아래 <span className="font-semibold">담당자</span> 정보를 확인하세요.</div>
                           </div>
                           {contacts.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2.5">
                               {contacts.map((c) => (
-                                <div key={c.role} className="rounded-lg border border-ln bg-surface-base px-3 py-2.5 flex items-start gap-2.5 min-w-[200px]">
-                                  <div className="h-7 w-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                                    <User size={13} className="text-accent" />
+                                <div key={c.role} className="rounded-lg border border-ln bg-surface-base px-3.5 py-3 flex items-start gap-3 min-w-[210px]">
+                                  <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                                    <User size={14} className="text-accent" />
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="text-[10px] text-tx-muted">{c.role}</div>
-                                    <div className="text-[11px] font-bold text-tx-primary">{c.name}</div>
+                                    <div className="text-xs text-tx-muted">{c.role}</div>
+                                    <div className="text-sm font-bold text-tx-primary">{c.name}</div>
                                     {c.phone && (
-                                      <div className="flex items-center gap-1 mt-0.5 text-[10px] text-tx-tertiary">
-                                        <Phone size={9} />
+                                      <div className="flex items-center gap-1 mt-0.5 text-xs text-tx-tertiary">
+                                        <Phone size={10} />
                                         {c.phone}
                                       </div>
                                     )}
                                     {c.email && (
-                                      <div className="flex items-center gap-1 text-[10px] text-tx-tertiary">
-                                        <Mail size={9} />
+                                      <div className="flex items-center gap-1 text-xs text-tx-tertiary">
+                                        <Mail size={10} />
                                         {c.email}
+                                      </div>
+                                    )}
+                                    {c.requestMethod && (
+                                      <div className="flex items-center gap-1 mt-1 text-xs text-accent-text">
+                                        <MessageSquare size={10} />
+                                        {c.requestUrl ? (
+                                          <a href={c.requestUrl} target="_blank" rel="noreferrer" className="hover:underline">{c.requestMethod}</a>
+                                        ) : (
+                                          <span>{c.requestMethod}</span>
+                                        )}
                                       </div>
                                     )}
                                   </div>
@@ -463,8 +494,8 @@ export function CenterDisplay({
                             </div>
                           )}
                           {activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
-                            <div className="rounded-md border border-ln bg-surface-base px-3 py-2.5 text-[11px] text-tx-tertiary">
-                              <div className="text-[10px] font-bold text-tx-muted mb-1.5 uppercase tracking-wide">참조 정보</div>
+                            <div className="rounded-md border border-ln bg-surface-base px-3.5 py-3 text-xs text-tx-tertiary">
+                              <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">참조 정보</div>
                               <div className="space-y-1.5">
                                 {activeItem.relatedInfo.map((info) => (
                                   <div key={info.label} className="flex flex-wrap items-center gap-2">
@@ -483,50 +514,43 @@ export function CenterDisplay({
                           )}
                         </div>
                       )}
-                      {!isSeatAssignment && question.refs && question.refs.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {refItems
-                            .filter((doc) => question.refs!.includes(doc.label))
-                            .map((doc, i) => (
-                              <button
-                                key={`qref-${i}`}
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); handleDocClick(doc); }}
-                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-surface-base border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors"
-                              >
-                                {doc.kind === 'external' ? <ExternalLink size={9} /> : <FileDown size={9} />}
-                                {doc.label}
-                              </button>
-                            ))}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
               )}
             </div>
             {!isSeatAssignment && contacts.length > 0 && (
-              <div className="mt-5">
-                <div className="text-[10px] font-bold text-tx-muted mb-2 uppercase tracking-wide">담당자</div>
-                <div className="flex flex-wrap gap-2">
+              <div className="mt-6">
+                <div className="text-xs font-bold text-tx-muted mb-2.5 uppercase tracking-wide">담당자</div>
+                <div className="flex flex-wrap gap-2.5">
                   {contacts.map((c) => (
-                    <div key={c.role} className="rounded-lg border border-ln bg-surface-sunken px-3.5 py-2.5 flex items-start gap-2.5 min-w-[200px]">
-                      <div className="h-7 w-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                        <User size={13} className="text-accent" />
+                    <div key={c.role} className="rounded-lg border border-ln bg-surface-sunken px-4 py-3 flex items-start gap-3 min-w-[210px]">
+                      <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                        <User size={14} className="text-accent" />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-[10px] text-tx-muted">{c.role}</div>
-                        <div className="text-[11px] font-bold text-tx-primary">{c.name}</div>
+                        <div className="text-xs text-tx-muted">{c.role}</div>
+                        <div className="text-sm font-bold text-tx-primary">{c.name}</div>
                         {c.phone && (
-                          <div className="flex items-center gap-1 mt-0.5 text-[10px] text-tx-tertiary">
-                            <Phone size={9} />
+                          <div className="flex items-center gap-1 mt-0.5 text-xs text-tx-tertiary">
+                            <Phone size={10} />
                             {c.phone}
                           </div>
                         )}
                         {c.email && (
-                          <div className="flex items-center gap-1 text-[10px] text-tx-tertiary">
-                            <Mail size={9} />
+                          <div className="flex items-center gap-1 text-xs text-tx-tertiary">
+                            <Mail size={10} />
                             {c.email}
+                          </div>
+                        )}
+                        {c.requestMethod && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-accent-text">
+                            <MessageSquare size={10} />
+                            {c.requestUrl ? (
+                              <a href={c.requestUrl} target="_blank" rel="noreferrer" className="hover:underline">{c.requestMethod}</a>
+                            ) : (
+                              <span>{c.requestMethod}</span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -536,9 +560,9 @@ export function CenterDisplay({
               </div>
             )}
             {!isSeatAssignment && activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
-              <div className="mt-4 rounded-lg border border-ln bg-surface-sunken px-3.5 py-2.5 text-xs text-tx-tertiary">
-                <div className="text-[10px] font-bold text-tx-muted mb-1.5 uppercase tracking-wide">참조 정보</div>
-                <div className="space-y-1.5">
+              <div className="mt-5 rounded-lg border border-ln bg-surface-sunken px-4 py-3 text-sm text-tx-tertiary">
+                <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">참조 정보</div>
+                <div className="space-y-2">
                   {activeItem.relatedInfo.map((info) => (
                     <div key={info.label} className="flex flex-wrap items-center gap-2">
                       <span className="text-tx-muted min-w-[120px]">{info.label}</span>
@@ -554,20 +578,20 @@ export function CenterDisplay({
                 </div>
               </div>
             )}
-            <details className="mt-6 rounded-lg border border-ln-subtle bg-surface-base group">
-              <summary className="cursor-pointer px-3.5 py-2.5 text-xs font-bold text-tx-tertiary hover:text-tx-secondary transition-colors flex items-center gap-1.5">
+            <details className="mt-8 rounded-lg border border-ln-subtle bg-surface-base group">
+              <summary className="cursor-pointer px-4 py-3 text-base font-bold text-tx-tertiary hover:text-tx-secondary transition-colors flex items-center gap-1.5">
                 <span className="inline-block transition-transform group-open:rotate-90 text-tx-muted">▸</span>
                 상세 정보
               </summary>
-              <div className="px-3.5 pb-3.5 space-y-3 border-t border-ln-subtle pt-3">
+              <div className="px-4 pb-4 space-y-4 border-t border-ln-subtle pt-3.5">
                 <div>
-                  <h4 className="text-[10px] font-bold text-tx-muted mb-1 uppercase tracking-wide">요구사항 설명</h4>
-                  <p className="text-xs text-tx-tertiary leading-relaxed">{activeItem.description}</p>
+                  <h4 className="text-xs font-bold text-tx-muted mb-1.5 uppercase tracking-wide">요구사항 설명</h4>
+                  <p className="text-sm text-tx-tertiary leading-relaxed">{activeItem.description}</p>
                 </div>
                 {activeItem.checkPoints && activeItem.checkPoints.length > 0 && (
                   <div>
-                    <h4 className="text-[10px] font-bold text-tx-muted mb-1 uppercase tracking-wide">점검 포인트</h4>
-                    <ul className="list-disc pl-4 text-xs text-tx-tertiary space-y-0.5">
+                    <h4 className="text-xs font-bold text-tx-muted mb-1.5 uppercase tracking-wide">점검 포인트</h4>
+                    <ul className="list-disc pl-4 text-sm text-tx-tertiary space-y-1">
                       {activeItem.checkPoints.map((point, index) => (
                         <li key={`${activeItem.id}-${index}`}>{point}</li>
                       ))}
@@ -576,8 +600,8 @@ export function CenterDisplay({
                 )}
                 {activeItem.evidenceExamples && activeItem.evidenceExamples.length > 0 && (
                   <div>
-                    <h4 className="text-[10px] font-bold text-tx-muted mb-1 uppercase tracking-wide">증빙 예시</h4>
-                    <ul className="list-disc pl-4 text-xs text-tx-tertiary space-y-0.5">
+                    <h4 className="text-xs font-bold text-tx-muted mb-1.5 uppercase tracking-wide">증빙 예시</h4>
+                    <ul className="list-disc pl-4 text-sm text-tx-tertiary space-y-1">
                       {activeItem.evidenceExamples.map((example, index) => (
                         <li key={`${activeItem.id}-evidence-${index}`}>{example}</li>
                       ))}
@@ -586,8 +610,8 @@ export function CenterDisplay({
                 )}
                 {activeItem.testSuggestions && activeItem.testSuggestions.length > 0 && (
                   <div>
-                    <h4 className="text-[10px] font-bold text-tx-muted mb-1 uppercase tracking-wide">테스트 제안</h4>
-                    <ul className="list-disc pl-4 text-xs text-tx-tertiary space-y-0.5">
+                    <h4 className="text-xs font-bold text-tx-muted mb-1.5 uppercase tracking-wide">테스트 제안</h4>
+                    <ul className="list-disc pl-4 text-sm text-tx-tertiary space-y-1">
                       {activeItem.testSuggestions.map((suggestion, index) => (
                         <li key={`${activeItem.id}-test-${index}`}>{suggestion}</li>
                       ))}
@@ -595,9 +619,9 @@ export function CenterDisplay({
                   </div>
                 )}
                 {activeItem.passCriteria && (
-                  <div className="rounded-md border border-status-pass-border bg-status-pass-bg px-3 py-2 text-status-pass-text">
-                    <h4 className="text-[10px] font-bold mb-1 uppercase tracking-wide">판정 기준</h4>
-                    <p className="text-xs leading-relaxed">{activeItem.passCriteria}</p>
+                  <div className="rounded-md border border-status-pass-border bg-status-pass-bg px-3.5 py-2.5 text-status-pass-text">
+                    <h4 className="text-xs font-bold mb-1.5 uppercase tracking-wide">판정 기준</h4>
+                    <p className="text-sm leading-relaxed">{activeItem.passCriteria}</p>
                   </div>
                 )}
               </div>
@@ -661,7 +685,7 @@ export function CenterDisplay({
                 </div>
                 {selectedDoc.showRelatedInfo && activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
                   <div className="rounded-xl border border-ln bg-surface-sunken px-4 py-3 text-xs text-tx-tertiary">
-                    <div className="text-[11px] font-semibold text-tx-muted mb-2">관련 정보</div>
+                    <div className="text-xs font-semibold text-tx-muted mb-2">관련 정보</div>
                     <div className="space-y-1.5">
                       {activeItem.relatedInfo.map((info) => (
                         <div key={info.label} className="flex flex-wrap items-center gap-2">

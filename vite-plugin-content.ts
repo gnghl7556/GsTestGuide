@@ -128,6 +128,16 @@ function generateProcessModule(rootDir: string): string {
         }))
       : [];
 
+    const contactsSection = findSection(sections, '담당자')?.content;
+    const contacts = contactsSection
+      ? parseTable(contactsSection).map((row) => ({
+          role: row['역할'] ?? '',
+          name: row['이름'] ?? '',
+          ...(row['연락처'] ? { phone: row['연락처'] } : {}),
+          ...(row['이메일'] ? { email: row['이메일'] } : {}),
+        })).filter((c) => c.role)
+      : [];
+
     return {
       id: item.frontmatter.id as string,
       category,
@@ -138,6 +148,7 @@ function generateProcessModule(rootDir: string): string {
       passCriteria: findSection(sections, '합격 기준')?.content?.trim() ?? '',
       requiredDocs: requiredDocs.length > 0 ? requiredDocs : undefined,
       relatedInfo: relatedInfo.length > 0 ? relatedInfo : undefined,
+      contacts: contacts.length > 0 ? contacts : undefined,
       keywords: (item.frontmatter.keywords as string[]) ?? [],
     };
   });

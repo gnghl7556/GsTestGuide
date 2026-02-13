@@ -29,11 +29,6 @@ order: 2
 | 자리 배정표  | external | 시험 자리 배정 내역 확인        |
 | 장비관리시스템 | external | 시험에 사용할 수 있는 장비 목록 조회 |
 
-## 참조 정보
-| 항목 | 내용 | 링크 |
-|------|------|------|
-| 자리 배치 확인 | 구글 스프레드 시트 | https://docs.google.com/spreadsheets/d/159J439Hl5l25-PmP_uX-s-TTkqR8l6aE3uUhUUtydEU/edit?usp=sharing |
-
 ## 담당자
 | 역할 | 이름 | 연락처 | 이메일 |
 |------|------|--------|--------|

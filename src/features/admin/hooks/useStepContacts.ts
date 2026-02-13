@@ -7,44 +7,51 @@ type Contact = {
   name: string;
   phone?: string;
   email?: string;
+  requestMethod?: string;
+  requestUrl?: string;
+};
+
+type FirestoreRoleContact = Contact & {
+  linkedSteps?: string[];
 };
 
 /**
  * Subscribe to the global roleContacts collection.
- * Given the step's markdown-defined roles, returns resolved contacts
- * with Firestore data overriding markdown defaults.
+ * Returns contacts whose linkedSteps include the given stepId,
+ * plus markdown-defined contacts for roles not covered by Firestore.
  */
 export function useStepContacts(
+  stepId?: string,
   markdownContacts?: Contact[]
 ): Contact[] {
-  const [roleMap, setRoleMap] = useState<Record<string, Contact>>({});
+  const [firestoreRoles, setFirestoreRoles] = useState<FirestoreRoleContact[]>([]);
 
   useEffect(() => {
     if (!db) return;
     const unsub = onSnapshot(collection(db, 'roleContacts'), (snap) => {
-      const map: Record<string, Contact> = {};
+      const list: FirestoreRoleContact[] = [];
       snap.forEach((doc) => {
-        const data = doc.data() as Contact;
-        if (data.role) map[data.role] = data;
+        const data = doc.data() as FirestoreRoleContact;
+        if (data.role) list.push(data);
       });
-      setRoleMap(map);
+      setFirestoreRoles(list);
     });
     return () => unsub();
   }, []);
 
-  if (!markdownContacts || markdownContacts.length === 0) return [];
+  if (!stepId) return [];
 
-  // For each role the step references, use Firestore override if available
-  return markdownContacts.map((md) => {
-    const override = roleMap[md.role];
-    if (override) {
-      return {
-        role: md.role,
-        name: override.name,
-        phone: override.phone,
-        email: override.email,
-      };
-    }
-    return md;
-  });
+  // Firestore roles whose linkedSteps include this step
+  const matchedFromFirestore = firestoreRoles.filter(
+    (r) => r.linkedSteps && r.linkedSteps.includes(stepId)
+  );
+
+  const coveredRoles = new Set(matchedFromFirestore.map((r) => r.role));
+
+  // Markdown contacts for roles not already covered by Firestore
+  const fromMarkdown = (markdownContacts ?? []).filter(
+    (md) => !coveredRoles.has(md.role)
+  );
+
+  return [...matchedFromFirestore, ...fromMarkdown];
 }
