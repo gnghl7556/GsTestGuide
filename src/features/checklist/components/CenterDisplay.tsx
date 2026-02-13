@@ -53,7 +53,7 @@ export function CenterDisplay({
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const { currentTestNumber, testSetup } = useTestSetupContext();
   const agreement = testSetup.agreementParsed;
-  const contacts = useStepContacts(activeItem?.id, activeItem?.contacts);
+  const contacts = useStepContacts(activeItem?.contacts);
   useEffect(() => {
     if (!selectedDoc) return;
     const handleEsc = (event: KeyboardEvent) => {

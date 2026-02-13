@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../../lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 type Contact = {
   role: string;
@@ -10,28 +10,41 @@ type Contact = {
 };
 
 /**
- * Subscribe to Firestore contacts for a given step.
- * Returns Firestore contacts if available, otherwise falls back to markdown defaults.
+ * Subscribe to the global roleContacts collection.
+ * Given the step's markdown-defined roles, returns resolved contacts
+ * with Firestore data overriding markdown defaults.
  */
 export function useStepContacts(
-  stepId: string | undefined,
   markdownContacts?: Contact[]
 ): Contact[] {
-  const [firestoreContacts, setFirestoreContacts] = useState<Contact[] | null>(null);
+  const [roleMap, setRoleMap] = useState<Record<string, Contact>>({});
 
   useEffect(() => {
-    if (!db || !stepId) return;
-    const unsub = onSnapshot(doc(db, 'stepContacts', stepId), (snap) => {
-      const data = snap.data();
-      if (data?.contacts && Array.isArray(data.contacts) && data.contacts.length > 0) {
-        setFirestoreContacts(data.contacts as Contact[]);
-      } else {
-        setFirestoreContacts(null);
-      }
+    if (!db) return;
+    const unsub = onSnapshot(collection(db, 'roleContacts'), (snap) => {
+      const map: Record<string, Contact> = {};
+      snap.forEach((doc) => {
+        const data = doc.data() as Contact;
+        if (data.role) map[data.role] = data;
+      });
+      setRoleMap(map);
     });
     return () => unsub();
-  }, [stepId]);
+  }, []);
 
-  // Firestore overrides markdown defaults
-  return firestoreContacts ?? markdownContacts ?? [];
+  if (!markdownContacts || markdownContacts.length === 0) return [];
+
+  // For each role the step references, use Firestore override if available
+  return markdownContacts.map((md) => {
+    const override = roleMap[md.role];
+    if (override) {
+      return {
+        role: md.role,
+        name: override.name,
+        phone: override.phone,
+        email: override.email,
+      };
+    }
+    return md;
+  });
 }
