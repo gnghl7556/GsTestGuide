@@ -14,7 +14,8 @@ import { RequiredDocChip } from '../../../components/ui';
 import { Setup03Evidence } from './Setup03Evidence';
 import { Setup04Evidence } from './Setup04Evidence';
 import { useEffect, useState } from 'react';
-import { storage } from '../../../lib/firebase';
+import { db, storage } from '../../../lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { getDownloadURL, ref, listAll } from 'firebase/storage';
 import { DefectRefBoardModal } from '../../defects/components/DefectRefBoardModal';
 import { useStepContacts } from '../../admin/hooks/useStepContacts';
@@ -51,9 +52,24 @@ export function CenterDisplay({
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const [showDefectBoard, setShowDefectBoard] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [docDescriptions, setDocDescriptions] = useState<Record<string, string>>({});
   const { currentTestNumber, testSetup } = useTestSetupContext();
   const agreement = testSetup.agreementParsed;
   const contacts = useStepContacts(activeItem?.id, activeItem?.contacts);
+
+  // Subscribe to Firestore docMaterials for admin-managed descriptions
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(collection(db, 'docMaterials'), (snap) => {
+      const map: Record<string, string> = {};
+      snap.forEach((d) => {
+        const data = d.data() as { label?: string; description?: string };
+        if (data.label && data.description) map[data.label] = data.description;
+      });
+      setDocDescriptions(map);
+    });
+    return () => unsub();
+  }, []);
   useEffect(() => {
     if (!selectedDoc) return;
     const handleEsc = (event: KeyboardEvent) => {
@@ -457,30 +473,30 @@ export function CenterDisplay({
                             <div>• 사용 가능한 시험 자리: 아래 <span className="font-semibold">담당자</span> 정보를 확인하세요.</div>
                           </div>
                           {contacts.length > 0 && (
-                            <div className="flex flex-wrap gap-2.5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {contacts.map((c) => (
-                                <div key={c.role} className="rounded-lg border border-ln bg-surface-base px-3.5 py-3 flex items-start gap-3 min-w-[210px]">
-                                  <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                                    <User size={14} className="text-accent" />
+                                <div key={c.role} className="rounded-xl border border-ln bg-surface-base px-5 py-4 flex items-start gap-4">
+                                  <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                                    <User size={18} className="text-accent" />
                                   </div>
-                                  <div className="min-w-0">
-                                    <div className="text-xs text-tx-muted">{c.role}</div>
-                                    <div className="text-sm font-bold text-tx-primary">{c.name}</div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-xs font-medium text-tx-muted">{c.role}</div>
+                                    <div className="text-base font-bold text-tx-primary mt-0.5">{c.name}</div>
                                     {c.phone && (
-                                      <div className="flex items-center gap-1 mt-0.5 text-xs text-tx-tertiary">
-                                        <Phone size={10} />
+                                      <div className="flex items-center gap-1.5 mt-1.5 text-sm text-tx-tertiary">
+                                        <Phone size={13} />
                                         {c.phone}
                                       </div>
                                     )}
                                     {c.email && (
-                                      <div className="flex items-center gap-1 text-xs text-tx-tertiary">
-                                        <Mail size={10} />
+                                      <div className="flex items-center gap-1.5 mt-0.5 text-sm text-tx-tertiary">
+                                        <Mail size={13} />
                                         {c.email}
                                       </div>
                                     )}
                                     {c.requestMethod && (
-                                      <div className="flex items-center gap-1 mt-1 text-xs text-accent-text">
-                                        <MessageSquare size={10} />
+                                      <div className="flex items-center gap-1.5 mt-2 text-sm text-accent-text">
+                                        <MessageSquare size={13} />
                                         {c.requestUrl ? (
                                           <a href={c.requestUrl} target="_blank" rel="noreferrer" className="hover:underline">{c.requestMethod}</a>
                                         ) : (
@@ -521,31 +537,31 @@ export function CenterDisplay({
             </div>
             {!isSeatAssignment && contacts.length > 0 && (
               <div className="mt-6">
-                <div className="text-xs font-bold text-tx-muted mb-2.5 uppercase tracking-wide">담당자</div>
-                <div className="flex flex-wrap gap-2.5">
+                <div className="text-xs font-bold text-tx-muted mb-3 uppercase tracking-wide">담당자</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {contacts.map((c) => (
-                    <div key={c.role} className="rounded-lg border border-ln bg-surface-sunken px-4 py-3 flex items-start gap-3 min-w-[210px]">
-                      <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                        <User size={14} className="text-accent" />
+                    <div key={c.role} className="rounded-xl border border-ln bg-surface-sunken px-5 py-4 flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                        <User size={18} className="text-accent" />
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-xs text-tx-muted">{c.role}</div>
-                        <div className="text-sm font-bold text-tx-primary">{c.name}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium text-tx-muted">{c.role}</div>
+                        <div className="text-base font-bold text-tx-primary mt-0.5">{c.name}</div>
                         {c.phone && (
-                          <div className="flex items-center gap-1 mt-0.5 text-xs text-tx-tertiary">
-                            <Phone size={10} />
+                          <div className="flex items-center gap-1.5 mt-1.5 text-sm text-tx-tertiary">
+                            <Phone size={13} />
                             {c.phone}
                           </div>
                         )}
                         {c.email && (
-                          <div className="flex items-center gap-1 text-xs text-tx-tertiary">
-                            <Mail size={10} />
+                          <div className="flex items-center gap-1.5 mt-0.5 text-sm text-tx-tertiary">
+                            <Mail size={13} />
                             {c.email}
                           </div>
                         )}
                         {c.requestMethod && (
-                          <div className="flex items-center gap-1 mt-1 text-xs text-accent-text">
-                            <MessageSquare size={10} />
+                          <div className="flex items-center gap-1.5 mt-2 text-sm text-accent-text">
+                            <MessageSquare size={13} />
                             {c.requestUrl ? (
                               <a href={c.requestUrl} target="_blank" rel="noreferrer" className="hover:underline">{c.requestMethod}</a>
                             ) : (
@@ -680,7 +696,7 @@ export function CenterDisplay({
                 <div>
                   <div className="text-xs font-semibold text-tx-muted mb-2">설명</div>
                   <p className="text-sm text-tx-secondary leading-relaxed">
-                    {selectedDoc.description || '이 자료를 확인한 뒤 점검을 진행하세요.'}
+                    {docDescriptions[selectedDoc.label] || selectedDoc.description || '이 자료를 확인한 뒤 점검을 진행하세요.'}
                   </p>
                 </div>
                 {selectedDoc.showRelatedInfo && activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
