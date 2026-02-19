@@ -1,7 +1,10 @@
+import { useState } from 'react';
+import { ClipboardList } from 'lucide-react';
 import { NavSidebar } from '../components/NavSidebar';
 import { CenterDisplay } from '../components/CenterDisplay';
 import { RightActionPanel } from '../components/RightActionPanel';
 import { HelperToolsPopup } from '../components/HelperToolsPopup';
+import { DefectRefBoardModal } from '../../defects/components/DefectRefBoardModal';
 import type {
   ChecklistItem,
   ExecutionItemGate,
@@ -53,6 +56,7 @@ export function ChecklistView({
   recommendation,
   canReview
 }: ChecklistViewProps) {
+  const [showDefectBoard, setShowDefectBoard] = useState(false);
   return (
     <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)_clamp(280px,24vw,380px)] gap-5 min-h-0 pb-2">
       <div className="h-full overflow-hidden flex flex-col">
@@ -67,10 +71,19 @@ export function ChecklistView({
             itemGates={itemGates}
           />
         </div>
-        <div className="shrink-0 pt-2">
+        <div className="shrink-0 pt-2 space-y-1.5">
+          <button
+            type="button"
+            onClick={() => setShowDefectBoard(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold border bg-surface-base text-tx-secondary border-ln hover:border-ln-strong hover:bg-surface-raised transition-all w-full"
+          >
+            <ClipboardList size={13} />
+            결함 분류 기준표
+          </button>
           <HelperToolsPopup />
         </div>
       </div>
+      <DefectRefBoardModal open={showDefectBoard} onClose={() => setShowDefectBoard(false)} />
 
       <div className="h-full overflow-hidden">
         <CenterDisplay

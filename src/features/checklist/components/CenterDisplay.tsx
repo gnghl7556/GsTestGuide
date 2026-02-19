@@ -181,15 +181,54 @@ export function CenterDisplay({
   const q1Answer = quickAnswers.Q1 ?? 'NA';
   const q2Answer = quickAnswers.Q2 ?? 'NA';
 
-  const handleEnvAnswer = (questionId: string, value: QuickAnswer) => {
-    onQuickAnswer(activeItem.id, questionId, value);
-    if (!isSeatAssignment) return;
-    if (questionId === 'Q1') {
-      if (value === 'YES') {
-        onQuickAnswer(activeItem.id, 'Q2', 'NA');
+  /* ── Sequential gate: Q(n) "NO" → disable Q(n+1)+ ── */
+  const SKIP_RULES: Record<string, { trigger: string; skip: string[]; keep?: string[] }> = {
+    'SETUP-03': { trigger: 'Q2', skip: ['Q3', 'Q4'], keep: ['Q5'] },
+  };
+
+  const isQuestionDisabled = (questionId: string, questions: typeof seatQuestions): boolean => {
+    if (isSeatAssignment) {
+      if (questionId === 'Q2' && (q1Answer === 'NA' || q1Answer === 'YES')) return true;
+      return false;
+    }
+    const rule = SKIP_RULES[activeItem.id];
+    if (rule) {
+      const triggerAnswer = quickAnswers[rule.trigger];
+      if (triggerAnswer === 'NO' && rule.skip.includes(questionId)) return true;
+    }
+    const idx = questions.findIndex((q) => q.id === questionId);
+    if (idx <= 0) return false;
+    for (let i = idx - 1; i >= 0; i--) {
+      const prevId = questions[i].id;
+      const prevAnswer = quickAnswers[prevId];
+      if (rule && rule.skip.includes(prevId)) continue;
+      if (prevAnswer === 'NO') {
+        if (rule && rule.keep?.includes(questionId)) return false;
+        return true;
       }
-      if (value === 'NO') {
-        onQuickAnswer(activeItem.id, 'Q2', q2Answer === 'NA' ? 'NA' : q2Answer);
+      if (!prevAnswer || prevAnswer === 'NA') return true;
+      break;
+    }
+    return false;
+  };
+
+  const handleAnswer = (questionId: string, value: QuickAnswer) => {
+    onQuickAnswer(isSeatAssignment ? activeItem.id : requirementId, questionId, value);
+    if (isSeatAssignment && questionId === 'Q1' && value === 'YES') {
+      onQuickAnswer(activeItem.id, 'Q2', 'NA');
+    }
+    const questions = isSeatAssignment ? seatQuestions : (quickModeItem?.quickQuestions ?? []);
+    if (value === 'NO') {
+      const rule = SKIP_RULES[activeItem.id];
+      const idx = questions.findIndex((q) => q.id === questionId);
+      for (let i = idx + 1; i < questions.length; i++) {
+        const qid = questions[i].id;
+        if (rule && rule.trigger === questionId && rule.keep?.includes(qid)) continue;
+        if (rule && rule.trigger === questionId && rule.skip.includes(qid)) {
+          onQuickAnswer(isSeatAssignment ? activeItem.id : requirementId, qid, 'NA');
+          continue;
+        }
+        onQuickAnswer(isSeatAssignment ? activeItem.id : requirementId, qid, 'NA');
       }
     }
   };
@@ -293,12 +332,14 @@ export function CenterDisplay({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {seatQuestions.map((question, index) => (
+                  {seatQuestions.map((question, index) => {
+                    const disabled = isQuestionDisabled(question.id, seatQuestions);
+                    return (
                     <div
                       key={question.id}
                       id={`question-${requirementId}-${question.id}`}
                       className={`p-4 rounded-xl border shadow-sm transition-colors ${
-                        isSeatAssignment && question.id === 'Q2' && (q1Answer === 'NA' || q1Answer === 'YES')
+                        disabled
                           ? 'border-ln-subtle bg-surface-raised opacity-50 pointer-events-none'
                           : quickAnswers[question.id] === 'YES'
                             ? 'border-status-pass-border/40 bg-status-pass-bg/30'
@@ -358,11 +399,7 @@ export function CenterDisplay({
                             type="button"
                             onClick={() => {
                               if (!quickModeItem && !isSeatAssignment) return;
-                              if (isSeatAssignment && (question.id === 'Q1' || question.id === 'Q2')) {
-                                handleEnvAnswer(question.id, 'YES');
-                                return;
-                              }
-                              onQuickAnswer(requirementId, question.id, 'YES');
+                              handleAnswer(question.id, 'YES');
                             }}
                             className={`px-4 py-2 rounded-lg text-base font-bold border transition-colors ${
                               currentAnswer === 'YES'
@@ -376,11 +413,7 @@ export function CenterDisplay({
                             type="button"
                             onClick={() => {
                               if (!quickModeItem && !isSeatAssignment) return;
-                              if (isSeatAssignment && (question.id === 'Q1' || question.id === 'Q2')) {
-                                handleEnvAnswer(question.id, 'NO');
-                                return;
-                              }
-                              onQuickAnswer(requirementId, question.id, 'NO');
+                              handleAnswer(question.id, 'NO');
                             }}
                             className={`px-4 py-2 rounded-lg text-base font-bold border transition-colors ${
                               currentAnswer === 'NO'
@@ -394,7 +427,7 @@ export function CenterDisplay({
                             type="button"
                             onClick={() => {
                               if (!quickModeItem && !isSeatAssignment) return;
-                              onQuickAnswer(requirementId, question.id, 'NA');
+                              handleAnswer(question.id, 'NA');
                             }}
                             className={`px-4 py-2 rounded-lg text-base font-bold border transition-colors ${
                               currentAnswer === 'NA'
@@ -518,7 +551,8 @@ export function CenterDisplay({
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
