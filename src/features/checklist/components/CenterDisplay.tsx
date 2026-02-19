@@ -332,24 +332,34 @@ export function CenterDisplay({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {seatQuestions.map((question, index) => {
+                  {(() => {
+                    const firstUnansweredId = seatQuestions.find((q) => {
+                      if (isQuestionDisabled(q.id, seatQuestions)) return false;
+                      const ans = quickAnswers[q.id];
+                      return !ans || ans === 'NA';
+                    })?.id ?? null;
+                    return seatQuestions.map((question, index) => {
                     const disabled = isQuestionDisabled(question.id, seatQuestions);
+                    const currentAnswer = quickAnswers[question.id] ?? 'NA';
+                    const isAnswered = currentAnswer === 'YES' || currentAnswer === 'NO';
+                    const isCurrent = question.id === firstUnansweredId;
                     return (
                     <div
                       key={question.id}
                       id={`question-${requirementId}-${question.id}`}
-                      className={`p-4 rounded-xl border shadow-sm transition-colors ${
+                      className={`rounded-xl border shadow-sm transition-all duration-200 ${
                         disabled
-                          ? 'border-ln-subtle bg-surface-raised opacity-50 pointer-events-none'
-                          : quickAnswers[question.id] === 'YES'
-                            ? 'border-status-pass-border/40 bg-status-pass-bg/30'
-                            : quickAnswers[question.id] === 'NO'
-                              ? 'border-status-fail-border/40 bg-status-fail-bg/30'
-                              : 'border-ln bg-surface-sunken'
+                          ? 'p-3 border-ln-subtle bg-surface-raised opacity-40 pointer-events-none'
+                          : isAnswered
+                            ? 'p-3 opacity-60 ' + (currentAnswer === 'YES'
+                              ? 'border-status-pass-border/30 bg-status-pass-bg/15'
+                              : 'border-status-fail-border/30 bg-status-fail-bg/15')
+                            : isCurrent
+                              ? 'p-4 border-accent/50 bg-surface-sunken ring-2 ring-accent/15'
+                              : 'p-4 border-ln bg-surface-sunken'
                       }`}
                     >
                       {(() => {
-                        const currentAnswer = quickAnswers[question.id] ?? 'NA';
                         return (
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
@@ -358,15 +368,19 @@ export function CenterDisplay({
                               ? 'bg-status-pass-bg text-status-pass-text border border-status-pass-border'
                               : currentAnswer === 'NO'
                                 ? 'bg-status-fail-bg text-status-fail-text border border-status-fail-border'
-                                : 'bg-surface-base text-tx-tertiary border border-ln'
+                                : isCurrent
+                                  ? 'bg-accent/10 text-accent border border-accent/30'
+                                  : 'bg-surface-base text-tx-tertiary border border-ln'
                           }`}>
                             {index + 1}
                           </span>
                           <div className="min-w-0">
+                            {!isAnswered && (
                             <div className="text-xs font-bold text-tx-muted mb-0.5">
                               {question.importance === 'MUST' ? '필수' : '권고'}
                             </div>
-                            {!isSeatAssignment && (() => {
+                            )}
+                            {!isSeatAssignment && !isAnswered && (() => {
                               const questionRefs = question.refs && question.refs.length > 0
                                 ? refItems.filter((d) => question.refs!.includes(d.label))
                                 : refItems;
@@ -391,17 +405,19 @@ export function CenterDisplay({
                                 </div>
                               );
                             })()}
-                            <span className="text-[15px] text-tx-primary leading-snug font-semibold">{question.text}</span>
+                            <span className={`leading-snug font-semibold ${isAnswered ? 'text-sm text-tx-tertiary' : 'text-[15px] text-tx-primary'}`}>{question.text}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className={`flex items-center gap-2 shrink-0 ${isAnswered ? 'gap-1.5' : 'gap-2'}`}>
                           <button
                             type="button"
                             onClick={() => {
                               if (!quickModeItem && !isSeatAssignment) return;
                               handleAnswer(question.id, 'YES');
                             }}
-                            className={`px-4 py-2 rounded-lg text-base font-bold border transition-colors ${
+                            className={`rounded-lg font-bold border transition-colors ${
+                              isAnswered ? 'px-3 py-1.5 text-sm' : 'px-4 py-2 text-base'
+                            } ${
                               currentAnswer === 'YES'
                                 ? 'bg-status-pass-bg text-status-pass-text border-status-pass-border'
                                 : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
@@ -415,7 +431,9 @@ export function CenterDisplay({
                               if (!quickModeItem && !isSeatAssignment) return;
                               handleAnswer(question.id, 'NO');
                             }}
-                            className={`px-4 py-2 rounded-lg text-base font-bold border transition-colors ${
+                            className={`rounded-lg font-bold border transition-colors ${
+                              isAnswered ? 'px-3 py-1.5 text-sm' : 'px-4 py-2 text-base'
+                            } ${
                               currentAnswer === 'NO'
                                 ? 'bg-status-fail-bg text-status-fail-text border-status-fail-border'
                                 : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
@@ -423,6 +441,7 @@ export function CenterDisplay({
                           >
                             아니오
                           </button>
+                          {!isAnswered && (
                           <button
                             type="button"
                             onClick={() => {
@@ -437,6 +456,7 @@ export function CenterDisplay({
                           >
                             해당없음
                           </button>
+                          )}
                         </div>
                       </div>
                         );
@@ -552,7 +572,8 @@ export function CenterDisplay({
                       )}
                     </div>
                     );
-                  })}
+                  });
+                  })()}
                 </div>
               )}
             </div>
