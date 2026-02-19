@@ -248,23 +248,10 @@ export function CenterDisplay({
           </div>
         ) : (
           <div className="max-w-none">
-            {quickModeItem ? (
-              <>
-                <p className="text-lg text-tx-primary leading-relaxed font-semibold">
-                  {quickModeItem.summary}
-                </p>
-                {activeItem.description && (
-                  <p className="text-base text-tx-tertiary leading-relaxed mt-2">
-                    {activeItem.description}
-                  </p>
-                )}
-              </>
-            ) : (
-              activeItem.description && (
-                <p className="text-base text-tx-tertiary leading-relaxed">
-                  {activeItem.description}
-                </p>
-              )
+            {activeItem.description && (
+              <p className="text-base text-tx-secondary leading-relaxed">
+                {activeItem.description}
+              </p>
             )}
             <div className="mt-5 space-y-4">
               {activeItem.id === 'SETUP-03' ? (
