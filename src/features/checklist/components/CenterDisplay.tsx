@@ -347,139 +347,96 @@ export function CenterDisplay({
                     <div
                       key={question.id}
                       id={`question-${requirementId}-${question.id}`}
-                      className={`rounded-xl transition-all duration-300 ease-out ${
+                      className={`rounded-xl px-4 py-3.5 transition-all duration-300 ease-out origin-left ${
                         disabled
-                          ? 'px-3 py-2.5 border border-ln-subtle bg-surface-raised/50 opacity-35 pointer-events-none'
+                          ? 'bg-surface-sunken/50 opacity-25 pointer-events-none scale-[0.97]'
                           : isAnswered
-                            ? 'px-3 py-2.5 border ' + (currentAnswer === 'YES'
-                              ? 'border-status-pass-border/25 bg-[var(--status-pass-bg)]/40'
-                              : 'border-status-fail-border/25 bg-[var(--status-fail-bg)]/40')
+                            ? 'bg-surface-sunken/70 scale-[0.97] opacity-60'
                             : isCurrent
-                              ? 'px-4 py-4 border-2 border-[var(--accent)]/40 bg-[var(--accent-subtle)] shadow-md shadow-[var(--accent)]/5'
-                              : 'px-4 py-4 border border-ln bg-surface-sunken'
+                              ? 'bg-surface-base scale-100 shadow-[0_4px_16px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]'
+                              : 'bg-surface-sunken/40 scale-[0.97] opacity-35'
                       }`}
                     >
                       {(() => {
                         return (
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className={`inline-flex items-center justify-center rounded-full text-xs font-bold shrink-0 transition-all duration-300 ${
-                            isAnswered ? 'h-5 w-5 text-[10px]' : 'h-7 w-7'
-                          } ${
-                            currentAnswer === 'YES'
-                              ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border border-[var(--status-pass-border)]/50'
-                              : currentAnswer === 'NO'
-                                ? 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)] border border-[var(--status-fail-border)]/50'
-                                : isCurrent
-                                  ? 'bg-[var(--accent)]/15 text-[var(--accent)] border-2 border-[var(--accent)]/30'
-                                  : 'bg-surface-base text-tx-muted border border-ln'
-                          }`}>
+                          <span className="inline-flex items-center justify-center h-6 w-6 rounded-full text-[11px] font-bold shrink-0 text-tx-tertiary">
                             {index + 1}
                           </span>
                           <div className="min-w-0">
-                            {!isAnswered && (
-                            <div className={`text-xs font-bold mb-0.5 ${isCurrent ? 'text-[var(--accent-text)]' : 'text-tx-muted'}`}>
-                              {question.importance === 'MUST' ? '필수' : '권고'}
+                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                              <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                question.importance === 'MUST'
+                                  ? 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)]'
+                                  : 'bg-surface-sunken text-tx-muted'
+                              }`}>
+                                {question.importance === 'MUST' ? '필수' : '권고'}
+                              </span>
+                              {!isSeatAssignment && (() => {
+                                const questionRefs = question.refs && question.refs.length > 0
+                                  ? refItems.filter((d) => question.refs!.includes(d.label))
+                                  : refItems;
+                                if (questionRefs.length === 0) return null;
+                                return questionRefs.map((d, i) => (
+                                  <button
+                                    key={`qref-${question.id}-${i}`}
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); handleDocClick(d); }}
+                                    className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-md border transition-colors ${
+                                      selectedDoc?.label === d.label
+                                        ? `${theme.text} ${theme.border} bg-white/50`
+                                        : 'bg-surface-base border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary'
+                                    }`}
+                                  >
+                                    {d.kind === 'external' ? <ExternalLink size={9} /> : <FileDown size={9} />}
+                                    {d.label}
+                                  </button>
+                                ));
+                              })()}
                             </div>
-                            )}
-                            {!isSeatAssignment && !isAnswered && (() => {
-                              const questionRefs = question.refs && question.refs.length > 0
-                                ? refItems.filter((d) => question.refs!.includes(d.label))
-                                : refItems;
-                              if (questionRefs.length === 0) return null;
-                              return (
-                                <div className="flex items-center gap-1 mb-1 flex-wrap">
-                                  {questionRefs.map((d, i) => (
-                                    <button
-                                      key={`qref-${question.id}-${i}`}
-                                      type="button"
-                                      onClick={(e) => { e.stopPropagation(); handleDocClick(d); }}
-                                      className={`inline-flex items-center gap-0.5 text-[11px] px-1.5 py-0.5 rounded-md border transition-colors ${
-                                        selectedDoc?.label === d.label
-                                          ? `${theme.text} ${theme.border} bg-white/50`
-                                          : 'bg-surface-base border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary'
-                                      }`}
-                                    >
-                                      {d.kind === 'external' ? <ExternalLink size={9} /> : <FileDown size={9} />}
-                                      {d.label}
-                                    </button>
-                                  ))}
-                                </div>
-                              );
-                            })()}
-                            <span className={`leading-snug font-semibold transition-all duration-300 ${
-                              isAnswered
-                                ? 'text-[13px] text-tx-muted'
-                                : isCurrent
-                                  ? 'text-[15px] text-tx-primary'
-                                  : 'text-[15px] text-tx-secondary'
-                            }`}>{question.text}</span>
+                            <span className="text-[14px] leading-snug font-semibold text-tx-primary">{question.text}</span>
                           </div>
                         </div>
                         <div className="flex items-center shrink-0 gap-1.5">
-                          {isAnswered ? (
-                            <>
-                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
-                                currentAnswer === 'YES'
-                                  ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border border-[var(--status-pass-border)]/40'
-                                  : 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)] border border-[var(--status-fail-border)]/40'
-                              }`}>
-                                {currentAnswer === 'YES' ? '예' : '아니오'}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!quickModeItem && !isSeatAssignment) return;
-                                  handleAnswer(question.id, 'NA');
-                                }}
-                                className="rounded-md px-1.5 py-1 text-[10px] text-tx-muted hover:text-tx-secondary hover:bg-surface-sunken transition-colors"
-                                title="응답 초기화"
-                              >
-                                변경
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!quickModeItem && !isSeatAssignment) return;
-                                  handleAnswer(question.id, 'YES');
-                                }}
-                                className={`px-4 py-2 rounded-lg text-base font-bold border transition-all duration-200 ${
-                                  isCurrent
-                                    ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border-[var(--status-pass-border)] hover:shadow-sm'
-                                    : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
-                                }`}
-                              >
-                                예
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!quickModeItem && !isSeatAssignment) return;
-                                  handleAnswer(question.id, 'NO');
-                                }}
-                                className={`px-4 py-2 rounded-lg text-base font-bold border transition-all duration-200 ${
-                                  isCurrent
-                                    ? 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)] border-[var(--status-fail-border)] hover:shadow-sm'
-                                    : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
-                                }`}
-                              >
-                                아니오
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!quickModeItem && !isSeatAssignment) return;
-                                  handleAnswer(question.id, 'NA');
-                                }}
-                                className="px-3 py-2 rounded-lg text-sm font-medium border border-ln bg-surface-base text-tx-muted hover:border-ln-strong hover:text-tx-secondary transition-all duration-200"
-                              >
-                                해당없음
-                              </button>
-                            </>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!quickModeItem && !isSeatAssignment) return;
+                              handleAnswer(question.id, currentAnswer === 'YES' ? 'NA' : 'YES');
+                            }}
+                            className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
+                              currentAnswer === 'YES'
+                                ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border-[var(--status-pass-border)]'
+                                : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong hover:text-tx-secondary'
+                            }`}
+                          >
+                            예
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!quickModeItem && !isSeatAssignment) return;
+                              handleAnswer(question.id, currentAnswer === 'NO' ? 'NA' : 'NO');
+                            }}
+                            className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
+                              currentAnswer === 'NO'
+                                ? 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)] border-[var(--status-fail-border)]'
+                                : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong hover:text-tx-secondary'
+                            }`}
+                          >
+                            아니오
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!quickModeItem && !isSeatAssignment) return;
+                              handleAnswer(question.id, 'NA');
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-tx-muted bg-surface-base border border-ln hover:border-ln-strong hover:text-tx-secondary transition-all duration-200"
+                          >
+                            해당없음
+                          </button>
                         </div>
                       </div>
                         );
@@ -536,38 +493,38 @@ export function CenterDisplay({
                             <div>• 사용 가능한 시험 자리: 아래 <span className="font-semibold">담당자</span> 정보를 확인하세요.</div>
                           </div>
                           {contacts.length > 0 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               {contacts.map((c) => (
-                                <div key={c.role} className="rounded-xl border border-ln bg-surface-base px-5 py-4 flex items-start gap-4">
-                                  <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                                    <User size={18} className="text-accent" />
+                                <div key={c.role} className="rounded-xl bg-white/40 dark:bg-white/[0.06] backdrop-blur-md shadow-[0_2px_8px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] px-4 py-3 flex items-center gap-3">
+                                  <div className="h-8 w-8 rounded-full bg-surface-base flex items-center justify-center shrink-0">
+                                    <User size={14} className="text-tx-tertiary" />
                                   </div>
                                   <div className="min-w-0 flex-1">
-                                    <div className="text-xs font-medium text-tx-muted">{c.role}</div>
-                                    <div className="text-base font-bold text-tx-primary mt-0.5">{c.name}</div>
-                                    {c.phone && (
-                                      <div className="flex items-center gap-1.5 mt-1.5 text-sm text-tx-tertiary">
-                                        <Phone size={13} />
-                                        {c.phone}
-                                      </div>
-                                    )}
-                                    {c.email && (
-                                      <div className="flex items-center gap-1.5 mt-0.5 text-sm text-tx-tertiary">
-                                        <Mail size={13} />
-                                        {c.email}
-                                      </div>
-                                    )}
-                                    {c.requestMethod && (
-                                      <div className="flex items-center gap-1.5 mt-2 text-sm text-accent-text">
-                                        <MessageSquare size={13} />
-                                        {c.requestUrl ? (
-                                          <a href={c.requestUrl} target="_blank" rel="noreferrer" className="hover:underline">{c.requestMethod}</a>
-                                        ) : (
-                                          <span>{c.requestMethod}</span>
-                                        )}
-                                      </div>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-bold text-tx-primary">{c.name}</span>
+                                      <span className="text-[11px] text-tx-muted">{c.role}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-0.5">
+                                      {c.phone && (
+                                        <span className="flex items-center gap-1 text-xs text-tx-tertiary">
+                                          <Phone size={10} />{c.phone}
+                                        </span>
+                                      )}
+                                      {c.email && (
+                                        <span className="flex items-center gap-1 text-xs text-tx-tertiary">
+                                          <Mail size={10} />{c.email}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
+                                  {c.requestMethod && (
+                                    <span className="flex items-center gap-1 text-xs text-tx-secondary shrink-0">
+                                      <MessageSquare size={10} />
+                                      {c.requestUrl ? (
+                                        <a href={c.requestUrl} target="_blank" rel="noreferrer" className="hover:underline">{c.requestMethod}</a>
+                                      ) : c.requestMethod}
+                                    </span>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -602,39 +559,39 @@ export function CenterDisplay({
             </div>
             {!isSeatAssignment && contacts.length > 0 && (
               <div className="mt-6">
-                <div className="text-xs font-bold text-tx-muted mb-3 uppercase tracking-wide">담당자</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="text-xs font-bold text-tx-secondary mb-2.5 tracking-wide">담당자</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {contacts.map((c) => (
-                    <div key={c.role} className="rounded-xl border border-ln bg-surface-sunken px-5 py-4 flex items-start gap-4">
-                      <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                        <User size={18} className="text-accent" />
+                    <div key={c.role} className="rounded-xl bg-white/40 dark:bg-white/[0.06] backdrop-blur-md shadow-[0_2px_8px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] px-4 py-3 flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-surface-base flex items-center justify-center shrink-0">
+                        <User size={14} className="text-tx-tertiary" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium text-tx-muted">{c.role}</div>
-                        <div className="text-base font-bold text-tx-primary mt-0.5">{c.name}</div>
-                        {c.phone && (
-                          <div className="flex items-center gap-1.5 mt-1.5 text-sm text-tx-tertiary">
-                            <Phone size={13} />
-                            {c.phone}
-                          </div>
-                        )}
-                        {c.email && (
-                          <div className="flex items-center gap-1.5 mt-0.5 text-sm text-tx-tertiary">
-                            <Mail size={13} />
-                            {c.email}
-                          </div>
-                        )}
-                        {c.requestMethod && (
-                          <div className="flex items-center gap-1.5 mt-2 text-sm text-accent-text">
-                            <MessageSquare size={13} />
-                            {c.requestUrl ? (
-                              <a href={c.requestUrl} target="_blank" rel="noreferrer" className="hover:underline">{c.requestMethod}</a>
-                            ) : (
-                              <span>{c.requestMethod}</span>
-                            )}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-tx-primary">{c.name}</span>
+                          <span className="text-[11px] text-tx-muted">{c.role}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          {c.phone && (
+                            <span className="flex items-center gap-1 text-xs text-tx-tertiary">
+                              <Phone size={10} />{c.phone}
+                            </span>
+                          )}
+                          {c.email && (
+                            <span className="flex items-center gap-1 text-xs text-tx-tertiary">
+                              <Mail size={10} />{c.email}
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      {c.requestMethod && (
+                        <span className="flex items-center gap-1 text-xs text-tx-secondary shrink-0">
+                          <MessageSquare size={10} />
+                          {c.requestUrl ? (
+                            <a href={c.requestUrl} target="_blank" rel="noreferrer" className="hover:underline">{c.requestMethod}</a>
+                          ) : c.requestMethod}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>

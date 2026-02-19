@@ -65,76 +65,82 @@ export function Setup03Evidence({
   const agreementOs = agreement?.operatingSystem || '';
   const agreementOtherEnv = agreement?.otherEnvironment || '';
 
-  const renderAnswerButtons = (questionId: string) => {
-    const currentAnswer = quickAnswers[questionId] ?? 'NA';
-    return (
-      <div className="flex items-center gap-2 shrink-0">
-        <button
-          type="button"
-          onClick={() => onQuickAnswer(itemId, questionId, 'YES')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold border ${
-            currentAnswer === 'YES'
-              ? 'bg-status-pass-bg text-status-pass-text border-status-pass-border'
-              : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
-          }`}
-        >
-          예
-        </button>
-        <button
-          type="button"
-          onClick={() => onQuickAnswer(itemId, questionId, 'NO')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold border ${
-            currentAnswer === 'NO'
-              ? 'bg-status-fail-bg text-status-fail-text border-status-fail-border'
-              : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
-          }`}
-        >
-          아니오
-        </button>
-        <button
-          type="button"
-          onClick={() => onQuickAnswer(itemId, questionId, 'NA')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold border ${
-            currentAnswer === 'NA'
-              ? 'bg-status-pending-bg text-tx-tertiary border-status-pending-border'
-              : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
-          }`}
-        >
-          해당없음
-        </button>
-      </div>
-    );
-  };
+  const firstUnansweredId = QUESTIONS.find((q) => {
+    const ans = quickAnswers[q.id];
+    return !ans || ans === 'NA';
+  })?.id ?? null;
 
   return (
     <div className="space-y-3">
       {QUESTIONS.map((question, index) => {
-        const answer = quickAnswers[question.id] ?? 'NA';
+        const currentAnswer = quickAnswers[question.id] ?? 'NA';
+        const isAnswered = currentAnswer === 'YES' || currentAnswer === 'NO';
+        const isCurrent = question.id === firstUnansweredId;
         const yesGuide = YES_GUIDES[question.id];
+
         return (
           <div
             key={question.id}
-            className="p-4 rounded-xl border shadow-sm border-ln bg-surface-sunken"
+            className={`rounded-xl px-4 py-3.5 transition-all duration-300 ease-out origin-left ${
+              isAnswered
+                ? 'bg-surface-sunken/70 scale-[0.97] opacity-60'
+                : isCurrent
+                  ? 'bg-surface-base scale-100 shadow-[0_4px_16px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]'
+                  : 'bg-surface-sunken/40 scale-[0.97] opacity-35'
+            }`}
           >
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-surface-base text-xs font-bold text-tx-tertiary border border-ln">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full text-[11px] font-bold shrink-0 text-tx-tertiary">
                   {index + 1}
                 </span>
-                <div>
-                  <div className="text-[10px] font-bold text-tx-muted mb-0.5">
-                    {question.importance === 'MUST' ? '필수' : '권고'}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                    <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      question.importance === 'MUST'
+                        ? 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)]'
+                        : 'bg-surface-sunken text-tx-muted'
+                    }`}>
+                      {question.importance === 'MUST' ? '필수' : '권고'}
+                    </span>
                   </div>
-                  <span className="text-base text-tx-primary leading-snug font-semibold">
-                    {question.text}
-                  </span>
+                  <span className="text-[14px] leading-snug font-semibold text-tx-primary">{question.text}</span>
                 </div>
               </div>
-              {renderAnswerButtons(question.id)}
+              <div className="flex items-center shrink-0 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onQuickAnswer(itemId, question.id, currentAnswer === 'YES' ? 'NA' : 'YES')}
+                  className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
+                    currentAnswer === 'YES'
+                      ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border-[var(--status-pass-border)]'
+                      : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong hover:text-tx-secondary'
+                  }`}
+                >
+                  예
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onQuickAnswer(itemId, question.id, currentAnswer === 'NO' ? 'NA' : 'NO')}
+                  className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
+                    currentAnswer === 'NO'
+                      ? 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)] border-[var(--status-fail-border)]'
+                      : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong hover:text-tx-secondary'
+                  }`}
+                >
+                  아니오
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onQuickAnswer(itemId, question.id, 'NA')}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-tx-muted bg-surface-base border border-ln hover:border-ln-strong hover:text-tx-secondary transition-all duration-200"
+                >
+                  해당없음
+                </button>
+              </div>
             </div>
 
-            {/* YES: 참조 태그 + 가이드 */}
-            {answer === 'YES' && (
+            {currentAnswer === 'YES' && (
               <div className="mt-4 space-y-3">
                 {question.id === 'Q1' && agreementOs && (
                   <div className="px-3 py-2 rounded-lg bg-accent-subtle border border-accent text-sm text-accent-text">
@@ -168,8 +174,7 @@ export function Setup03Evidence({
               </div>
             )}
 
-            {/* NO: 가이드 텍스트 */}
-            {answer === 'NO' && (
+            {currentAnswer === 'NO' && (
               <div className="mt-4 rounded-lg border border-ln bg-surface-sunken px-4 py-3">
                 <div className="text-xs text-tx-tertiary space-y-1.5">
                   {NO_GUIDES[question.id]?.map((guide, i) => (
