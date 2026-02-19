@@ -468,6 +468,16 @@ export function CenterDisplay({
                               >
                                 아니오
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!quickModeItem && !isSeatAssignment) return;
+                                  handleAnswer(question.id, 'NA');
+                                }}
+                                className="px-3 py-2 rounded-lg text-sm font-medium border border-ln bg-surface-base text-tx-muted hover:border-ln-strong hover:text-tx-secondary transition-all duration-200"
+                              >
+                                해당없음
+                              </button>
                             </>
                           )}
                         </div>
