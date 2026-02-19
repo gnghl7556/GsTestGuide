@@ -17,7 +17,7 @@ const MUST_HINTS = [
   '서명'
 ];
 
-const SHOULD_HINTS = ['권장', '가능', '절차', '정의', '훈련', '정기', '점검', '정책'];
+const SHOULD_HINTS = ['권장', '가능', '절차', '정의', '훈련', '정기', '점검', '정책', '조건부'];
 
 const CATEGORY_TAGS: Record<Requirement['category'], string[]> = {
   SETUP: [
