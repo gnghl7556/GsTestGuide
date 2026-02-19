@@ -384,10 +384,10 @@ export function MaterialManagement() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ln bg-surface-raised">
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary w-44">자료명</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary w-40">자료명</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary w-20">종류</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary w-48">설명</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">연결 항목</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary w-48">연결 항목</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">설명</th>
                 <th className="px-4 py-3 text-right text-xs font-bold text-tx-secondary w-24">작업</th>
               </tr>
             </thead>
@@ -414,16 +414,17 @@ export function MaterialManagement() {
                       <option value="external">External</option>
                     </select>
                   </td>
+                  <td className="px-4 py-2">{renderStepChips()}</td>
                   <td className="px-4 py-2">
-                    <input
-                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken"
+                    <textarea
+                      className="w-full rounded border border-ln px-2.5 py-1.5 text-sm bg-surface-sunken resize-none leading-relaxed"
                       value={form.description}
                       onChange={(e) => setForm({ ...form, description: e.target.value })}
-                      placeholder="설명 (선택)"
+                      placeholder="팝업에 표시될 자료 설명을 입력하세요"
+                      rows={3}
                     />
                   </td>
-                  <td className="px-4 py-2">{renderStepChips()}</td>
-                  <td className="px-4 py-2 text-right">
+                  <td className="px-4 py-2 text-right align-top">
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={handleAdd} disabled={saving} className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg" title="저장">
                         <Check size={16} />
@@ -456,16 +457,17 @@ export function MaterialManagement() {
                             <option value="external">External</option>
                           </select>
                         </td>
+                        <td className="px-4 py-2">{renderStepChips()}</td>
                         <td className="px-4 py-2">
-                          <input
-                            className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken"
+                          <textarea
+                            className="w-full rounded border border-ln px-2.5 py-1.5 text-sm bg-surface-sunken resize-none leading-relaxed"
                             value={form.description}
                             onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            placeholder="설명"
+                            placeholder="팝업에 표시될 자료 설명을 입력하세요"
+                            rows={3}
                           />
                         </td>
-                        <td className="px-4 py-2">{renderStepChips()}</td>
-                        <td className="px-4 py-2 text-right">
+                        <td className="px-4 py-2 text-right align-top">
                           <div className="flex items-center justify-end gap-1">
                             <button onClick={handleEditSave} disabled={saving} className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg" title="저장">
                               <Check size={16} />
@@ -502,8 +504,8 @@ export function MaterialManagement() {
                           {d.kind === 'external' ? 'External' : 'File'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-tx-tertiary">{d.description || '-'}</td>
                       <td className="px-4 py-3">{renderStepBadges(d)}</td>
+                      <td className="px-4 py-3 text-xs text-tx-tertiary">{d.description || '-'}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button onClick={() => handleEditStart(d)} className="rounded p-1 text-tx-muted hover:text-accent-text hover:bg-accent-subtle" title="수정">
