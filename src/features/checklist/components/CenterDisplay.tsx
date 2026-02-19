@@ -347,36 +347,38 @@ export function CenterDisplay({
                     <div
                       key={question.id}
                       id={`question-${requirementId}-${question.id}`}
-                      className={`rounded-xl border shadow-sm transition-all duration-200 ${
+                      className={`rounded-xl transition-all duration-300 ease-out ${
                         disabled
-                          ? 'p-3 border-ln-subtle bg-surface-raised opacity-40 pointer-events-none'
+                          ? 'px-3 py-2.5 border border-ln-subtle bg-surface-raised/50 opacity-35 pointer-events-none'
                           : isAnswered
-                            ? 'p-3 opacity-60 ' + (currentAnswer === 'YES'
-                              ? 'border-status-pass-border/30 bg-status-pass-bg/15'
-                              : 'border-status-fail-border/30 bg-status-fail-bg/15')
+                            ? 'px-3 py-2.5 border ' + (currentAnswer === 'YES'
+                              ? 'border-status-pass-border/25 bg-[var(--status-pass-bg)]/40'
+                              : 'border-status-fail-border/25 bg-[var(--status-fail-bg)]/40')
                             : isCurrent
-                              ? 'p-4 border-accent/50 bg-surface-sunken ring-2 ring-accent/15'
-                              : 'p-4 border-ln bg-surface-sunken'
+                              ? 'px-4 py-4 border-2 border-[var(--accent)]/40 bg-[var(--accent-subtle)] shadow-md shadow-[var(--accent)]/5'
+                              : 'px-4 py-4 border border-ln bg-surface-sunken'
                       }`}
                     >
                       {(() => {
                         return (
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
+                          <span className={`inline-flex items-center justify-center rounded-full text-xs font-bold shrink-0 transition-all duration-300 ${
+                            isAnswered ? 'h-5 w-5 text-[10px]' : 'h-7 w-7'
+                          } ${
                             currentAnswer === 'YES'
-                              ? 'bg-status-pass-bg text-status-pass-text border border-status-pass-border'
+                              ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border border-[var(--status-pass-border)]/50'
                               : currentAnswer === 'NO'
-                                ? 'bg-status-fail-bg text-status-fail-text border border-status-fail-border'
+                                ? 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)] border border-[var(--status-fail-border)]/50'
                                 : isCurrent
-                                  ? 'bg-accent/10 text-accent border border-accent/30'
-                                  : 'bg-surface-base text-tx-tertiary border border-ln'
+                                  ? 'bg-[var(--accent)]/15 text-[var(--accent)] border-2 border-[var(--accent)]/30'
+                                  : 'bg-surface-base text-tx-muted border border-ln'
                           }`}>
                             {index + 1}
                           </span>
                           <div className="min-w-0">
                             {!isAnswered && (
-                            <div className="text-xs font-bold text-tx-muted mb-0.5">
+                            <div className={`text-xs font-bold mb-0.5 ${isCurrent ? 'text-[var(--accent-text)]' : 'text-tx-muted'}`}>
                               {question.importance === 'MUST' ? '필수' : '권고'}
                             </div>
                             )}
@@ -405,57 +407,68 @@ export function CenterDisplay({
                                 </div>
                               );
                             })()}
-                            <span className={`leading-snug font-semibold ${isAnswered ? 'text-sm text-tx-tertiary' : 'text-[15px] text-tx-primary'}`}>{question.text}</span>
+                            <span className={`leading-snug font-semibold transition-all duration-300 ${
+                              isAnswered
+                                ? 'text-[13px] text-tx-muted'
+                                : isCurrent
+                                  ? 'text-[15px] text-tx-primary'
+                                  : 'text-[15px] text-tx-secondary'
+                            }`}>{question.text}</span>
                           </div>
                         </div>
-                        <div className={`flex items-center gap-2 shrink-0 ${isAnswered ? 'gap-1.5' : 'gap-2'}`}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!quickModeItem && !isSeatAssignment) return;
-                              handleAnswer(question.id, 'YES');
-                            }}
-                            className={`rounded-lg font-bold border transition-colors ${
-                              isAnswered ? 'px-3 py-1.5 text-sm' : 'px-4 py-2 text-base'
-                            } ${
-                              currentAnswer === 'YES'
-                                ? 'bg-status-pass-bg text-status-pass-text border-status-pass-border'
-                                : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
-                            }`}
-                          >
-                            예
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!quickModeItem && !isSeatAssignment) return;
-                              handleAnswer(question.id, 'NO');
-                            }}
-                            className={`rounded-lg font-bold border transition-colors ${
-                              isAnswered ? 'px-3 py-1.5 text-sm' : 'px-4 py-2 text-base'
-                            } ${
-                              currentAnswer === 'NO'
-                                ? 'bg-status-fail-bg text-status-fail-text border-status-fail-border'
-                                : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
-                            }`}
-                          >
-                            아니오
-                          </button>
-                          {!isAnswered && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!quickModeItem && !isSeatAssignment) return;
-                              handleAnswer(question.id, 'NA');
-                            }}
-                            className={`px-4 py-2 rounded-lg text-base font-bold border transition-colors ${
-                              currentAnswer === 'NA'
-                                ? 'bg-status-pending-bg text-tx-tertiary border-status-pending-border'
-                                : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
-                            }`}
-                          >
-                            해당없음
-                          </button>
+                        <div className="flex items-center shrink-0 gap-1.5">
+                          {isAnswered ? (
+                            <>
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
+                                currentAnswer === 'YES'
+                                  ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border border-[var(--status-pass-border)]/40'
+                                  : 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)] border border-[var(--status-fail-border)]/40'
+                              }`}>
+                                {currentAnswer === 'YES' ? '예' : '아니오'}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!quickModeItem && !isSeatAssignment) return;
+                                  handleAnswer(question.id, 'NA');
+                                }}
+                                className="rounded-md px-1.5 py-1 text-[10px] text-tx-muted hover:text-tx-secondary hover:bg-surface-sunken transition-colors"
+                                title="응답 초기화"
+                              >
+                                변경
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!quickModeItem && !isSeatAssignment) return;
+                                  handleAnswer(question.id, 'YES');
+                                }}
+                                className={`px-4 py-2 rounded-lg text-base font-bold border transition-all duration-200 ${
+                                  isCurrent
+                                    ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border-[var(--status-pass-border)] hover:shadow-sm'
+                                    : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
+                                }`}
+                              >
+                                예
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!quickModeItem && !isSeatAssignment) return;
+                                  handleAnswer(question.id, 'NO');
+                                }}
+                                className={`px-4 py-2 rounded-lg text-base font-bold border transition-all duration-200 ${
+                                  isCurrent
+                                    ? 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)] border-[var(--status-fail-border)] hover:shadow-sm'
+                                    : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong'
+                                }`}
+                              >
+                                아니오
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
