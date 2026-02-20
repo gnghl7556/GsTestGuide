@@ -1,9 +1,9 @@
 import { REQUIREMENTS_DB } from 'virtual:content/process';
-import type { ChecklistItem, UserProfile } from '../types';
+import type { ChecklistItem, Requirement, UserProfile } from '../types';
 
 // ✅ export function 필수
-export function generateChecklist(profile: UserProfile): ChecklistItem[] {
-  return REQUIREMENTS_DB.map((req) => {
+export function generateChecklist(profile: UserProfile, requirements?: Requirement[]): ChecklistItem[] {
+  return (requirements ?? REQUIREMENTS_DB).map((req) => {
     let status: ChecklistItem["status"] = "Applicable";
     let autoReason: string | undefined;
 

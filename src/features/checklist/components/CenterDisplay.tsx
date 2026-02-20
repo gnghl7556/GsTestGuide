@@ -9,7 +9,6 @@ import type {
 import { CATEGORY_THEMES } from 'virtual:content/categories';
 import { Ban, FileDown, ExternalLink, Download, User, Phone, Mail, MessageSquare } from 'lucide-react';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
-import { DefectReportForm } from '../../defects/components/DefectReportForm';
 import { RequiredDocChip } from '../../../components/ui';
 import { Setup03Evidence } from './Setup03Evidence';
 import { Setup04Evidence } from './Setup04Evidence';
@@ -33,9 +32,6 @@ interface CenterDisplayProps {
   itemGate?: ExecutionItemGate;
   isFinalized: boolean;
 }
-
-/* ── Shared input class (token-based, no dark: prefix) ── */
-const inputCls = 'w-full rounded-xl border border-input-border bg-input-bg px-3 py-2 text-sm text-input-text placeholder-input-placeholder focus:border-[var(--focus-ring)] focus:ring-2 focus:ring-[var(--focus-ring)]/20 outline-none';
 
 export function CenterDisplay({
   activeItem,
@@ -94,16 +90,6 @@ export function CenterDisplay({
   }, [selectedDoc]);
   if (!activeItem) return <div className="h-full bg-surface-base rounded-xl border border-ln" />;
 
-  if (activeItem.id === 'DUR-EXEC-01' && currentTestNumber) {
-    return (
-      <DefectReportForm
-        projectId={currentTestNumber || ''}
-        testCaseId={activeItem.id}
-        isFinalized={isFinalized}
-      />
-    );
-  }
-
   const theme = CATEGORY_THEMES[activeItem.category] ?? CATEGORY_THEMES['SETUP'];
   const isNA = activeItem.status === 'Not_Applicable';
   const displayLabel =
@@ -160,75 +146,23 @@ export function CenterDisplay({
       canceled = true;
     };
   }, [refItems]);
-  const isSeatAssignment = activeItem.id === 'ENV-01';
-  const seatValue = typeof inputValues.seatLocation === 'string' ? inputValues.seatLocation : '';
   const requirementId = quickModeItem?.requirementId ?? activeItem.id;
-  const seatQuestions = isSeatAssignment
-    ? ([
-        {
-          id: 'Q1',
-          text: activeItem.checkPoints?.[0] ?? '시험 배정 후, 시험 자리가 이미 배정되었나요?',
-          importance: 'MUST'
-        },
-        {
-          id: 'Q2',
-          text: activeItem.checkPoints?.[1] ?? '시험에 필요한 장비 및 공간을 확인했나요?',
-          importance: 'MUST'
-        }
-      ] satisfies Array<{ id: string; text: string; importance: 'MUST' | 'SHOULD' }>)
-    : (quickModeItem?.quickQuestions ?? []);
+  const questions = quickModeItem?.quickQuestions ?? [];
 
-  const q1Answer = quickAnswers.Q1 ?? 'NA';
-  const q2Answer = quickAnswers.Q2 ?? 'NA';
-
-  /* ── Sequential gate: Q(n) "NO" → disable Q(n+1)+ ── */
-  const SKIP_RULES: Record<string, { trigger: string; skip: string[]; keep?: string[] }> = {
-    'SETUP-03': { trigger: 'Q2', skip: ['Q3', 'Q4'], keep: ['Q5'] },
-  };
-
-  const isQuestionDisabled = (questionId: string, questions: typeof seatQuestions): boolean => {
-    if (isSeatAssignment) {
-      if (questionId === 'Q2' && (q1Answer === 'NA' || q1Answer === 'YES')) return true;
-      return false;
-    }
-    const rule = SKIP_RULES[activeItem.id];
-    if (rule) {
-      const triggerAnswer = quickAnswers[rule.trigger];
-      if (triggerAnswer === 'NO' && rule.skip.includes(questionId)) return true;
-    }
+  const isQuestionDisabled = (questionId: string): boolean => {
     const idx = questions.findIndex((q) => q.id === questionId);
     if (idx <= 0) return false;
-    for (let i = idx - 1; i >= 0; i--) {
-      const prevId = questions[i].id;
-      const prevAnswer = quickAnswers[prevId];
-      if (rule && rule.skip.includes(prevId)) continue;
-      if (prevAnswer === 'NO') {
-        if (rule && rule.keep?.includes(questionId)) return false;
-        return true;
-      }
-      if (!prevAnswer || prevAnswer === 'NA') return true;
-      break;
-    }
+    const prevAnswer = quickAnswers[questions[idx - 1].id];
+    if (prevAnswer === 'NO' || !prevAnswer || prevAnswer === 'NA') return true;
     return false;
   };
 
   const handleAnswer = (questionId: string, value: QuickAnswer) => {
-    onQuickAnswer(isSeatAssignment ? activeItem.id : requirementId, questionId, value);
-    if (isSeatAssignment && questionId === 'Q1' && value === 'YES') {
-      onQuickAnswer(activeItem.id, 'Q2', 'NA');
-    }
-    const questions = isSeatAssignment ? seatQuestions : (quickModeItem?.quickQuestions ?? []);
+    onQuickAnswer(requirementId, questionId, value);
     if (value === 'NO') {
-      const rule = SKIP_RULES[activeItem.id];
       const idx = questions.findIndex((q) => q.id === questionId);
       for (let i = idx + 1; i < questions.length; i++) {
-        const qid = questions[i].id;
-        if (rule && rule.trigger === questionId && rule.keep?.includes(qid)) continue;
-        if (rule && rule.trigger === questionId && rule.skip.includes(qid)) {
-          onQuickAnswer(isSeatAssignment ? activeItem.id : requirementId, qid, 'NA');
-          continue;
-        }
-        onQuickAnswer(isSeatAssignment ? activeItem.id : requirementId, qid, 'NA');
+        onQuickAnswer(requirementId, questions[i].id, 'NA');
       }
     }
   };
@@ -333,13 +267,13 @@ export function CenterDisplay({
               ) : (
                 <div className="space-y-3">
                   {(() => {
-                    const firstUnansweredId = seatQuestions.find((q) => {
-                      if (isQuestionDisabled(q.id, seatQuestions)) return false;
+                    const firstUnansweredId = questions.find((q) => {
+                      if (isQuestionDisabled(q.id)) return false;
                       const ans = quickAnswers[q.id];
                       return !ans || ans === 'NA';
                     })?.id ?? null;
-                    return seatQuestions.map((question, index) => {
-                    const disabled = isQuestionDisabled(question.id, seatQuestions);
+                    return questions.map((question, index) => {
+                    const disabled = isQuestionDisabled(question.id);
                     const currentAnswer = quickAnswers[question.id] ?? 'NA';
                     const isAnswered = currentAnswer === 'YES' || currentAnswer === 'NO';
                     const isCurrent = question.id === firstUnansweredId;
@@ -373,7 +307,7 @@ export function CenterDisplay({
                               }`}>
                                 {question.importance === 'MUST' ? '필수' : '권고'}
                               </span>
-                              {!isSeatAssignment && (() => {
+                              {(() => {
                                 const questionRefs = question.refs && question.refs.length > 0
                                   ? refItems.filter((d) => question.refs!.includes(d.label))
                                   : refItems;
@@ -402,7 +336,7 @@ export function CenterDisplay({
                           <button
                             type="button"
                             onClick={() => {
-                              if (!quickModeItem && !isSeatAssignment) return;
+                              if (!quickModeItem) return;
                               handleAnswer(question.id, currentAnswer === 'YES' ? 'NA' : 'YES');
                             }}
                             className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
@@ -416,7 +350,7 @@ export function CenterDisplay({
                           <button
                             type="button"
                             onClick={() => {
-                              if (!quickModeItem && !isSeatAssignment) return;
+                              if (!quickModeItem) return;
                               handleAnswer(question.id, currentAnswer === 'NO' ? 'NA' : 'NO');
                             }}
                             className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
@@ -430,7 +364,7 @@ export function CenterDisplay({
                           <button
                             type="button"
                             onClick={() => {
-                              if (!quickModeItem && !isSeatAssignment) return;
+                              if (!quickModeItem) return;
                               handleAnswer(question.id, 'NA');
                             }}
                             className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-tx-muted bg-surface-base border border-ln hover:border-ln-strong hover:text-tx-secondary transition-all duration-200"
@@ -441,115 +375,6 @@ export function CenterDisplay({
                       </div>
                         );
                       })()}
-                      {isSeatAssignment && question.id === 'Q1' && q1Answer === 'YES' && (
-                        <div className="mt-3.5 space-y-2">
-                          <div className="text-xs font-bold text-tx-tertiary">시험 자리</div>
-                          <input
-                            type="text"
-                            value={seatValue}
-                            onChange={(e) => onInputChange(activeItem.id, 'seatLocation', e.target.value)}
-                            placeholder="예: 9-L/R, 10-L/R"
-                            className={inputCls}
-                          />
-                          <p className="text-xs text-status-pass-text">
-                            자리 정보 입력 후 다음 항목을 건너뛰고 판정에 참고하세요.
-                          </p>
-                        </div>
-                      )}
-                      {isSeatAssignment && question.id === 'Q1' && q1Answer === 'NO' && (
-                        <div className="mt-3.5 text-xs text-tx-tertiary">
-                          다음 질문을 진행하세요.
-                        </div>
-                      )}
-                      {isSeatAssignment && question.id === 'Q2' && q1Answer === 'NA' && (
-                        <div className="mt-3.5 text-xs text-tx-muted">
-                          먼저 1번 질문에 답해주세요.
-                        </div>
-                      )}
-                      {isSeatAssignment && question.id === 'Q2' && q1Answer === 'YES' && (
-                        <div className="mt-3.5 text-xs text-tx-muted">
-                          1번에서 자리 배정을 확인했으므로 다음 항목으로 이동하세요.
-                        </div>
-                      )}
-                      {isSeatAssignment && question.id === 'Q2' && q2Answer === 'YES' && (
-                        <div className="mt-3.5 space-y-2">
-                          <div className="text-xs font-bold text-tx-tertiary">시험 자리</div>
-                          <input
-                            type="text"
-                            value={seatValue}
-                            onChange={(e) => onInputChange(activeItem.id, 'seatLocation', e.target.value)}
-                            placeholder="예: 9-L/R, 10-L/R"
-                            className={inputCls}
-                          />
-                          <p className="text-xs text-status-pass-text">
-                            자리 정보 입력 후 다음 항목을 건너뛰고 판정에 참고하세요.
-                          </p>
-                        </div>
-                      )}
-                      {isSeatAssignment && question.id === 'Q2' && q1Answer === 'NO' && q2Answer === 'NO' && (
-                        <div className="mt-3.5 space-y-3">
-                          <div className="rounded-md border border-ln bg-surface-base px-3.5 py-2.5 text-sm text-tx-tertiary space-y-1">
-                            <div>• 시험에 필요한 장비 확인: <span className="font-semibold">시험 합의서</span>를 확인하세요.</div>
-                            <div>• 사용 가능한 시험 자리: 아래 <span className="font-semibold">담당자</span> 정보를 확인하세요.</div>
-                          </div>
-                          {contacts.length > 0 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {contacts.map((c) => (
-                                <div key={c.role} className="rounded-xl bg-white/40 dark:bg-white/[0.06] backdrop-blur-md shadow-[0_2px_8px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] px-4 py-3 flex items-center gap-3">
-                                  <div className="h-8 w-8 rounded-full bg-surface-base flex items-center justify-center shrink-0">
-                                    <User size={14} className="text-tx-tertiary" />
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-bold text-tx-primary">{c.name}</span>
-                                      <span className="text-[11px] text-tx-muted">{c.role}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 mt-0.5">
-                                      {c.phone && (
-                                        <span className="flex items-center gap-1 text-xs text-tx-tertiary">
-                                          <Phone size={10} />{c.phone}
-                                        </span>
-                                      )}
-                                      {c.email && (
-                                        <span className="flex items-center gap-1 text-xs text-tx-tertiary">
-                                          <Mail size={10} />{c.email}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  {c.requestMethod && (
-                                    <span className="flex items-center gap-1 text-xs text-tx-secondary shrink-0">
-                                      <MessageSquare size={10} />
-                                      {c.requestUrl ? (
-                                        <a href={c.requestUrl} target="_blank" rel="noreferrer" className="hover:underline">{c.requestMethod}</a>
-                                      ) : c.requestMethod}
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
-                            <div className="rounded-md border border-ln bg-surface-base px-3.5 py-3 text-xs text-tx-tertiary">
-                              <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">참조 정보</div>
-                              <div className="space-y-1.5">
-                                {activeItem.relatedInfo.map((info) => (
-                                  <div key={info.label} className="flex flex-wrap items-center gap-2">
-                                    <span className="text-tx-muted min-w-[120px]">{info.label}</span>
-                                    {info.href ? (
-                                      <a href={info.href} target="_blank" rel="noreferrer" className="text-accent-text hover:text-accent-hover underline">
-                                        {info.value}
-                                      </a>
-                                    ) : (
-                                      <span className="text-tx-secondary font-semibold">{info.value}</span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                     );
                   });
@@ -557,7 +382,7 @@ export function CenterDisplay({
                 </div>
               )}
             </div>
-            {!isSeatAssignment && contacts.length > 0 && (
+            {contacts.length > 0 && (
               <div className="mt-6">
                 <div className="text-xs font-bold text-tx-secondary mb-2.5 tracking-wide">담당자</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -597,7 +422,7 @@ export function CenterDisplay({
                 </div>
               </div>
             )}
-            {!isSeatAssignment && activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
+            {activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
               <div className="mt-5 rounded-lg border border-ln bg-surface-sunken px-4 py-3 text-sm text-tx-tertiary">
                 <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">참조 정보</div>
                 <div className="space-y-2">

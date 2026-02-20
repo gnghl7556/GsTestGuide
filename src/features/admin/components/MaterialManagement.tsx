@@ -397,7 +397,7 @@ export function MaterialManagement() {
                 <tr className="border-b border-ln bg-accent-subtle">
                   <td className="px-4 py-2">
                     <input
-                      className="w-full rounded border border-ln px-2 py-1 text-sm"
+                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                       value={form.label}
                       onChange={(e) => setForm({ ...form, label: e.target.value })}
                       placeholder="예: 시험 계획서"
@@ -406,7 +406,7 @@ export function MaterialManagement() {
                   </td>
                   <td className="px-4 py-2">
                     <select
-                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-white"
+                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                       value={form.kind}
                       onChange={(e) => setForm({ ...form, kind: e.target.value })}
                     >
@@ -449,7 +449,7 @@ export function MaterialManagement() {
                         </td>
                         <td className="px-4 py-2">
                           <select
-                            className="w-full rounded border border-ln px-2 py-1 text-sm bg-white"
+                            className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                             value={form.kind}
                             onChange={(e) => setForm({ ...form, kind: e.target.value })}
                           >

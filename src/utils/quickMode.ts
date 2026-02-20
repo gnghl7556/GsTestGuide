@@ -150,16 +150,9 @@ export const getRecommendation = (
   questions: QuickQuestion[],
   answers: Record<string, QuickAnswer>
 ): QuickDecision => {
-  const mustQuestions = questions.filter((q) => q.importance === 'MUST');
-  const shouldQuestions = questions.filter((q) => q.importance === 'SHOULD');
-
-  if (mustQuestions.some((q) => answers[q.id] === 'NO')) return 'FAIL';
-  if (mustQuestions.some((q) => answers[q.id] === 'NA')) return 'HOLD';
-
-  const mustAllYes = mustQuestions.every((q) => answers[q.id] === 'YES');
-  if (!mustAllYes) return 'HOLD';
-
-  if (shouldQuestions.some((q) => answers[q.id] === 'NO')) return 'HOLD';
-
-  return 'PASS';
+  const allAnswered = questions.every((q) => {
+    const a = answers[q.id];
+    return a === 'YES' || a === 'NO';
+  });
+  return allAnswered ? 'PASS' : 'HOLD';
 };

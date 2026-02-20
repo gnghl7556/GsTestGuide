@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Check, X, BookOpen } from 'lucide-react';
 
-import type { ChecklistItem, ExecutionItemGate, QuickReviewAnswer, ReviewData } from '../../../types';
+import type { ChecklistItem, ExecutionItemGate, QuickModeItem, QuickReviewAnswer, ReviewData } from '../../../types';
 import { CATEGORIES, CATEGORY_THEMES } from 'virtual:content/categories';
 import { ReferenceGuideModal } from './ReferenceGuideModal';
 
@@ -11,6 +10,7 @@ interface NavSidebarProps {
   checklist: ChecklistItem[];
   reviewData: Record<string, ReviewData>;
   quickReviewById: Record<string, QuickReviewAnswer>;
+  quickModeById: Record<string, QuickModeItem>;
   selectedReqId: string | null;
   setSelectedReqId: (id: string) => void;
   activeCategory: string;
@@ -21,12 +21,12 @@ export function NavSidebar({
   checklist,
   reviewData,
   quickReviewById,
+  quickModeById,
   selectedReqId,
   setSelectedReqId,
   activeCategory,
   itemGates
 }: NavSidebarProps) {
-  const navigate = useNavigate();
   const [expandedCats, setExpandedCats] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'HOLD' | 'FAIL'>('ALL');
   const [evidenceOnly, setEvidenceOnly] = useState(false);
@@ -224,50 +224,49 @@ export function NavSidebar({
                         <Circle size={10} className="text-tx-muted" />
                       );
 
-                    const isFeatureList = item.id === 'DUR-PLAN-01';
-                    const isTestCase = item.id === 'DUR-DESIGN-01';
                     return (
                       <li key={item.id}>
-                        <div className="space-y-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isBlocked) return;
-                              setSelectedReqId(item.id);
-                            }}
-                            disabled={isBlocked}
-                            title={isBlocked ? gate?.reason : undefined}
-                            className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all duration-150 flex items-start justify-between gap-2
-                              ${isActive
-                                ? `${theme.lightBg} ${theme.text} font-bold border-l-[3px] ${theme.activeBorder} border border-r-transparent border-y-transparent shadow-sm`
-                                : `${theme.idleBg} border ${theme.idleBorder} ${theme.idleText} ${theme.idleHoverBg} ${theme.idleHoverBorder}`
-                              }
-                              ${isBlocked ? 'opacity-50 cursor-not-allowed' : ''}
-                              ${isNA && !isActive ? 'opacity-40 line-through decoration-ln-strong' : ''}
-                            `}
-                          >
-                            <div className="flex items-start gap-2 min-w-0">
-                              <span className="mt-0.5 shrink-0">{statusIcon}</span>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : theme.idleText}`}>
-                                    {String(index + 1).padStart(2, '0')}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isBlocked) return;
+                            setSelectedReqId(item.id);
+                          }}
+                          disabled={isBlocked}
+                          title={isBlocked ? gate?.reason : undefined}
+                          className={`w-full text-left px-2.5 py-2 rounded-lg text-xs transition-all duration-150 flex items-start justify-between gap-2
+                            ${isActive
+                              ? `${theme.lightBg} ${theme.text} font-bold border-l-[3px] ${theme.activeBorder} border border-r-transparent border-y-transparent shadow-sm`
+                              : `${theme.idleBg} border ${theme.idleBorder} ${theme.idleText} ${theme.idleHoverBg} ${theme.idleHoverBorder}`
+                            }
+                            ${isBlocked ? 'opacity-50 cursor-not-allowed' : ''}
+                            ${isNA && !isActive ? 'opacity-40 line-through decoration-ln-strong' : ''}
+                          `}
+                        >
+                          <div className="flex items-start gap-2 min-w-0">
+                            <span className="mt-0.5 shrink-0">{statusIcon}</span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : theme.idleText}`}>
+                                  {String(index + 1).padStart(2, '0')}
+                                </span>
+                                <span className="block truncate flex-1">{toShortLabel(item.title)}</span>
+                                {isBlocked && (
+                                  <span className="shrink-0 rounded-full border border-ln bg-surface-sunken px-1.5 py-0.5 text-[9px] font-semibold text-tx-tertiary">
+                                    잠금
                                   </span>
-                                  <span className="block truncate flex-1">{toShortLabel(item.title)}</span>
-                                  {isBlocked && (
-                                    <span className="shrink-0 rounded-full border border-ln bg-surface-sunken px-1.5 py-0.5 text-[9px] font-semibold text-tx-tertiary">
-                                      잠금
-                                    </span>
-                                  )}
-                                  {item.checkPoints && item.checkPoints.length > 0 && (
+                                )}
+                                {(() => {
+                                  const questions = quickModeById[item.id]?.quickQuestions ?? [];
+                                  if (questions.length === 0) return null;
+                                  return (
                                     <span className="hidden lg:flex items-center gap-0.5 ml-auto">
-                                      {item.checkPoints.map((point, idx) => {
-                                        const qid = `Q${idx + 1}`;
-                                        const answer = quickReviewById[item.id]?.answers?.[qid];
+                                      {questions.map((q) => {
+                                        const answer = quickReviewById[item.id]?.answers?.[q.id];
                                         return (
                                           <span
-                                            key={`${item.id}-mini-${idx}`}
-                                            title={point}
+                                            key={`${item.id}-mini-${q.id}`}
+                                            title={q.text}
                                             className={`inline-block h-2 w-2 rounded-full ${
                                               answer === 'YES' ? 'bg-emerald-500'
                                               : answer === 'NO' ? 'bg-red-500'
@@ -278,40 +277,12 @@ export function NavSidebar({
                                         );
                                       })}
                                     </span>
-                                  )}
-                                </div>
+                                  );
+                                })()}
                               </div>
                             </div>
-                          </button>
-                          {isFeatureList && (
-                            <div className="pl-7">
-                              <button
-                                type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate('/design', { state: { tab: 'feature' } });
-                                  }}
-                                className="inline-flex items-center gap-2 rounded-md border border-ln bg-surface-base px-2 py-1 text-[10px] font-semibold text-tx-tertiary hover:text-tx-primary"
-                              >
-                                기능 리스트 관리
-                              </button>
-                            </div>
-                          )}
-                          {isTestCase && (
-                            <div className="pl-7">
-                              <button
-                                type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate('/design', { state: { tab: 'testcase' } });
-                                  }}
-                                className="inline-flex items-center gap-2 rounded-md border border-ln bg-surface-base px-2 py-1 text-[10px] font-semibold text-tx-tertiary hover:text-tx-primary"
-                              >
-                                TC 관리
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                          </div>
+                        </button>
                       </li>
                     );
                   })}

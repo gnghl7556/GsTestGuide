@@ -169,7 +169,7 @@ export function ProjectManagement() {
                           if (e.target.value) handleAssignTester(project.id, e.target.value);
                         }}
                         onBlur={() => setAssigningId(null)}
-                        className="rounded border border-ln px-2 py-1 text-xs"
+                        className="rounded border border-ln px-2 py-1 text-xs bg-surface-base text-tx-primary"
                       >
                         <option value="" disabled>시험원 선택</option>
                         {users.map((u) => (

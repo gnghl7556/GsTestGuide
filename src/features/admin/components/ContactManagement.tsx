@@ -284,7 +284,7 @@ export function ContactManagement() {
                 <tr className="border-b border-ln bg-accent-subtle">
                   <td className="px-4 py-2">
                     <input
-                      className="w-full rounded border border-ln px-2 py-1 text-sm"
+                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                       value={form.role}
                       onChange={(e) => setForm({ ...form, role: e.target.value })}
                       placeholder="예: 보안 담당"
@@ -294,7 +294,7 @@ export function ContactManagement() {
                   <td className="px-4 py-2">
                     <div className="relative">
                       <select
-                        className="w-full rounded border border-ln px-2 py-1 text-sm appearance-none bg-white pr-7"
+                        className="w-full rounded border border-ln px-2 py-1 text-sm appearance-none bg-surface-base text-tx-primary pr-7"
                         value={form.name}
                         onChange={(e) => handlePersonSelect(e.target.value)}
                       >
@@ -319,7 +319,7 @@ export function ContactManagement() {
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken"
+                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken text-tx-primary"
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
                       placeholder="연락처"
@@ -327,7 +327,7 @@ export function ContactManagement() {
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken"
+                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken text-tx-primary"
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
                       placeholder="이메일"
@@ -382,7 +382,7 @@ export function ContactManagement() {
                       <td className="px-4 py-2">
                         <div className="relative">
                           <select
-                            className="w-full rounded border border-ln px-2 py-1 text-sm appearance-none bg-white pr-7"
+                            className="w-full rounded border border-ln px-2 py-1 text-sm appearance-none bg-surface-base text-tx-primary pr-7"
                             value={form.name}
                             onChange={(e) => handlePersonSelect(e.target.value)}
                             autoFocus

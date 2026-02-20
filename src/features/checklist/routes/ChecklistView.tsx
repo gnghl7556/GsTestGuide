@@ -21,6 +21,7 @@ type ChecklistViewProps = {
   checklist: ChecklistItem[];
   reviewData: Record<string, ReviewData>;
   quickReviewById: Record<string, QuickReviewAnswer>;
+  quickModeById: Record<string, QuickModeItem>;
   selectedReqId: string | null;
   setSelectedReqId: (id: string | null) => void;
   activeItem?: ChecklistItem;
@@ -41,6 +42,7 @@ export function ChecklistView({
   checklist,
   reviewData,
   quickReviewById,
+  quickModeById,
   selectedReqId,
   setSelectedReqId,
   activeItem,
@@ -65,6 +67,7 @@ export function ChecklistView({
             checklist={checklist}
             reviewData={reviewData}
             quickReviewById={quickReviewById}
+            quickModeById={quickModeById}
             selectedReqId={selectedReqId}
             setSelectedReqId={setSelectedReqId}
             activeCategory={activeItem?.category || 'SETUP'}

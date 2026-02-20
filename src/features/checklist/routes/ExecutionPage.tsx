@@ -14,6 +14,9 @@ import type {
   UserProfile
 } from '../../../types';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
+import { useContentOverrides } from '../../../hooks/useContentOverrides';
+import { REQUIREMENTS_DB } from 'virtual:content/process';
+import { mergeOverrides } from '../../../lib/content/mergeOverrides';
 import { db } from '../../../lib/firebase';
 
 const storageKey = 'gs-test-guide:review';
@@ -65,13 +68,18 @@ export function ExecutionPage() {
   const [reviewData, setReviewData] = useState<Record<string, ReviewData>>(stored.reviewData || {});
   const [quickReviewById, setQuickReviewById] = useState<Record<string, QuickReviewAnswer>>(stored.quickReviewById || {});
   const { defects } = useDefects(currentTestNumber || null);
+  const contentOverrides = useContentOverrides();
 
   useEffect(() => {
     const payload = JSON.stringify({ profile, reviewData, selectedReqId, quickReviewById, testSetup, currentUserId });
     localStorage.setItem(storageKey, payload);
   }, [profile, reviewData, selectedReqId, quickReviewById, testSetup, currentUserId]);
 
-  const checklist = useMemo(() => generateChecklist(profile), [profile]);
+  const mergedRequirements = useMemo(
+    () => mergeOverrides(REQUIREMENTS_DB, contentOverrides),
+    [contentOverrides],
+  );
+  const checklist = useMemo(() => generateChecklist(profile, mergedRequirements), [profile, mergedRequirements]);
   const currentProject = useMemo(
     () => projects.find((project) => project.testNumber === currentTestNumber || project.id === currentTestNumber),
     [projects, currentTestNumber]
@@ -126,16 +134,9 @@ export function ExecutionPage() {
   const quickReview = quickModeItem ? quickReviewById[quickModeItem.requirementId] : undefined;
   const quickAnswers = quickReview?.answers || {};
   const quickInputValues: QuickInputValues = quickReview?.inputValues || {};
-  let recommendation: QuickDecision = quickModeItem
+  const recommendation: QuickDecision = quickModeItem
     ? getRecommendation(quickModeItem.quickQuestions, quickAnswers)
     : 'HOLD';
-  if (activeItem?.id === 'ENV-01') {
-    if (quickAnswers.Q1 === 'YES' || quickAnswers.Q2 === 'YES') {
-      recommendation = 'PASS';
-    } else if (quickAnswers.Q1 === 'NO' && quickAnswers.Q2 === 'NO') {
-      recommendation = 'HOLD';
-    }
-  }
 
   const isItemReadyForReview = (itemId: string) => {
     const gate = itemGates[itemId];
@@ -143,13 +144,6 @@ export function ExecutionPage() {
     const item = quickModeById[itemId];
     const entry = quickReviewById[itemId];
     if (!item || !entry) return false;
-    if (itemId === 'ENV-01') {
-      const q1 = entry.answers?.Q1 ?? 'NA';
-      const q2 = entry.answers?.Q2 ?? 'NA';
-      if (q1 === 'YES') return true;
-      if (q1 === 'NO') return q2 !== 'NA';
-      return false;
-    }
     const answered = entry.answeredQuestions || {};
     return item.quickQuestions.every((q) => Boolean(answered[q.id]));
   };
@@ -244,14 +238,7 @@ export function ExecutionPage() {
       };
       const nextAnswers = { ...existing.answers, [questionId]: value };
       const nextAnswered = { ...(existing.answeredQuestions || {}), [questionId]: true };
-      let autoRecommendation = getRecommendation(item.quickQuestions, nextAnswers);
-      if (itemId === 'ENV-01') {
-        const q1 = nextAnswers.Q1 ?? 'NA';
-        const q2 = nextAnswers.Q2 ?? 'NA';
-        if (q1 === 'YES') autoRecommendation = 'PASS';
-        else if (q1 === 'NO' && q2 === 'YES') autoRecommendation = 'PASS';
-        else if (q1 === 'NO' && q2 === 'NO') autoRecommendation = 'HOLD';
-      }
+      const autoRecommendation = getRecommendation(item.quickQuestions, nextAnswers);
       return {
         ...prev,
         [itemId]: {
@@ -290,6 +277,7 @@ export function ExecutionPage() {
       checklist={checklist}
       reviewData={reviewData}
       quickReviewById={quickReviewById}
+      quickModeById={quickModeById}
       selectedReqId={resolvedSelectedReqId}
       setSelectedReqId={(nextId) => {
         if (!nextId) return;

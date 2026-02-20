@@ -92,7 +92,7 @@ export function UserManagement() {
                 <tr className="border-b border-ln bg-accent-subtle">
                   <td className="px-4 py-2">
                     <input
-                      className="w-full rounded border border-ln px-2 py-1 text-sm"
+                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       placeholder="이름"
@@ -101,7 +101,7 @@ export function UserManagement() {
                   </td>
                   <td className="px-4 py-2">
                     <select
-                      className="rounded border border-ln px-2 py-1 text-sm"
+                      className="rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                       value={form.rank}
                       onChange={(e) => setForm({ ...form, rank: e.target.value as UserRank })}
                     >
@@ -112,7 +112,7 @@ export function UserManagement() {
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      className="w-full rounded border border-ln px-2 py-1 text-sm"
+                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
                       placeholder="이메일"
@@ -120,7 +120,7 @@ export function UserManagement() {
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      className="w-full rounded border border-ln px-2 py-1 text-sm"
+                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
                       placeholder="연락처"
@@ -152,14 +152,14 @@ export function UserManagement() {
                     <>
                       <td className="px-4 py-2">
                         <input
-                          className="w-full rounded border border-ln px-2 py-1 text-sm"
+                          className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                           value={form.name}
                           onChange={(e) => setForm({ ...form, name: e.target.value })}
                         />
                       </td>
                       <td className="px-4 py-2">
                         <select
-                          className="rounded border border-ln px-2 py-1 text-sm"
+                          className="rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                           value={form.rank}
                           onChange={(e) => setForm({ ...form, rank: e.target.value as UserRank })}
                         >
@@ -170,14 +170,14 @@ export function UserManagement() {
                       </td>
                       <td className="px-4 py-2">
                         <input
-                          className="w-full rounded border border-ln px-2 py-1 text-sm"
+                          className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                           value={form.email}
                           onChange={(e) => setForm({ ...form, email: e.target.value })}
                         />
                       </td>
                       <td className="px-4 py-2">
                         <input
-                          className="w-full rounded border border-ln px-2 py-1 text-sm"
+                          className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                           value={form.phone}
                           onChange={(e) => setForm({ ...form, phone: e.target.value })}
                         />

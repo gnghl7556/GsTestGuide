@@ -3,9 +3,10 @@ import { Paperclip } from 'lucide-react';
 
 const QUESTIONS = [
   { id: 'Q1', text: 'OS 종류/버전을 확인했나요?', importance: 'MUST' as const },
-  { id: 'Q2', text: 'IODD를 대여했나요?', importance: 'MUST' as const },
-  { id: 'Q3', text: 'OS 설치를 완료했나요?', importance: 'MUST' as const },
-  { id: 'Q4', text: '필수 SW를 설치했나요?', importance: 'MUST' as const },
+  { id: 'Q2', text: 'PC에 OS를 새로 설치해야 하나요?', importance: 'MUST' as const },
+  { id: 'Q3', text: 'IODD를 대여했나요?', importance: 'MUST' as const },
+  { id: 'Q4', text: 'OS 설치를 완료했나요?', importance: 'MUST' as const },
+  { id: 'Q5', text: '필수 SW를 설치했나요?', importance: 'MUST' as const },
 ];
 
 const NO_GUIDES: Record<string, string[]> = {
@@ -14,14 +15,18 @@ const NO_GUIDES: Record<string, string[]> = {
     '합의서에 OS 정보가 없으면 업체 담당자에게 문의하세요.',
   ],
   Q2: [
+    '기존 OS를 그대로 사용합니다.',
+    'IODD 대여 및 OS 설치 단계를 건너뜁니다.',
+  ],
+  Q3: [
     'IODD 대여가 필요한 경우 관리팀에 요청하세요.',
     'OS가 이미 설치된 장비라면 "해당없음"을 선택하세요.',
   ],
-  Q3: [
+  Q4: [
     'IODD를 사용하여 합의서에 명시된 OS를 설치하세요.',
     '설치 후 정상 부팅 여부를 확인하세요.',
   ],
-  Q4: [
+  Q5: [
     '합의서의 "기타 환경" 항목에서 필요한 SW 목록을 확인하세요.',
     '해당 SW를 설치하고, 정상 실행 여부를 확인하세요.',
   ],
@@ -33,14 +38,18 @@ const YES_GUIDES: Record<string, { refs: string[]; guides: string[] }> = {
     guides: ['합의서의 "운영체제" 항목에서 OS 정보를 확인하세요.'],
   },
   Q2: {
+    refs: [],
+    guides: ['IODD를 대여받고 OS를 새로 설치하세요.'],
+  },
+  Q3: {
     refs: ['IODD 담당자'],
     guides: ['IODD 대여 후 환경구성 파일에 기록하세요.'],
   },
-  Q3: {
+  Q4: {
     refs: ['환경구성 파일'],
     guides: ['환경구성 파일에 OS 설치 정보(Role, OS, CPU, Mem, Storage)를 입력하세요.'],
   },
-  Q4: {
+  Q5: {
     refs: ['시험 합의서', '환경구성 파일'],
     guides: [
       '합의서의 "기타 환경" 항목에서 필요 SW를 확인하세요.',
@@ -65,14 +74,31 @@ export function Setup03Evidence({
   const agreementOs = agreement?.operatingSystem || '';
   const agreementOtherEnv = agreement?.otherEnvironment || '';
 
-  const firstUnansweredId = QUESTIONS.find((q) => {
+  // Q2 "아니오" → Q3(IODD), Q4(OS 설치) 건너뜀, Q5(필수 SW)는 유지
+  const q2Answer = quickAnswers.Q2 ?? 'NA';
+  const SKIP_ON_Q2_NO = ['Q3', 'Q4'];
+
+  const isSkipped = (qId: string) =>
+    q2Answer === 'NO' && SKIP_ON_Q2_NO.includes(qId);
+
+  const visibleQuestions = QUESTIONS.filter((q) => !isSkipped(q.id));
+
+  const firstUnansweredId = visibleQuestions.find((q) => {
     const ans = quickAnswers[q.id];
     return !ans || ans === 'NA';
   })?.id ?? null;
 
+  // Q2 "아니오" 시 건너뛴 질문은 NA로 자동 설정
+  const handleSetup03Answer = (questionId: string, value: QuickAnswer) => {
+    onQuickAnswer(itemId, questionId, value);
+    if (questionId === 'Q2' && value === 'NO') {
+      SKIP_ON_Q2_NO.forEach((qId) => onQuickAnswer(itemId, qId, 'NA'));
+    }
+  };
+
   return (
     <div className="space-y-3">
-      {QUESTIONS.map((question, index) => {
+      {visibleQuestions.map((question, index) => {
         const currentAnswer = quickAnswers[question.id] ?? 'NA';
         const isAnswered = currentAnswer === 'YES' || currentAnswer === 'NO';
         const isCurrent = question.id === firstUnansweredId;
@@ -110,7 +136,7 @@ export function Setup03Evidence({
               <div className="flex items-center shrink-0 gap-1.5">
                 <button
                   type="button"
-                  onClick={() => onQuickAnswer(itemId, question.id, currentAnswer === 'YES' ? 'NA' : 'YES')}
+                  onClick={() => handleSetup03Answer(question.id, currentAnswer === 'YES' ? 'NA' : 'YES')}
                   className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
                     currentAnswer === 'YES'
                       ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border-[var(--status-pass-border)]'
@@ -121,7 +147,7 @@ export function Setup03Evidence({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onQuickAnswer(itemId, question.id, currentAnswer === 'NO' ? 'NA' : 'NO')}
+                  onClick={() => handleSetup03Answer(question.id, currentAnswer === 'NO' ? 'NA' : 'NO')}
                   className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
                     currentAnswer === 'NO'
                       ? 'bg-[var(--status-fail-bg)] text-[var(--status-fail-text)] border-[var(--status-fail-border)]'
@@ -132,7 +158,7 @@ export function Setup03Evidence({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onQuickAnswer(itemId, question.id, 'NA')}
+                  onClick={() => handleSetup03Answer(question.id, 'NA')}
                   className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-tx-muted bg-surface-base border border-ln hover:border-ln-strong hover:text-tx-secondary transition-all duration-200"
                 >
                   해당없음
@@ -147,7 +173,7 @@ export function Setup03Evidence({
                     <span className="font-semibold">합의서 OS:</span> {agreementOs}
                   </div>
                 )}
-                {question.id === 'Q4' && agreementOtherEnv && (
+                {question.id === 'Q5' && agreementOtherEnv && (
                   <div className="px-3 py-2 rounded-lg bg-accent-subtle border border-accent text-sm text-accent-text">
                     <span className="font-semibold">합의서 환경 정보:</span> {agreementOtherEnv}
                   </div>

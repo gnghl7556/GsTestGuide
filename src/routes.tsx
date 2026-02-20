@@ -10,6 +10,8 @@ import { UserManagement } from './features/admin/components/UserManagement';
 import { ProjectManagement } from './features/admin/components/ProjectManagement';
 import { ContactManagement } from './features/admin/components/ContactManagement';
 import { MaterialManagement } from './features/admin/components/MaterialManagement';
+import { ContentOverrideManagement } from './features/admin/components/ContentOverrideManagement';
+import { ReferenceGuideManagement } from './features/admin/components/ReferenceGuideManagement';
 
 export function AppRoutes() {
   return (
@@ -30,6 +32,8 @@ export function AppRoutes() {
           <Route path="projects" element={<ProjectManagement />} />
           <Route path="contacts" element={<ContactManagement />} />
           <Route path="materials" element={<MaterialManagement />} />
+          <Route path="content" element={<ContentOverrideManagement />} />
+          <Route path="guides" element={<ReferenceGuideManagement />} />
         </Route>
       </Route>
 

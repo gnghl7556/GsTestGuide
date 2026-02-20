@@ -1,5 +1,5 @@
 import { X, BookOpen } from 'lucide-react';
-import { REFERENCES } from 'virtual:content/references';
+import { useReferenceGuides } from '../../../hooks/useReferenceGuides';
 import type { ReferenceGuide } from 'virtual:content/references';
 
 interface ReferenceGuideModalProps {
@@ -34,6 +34,8 @@ function ReferenceCard({ guide }: { guide: ReferenceGuide }) {
 }
 
 export function ReferenceGuideModal({ open, onClose }: ReferenceGuideModalProps) {
+  const guides = useReferenceGuides();
+
   if (!open) return null;
 
   return (
@@ -52,7 +54,7 @@ export function ReferenceGuideModal({ open, onClose }: ReferenceGuideModalProps)
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {REFERENCES.map((guide) => (
+          {guides.map((guide) => (
             <ReferenceCard key={guide.id} guide={guide} />
           ))}
         </div>
