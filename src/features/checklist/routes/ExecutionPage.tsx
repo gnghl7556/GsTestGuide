@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { ChecklistView } from './ChecklistView';
 import { generateChecklist } from '../../../utils/checklistGenerator';
 import { toQuickModeItem, getRecommendation } from '../../../utils/quickMode';
@@ -568,13 +568,16 @@ export function ExecutionPage() {
     setActiveQuestionIdx(targetIdx);
   }, [activeItem, quickModeItem, reviewData, quickReviewById, activeQuestionIdx, setVerdict]);
 
-  // 전체 점검 데이터 초기화
+  // 전체 점검 데이터 초기화 (로컬 + Firestore)
   const handleResetAll = useCallback(() => {
     setReviewData({});
     setQuickReviewById({});
     setSelectedReqId(null);
     localStorage.removeItem(storageKey);
-  }, []);
+    if (db && currentTestNumber) {
+      void deleteDoc(doc(db, 'quickReviews', currentTestNumber));
+    }
+  }, [currentTestNumber]);
 
   useRegisterExecutionToolbar(handleResetAll);
 
