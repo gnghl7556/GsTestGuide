@@ -3,6 +3,7 @@ import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firest
 import { ChecklistView } from './ChecklistView';
 import { generateChecklist } from '../../../utils/checklistGenerator';
 import { toQuickModeItem, getRecommendation } from '../../../utils/quickMode';
+import { computeSkippedIndices, findNextActiveIndex, findPrevActiveIndex } from '../../../utils/branchingResolver';
 import { useDefects } from '../../report/hooks/useDefects';
 import { computeExecutionGate } from '../utils/executionGate';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -218,7 +219,12 @@ export function ExecutionPage() {
     const entry = quickReviewById[itemId];
     if (!item || !entry) return false;
     const answered = entry.answeredQuestions || {};
-    return item.quickQuestions.every((q) => Boolean(answered[q.id]));
+    const itemSkipped = computeSkippedIndices(
+      item.quickQuestions, entry.answers || {}, item.branchingRules
+    );
+    return item.quickQuestions.every((q, idx) =>
+      itemSkipped.has(idx) || Boolean(answered[q.id])
+    );
   }, [reviewData, quickModeById, quickReviewById]);
 
   /** 체크리스트에서 첫 번째 미완료 항목 ID (enabled 상태만) */
@@ -267,8 +273,16 @@ export function ExecutionPage() {
   const quickReview = quickModeItem ? quickReviewById[quickModeItem.requirementId] : undefined;
   const quickAnswers = quickReview?.answers || {};
   const quickInputValues: QuickInputValues = quickReview?.inputValues || {};
+
+  // 분기 규칙
+  const skippedIndices = useMemo(() => {
+    if (!quickModeItem) return new Set<number>();
+    return computeSkippedIndices(quickModeItem.quickQuestions, quickAnswers, quickModeItem.branchingRules);
+  }, [quickModeItem, quickAnswers]);
+  const hasBranching = Boolean(quickModeItem?.branchingRules?.length);
+
   const recommendation: QuickDecision = quickModeItem
-    ? getRecommendation(quickModeItem.quickQuestions, quickAnswers)
+    ? getRecommendation(quickModeItem.quickQuestions, quickAnswers, skippedIndices.size > 0 ? skippedIndices : undefined)
     : 'HOLD';
 
   // 키보드 단축키: 현재 활성 질문 인덱스
@@ -289,7 +303,12 @@ export function ExecutionPage() {
     const entry = quickReviewById[itemId];
     if (!item || !entry) return false;
     const answered = entry.answeredQuestions || {};
-    return item.quickQuestions.every((q) => Boolean(answered[q.id]));
+    const itemSkipped = computeSkippedIndices(
+      item.quickQuestions, entry.answers || {}, item.branchingRules
+    );
+    return item.quickQuestions.every((q, idx) =>
+      itemSkipped.has(idx) || Boolean(answered[q.id])
+    );
   };
   const canReview = activeItem ? isItemReadyForReview(activeItem.id) : false;
 
@@ -415,7 +434,11 @@ export function ExecutionPage() {
       };
       const nextAnswers = { ...existing.answers, [questionId]: value };
       const nextAnswered = { ...(existing.answeredQuestions || {}), [questionId]: true };
-      const autoRecommendation = getRecommendation(item.quickQuestions, nextAnswers);
+      const itemSkipped = computeSkippedIndices(item.quickQuestions, nextAnswers, item.branchingRules);
+      const autoRecommendation = getRecommendation(
+        item.quickQuestions, nextAnswers,
+        itemSkipped.size > 0 ? itemSkipped : undefined
+      );
       return {
         ...prev,
         [itemId]: {
@@ -459,35 +482,63 @@ export function ExecutionPage() {
     if (!q) return;
 
     updateQuickAnswer(activeItem.id, q.id, value);
-    // NO → 후속 자동 NA
+
     if (value === 'NO' || value === 'NA') {
-      for (let i = activeQuestionIdx + 1; i < questions.length; i++) {
-        updateQuickAnswer(activeItem.id, questions[i].id, 'NA');
+      if (hasBranching) {
+        // 분기 모드: 규칙에 해당하는 질문만 NA 처리
+        const newAnswers = { ...quickAnswers, [q.id]: value };
+        const newSkipped = computeSkippedIndices(questions, newAnswers, quickModeItem.branchingRules);
+        for (const skipIdx of newSkipped) {
+          if (skipIdx > activeQuestionIdx) {
+            updateQuickAnswer(activeItem.id, questions[skipIdx].id, 'NA');
+          }
+        }
+        // 다음 활성 질문으로 이동
+        const nextIdx = findNextActiveIndex(activeQuestionIdx, questions.length, newSkipped);
+        if (nextIdx >= 0) setActiveQuestionIdx(nextIdx);
+      } else {
+        // 레거시: 후속 전체 NA
+        for (let i = activeQuestionIdx + 1; i < questions.length; i++) {
+          updateQuickAnswer(activeItem.id, questions[i].id, 'NA');
+        }
+      }
+    } else if (value === 'YES') {
+      if (hasBranching) {
+        const nextIdx = findNextActiveIndex(activeQuestionIdx, questions.length, skippedIndices);
+        if (nextIdx >= 0) setActiveQuestionIdx(nextIdx);
+      } else {
+        const nextIdx = activeQuestionIdx + 1;
+        if (nextIdx < questions.length) {
+          setActiveQuestionIdx(nextIdx);
+        }
       }
     }
-    // 다음 미답변 질문으로 이동
-    if (value === 'YES') {
-      const nextIdx = activeQuestionIdx + 1;
-      if (nextIdx < questions.length) {
-        setActiveQuestionIdx(nextIdx);
-      }
-    }
-  }, [quickModeItem, activeItem, activeQuestionIdx, itemGates, updateQuickAnswer]);
+  }, [quickModeItem, activeItem, activeQuestionIdx, itemGates, updateQuickAnswer, quickAnswers, hasBranching, skippedIndices]);
 
   // 키보드 단축키: 같은 항목 내 체크포인트 간 이동
   const selectNextQuestion = useCallback(() => {
     if (!quickModeItem) return;
     const total = quickModeItem.quickQuestions.length;
-    if (activeQuestionIdx < total - 1) {
-      setActiveQuestionIdx(activeQuestionIdx + 1);
+    if (hasBranching) {
+      const nextIdx = findNextActiveIndex(activeQuestionIdx, total, skippedIndices);
+      if (nextIdx >= 0) setActiveQuestionIdx(nextIdx);
+    } else {
+      if (activeQuestionIdx < total - 1) {
+        setActiveQuestionIdx(activeQuestionIdx + 1);
+      }
     }
-  }, [quickModeItem, activeQuestionIdx]);
+  }, [quickModeItem, activeQuestionIdx, hasBranching, skippedIndices]);
 
   const selectPrevQuestion = useCallback(() => {
-    if (activeQuestionIdx > 0) {
-      setActiveQuestionIdx(activeQuestionIdx - 1);
+    if (hasBranching) {
+      const prevIdx = findPrevActiveIndex(activeQuestionIdx, skippedIndices);
+      if (prevIdx >= 0) setActiveQuestionIdx(prevIdx);
+    } else {
+      if (activeQuestionIdx > 0) {
+        setActiveQuestionIdx(activeQuestionIdx - 1);
+      }
     }
-  }, [activeQuestionIdx]);
+  }, [activeQuestionIdx, hasBranching, skippedIndices]);
 
   // 키보드 단축키: 판정 확정 + 다음 이동
   const confirmAndMoveNext = useCallback(() => {
@@ -529,17 +580,18 @@ export function ExecutionPage() {
     const questions = quickModeItem.quickQuestions;
     const answers = quickReviewById[itemId]?.answers || {};
 
-    // 마지막으로 답변된 질문 인덱스 찾기 (현재 activeQuestionIdx부터 역순)
+    // 마지막으로 답변된 활성 질문 인덱스 찾기
     let targetIdx = -1;
     for (let i = activeQuestionIdx; i >= 0; i--) {
+      if (hasBranching && skippedIndices.has(i)) continue;
       if (answers[questions[i].id] !== undefined) {
         targetIdx = i;
         break;
       }
     }
-    // activeQuestionIdx 이후에도 답변이 있으면 (자동 NA 등)
     if (targetIdx === -1) {
       for (let i = questions.length - 1; i >= 0; i--) {
+        if (hasBranching && skippedIndices.has(i)) continue;
         if (answers[questions[i].id] !== undefined) {
           targetIdx = i;
           break;
@@ -548,25 +600,48 @@ export function ExecutionPage() {
     }
     if (targetIdx === -1) return;
 
-    // 해당 질문 + 후속 자동 NA 답변 모두 제거
     setQuickReviewById((prev) => {
       const existing = prev[itemId];
       if (!existing) return prev;
       const nextAnswers = { ...existing.answers };
       const nextAnswered = { ...(existing.answeredQuestions || {}) };
-      // targetIdx부터 끝까지 모두 제거 (자동 NA 포함)
-      for (let i = targetIdx; i < questions.length; i++) {
-        delete nextAnswers[questions[i].id];
-        delete nextAnswered[questions[i].id];
+
+      if (hasBranching) {
+        // 분기 모드: 해당 질문 + 해당 질문의 skip 대상만 제거
+        delete nextAnswers[questions[targetIdx].id];
+        delete nextAnswered[questions[targetIdx].id];
+        // 이 질문이 트리거하던 skip 대상 질문들도 제거
+        const branchingRules = quickModeItem.branchingRules || [];
+        for (const rule of branchingRules) {
+          if (rule.sourceIndex === targetIdx) {
+            for (const skipIdx of rule.skipIndices) {
+              if (skipIdx < questions.length) {
+                delete nextAnswers[questions[skipIdx].id];
+                delete nextAnswered[questions[skipIdx].id];
+              }
+            }
+          }
+        }
+      } else {
+        // 레거시: targetIdx부터 끝까지 모두 제거
+        for (let i = targetIdx; i < questions.length; i++) {
+          delete nextAnswers[questions[i].id];
+          delete nextAnswered[questions[i].id];
+        }
       }
-      const autoRecommendation = getRecommendation(questions, nextAnswers);
+
+      const itemSkipped = computeSkippedIndices(questions, nextAnswers, quickModeItem.branchingRules);
+      const autoRecommendation = getRecommendation(
+        questions, nextAnswers,
+        itemSkipped.size > 0 ? itemSkipped : undefined
+      );
       return {
         ...prev,
         [itemId]: { ...existing, answers: nextAnswers, answeredQuestions: nextAnswered, autoRecommendation }
       };
     });
     setActiveQuestionIdx(targetIdx);
-  }, [activeItem, quickModeItem, reviewData, quickReviewById, activeQuestionIdx, setVerdict]);
+  }, [activeItem, quickModeItem, reviewData, quickReviewById, activeQuestionIdx, setVerdict, hasBranching, skippedIndices]);
 
   // 전체 점검 데이터 초기화 (로컬 + Firestore)
   const handleResetAll = useCallback(() => {

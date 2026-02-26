@@ -3,7 +3,7 @@ import { Pencil, Check, X, RotateCcw, ChevronDown, ChevronRight, FileDown, Alert
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db } from '../../../lib/firebase';
 import { doc, setDoc, deleteDoc, getDocs, collection, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import type { ContentOverride } from '../../../lib/content/mergeOverrides';
+import type { ContentOverride, BranchingRule } from '../../../lib/content/mergeOverrides';
 import type { RequirementCategory, QuestionImportance } from '../../../types';
 import { inferImportance } from '../../../utils/quickMode';
 
@@ -47,6 +47,7 @@ type EditingState = {
   evidenceExamples: string[];
   testSuggestions: string[];
   passCriteria: string;
+  branchingRules: BranchingRule[];
 };
 
 export function ContentOverrideManagement() {
@@ -135,6 +136,57 @@ export function ContentOverrideManagement() {
     return groupOrder.map((name) => ({ name, labels: groups[name] })).filter((g) => g.labels.length > 0);
   }, [docMaterialsList]);
 
+  const addBranchingRule = useCallback(() => {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        branchingRules: [
+          ...prev.branchingRules,
+          { sourceIndex: 0, triggerAnswer: 'NO' as const, skipIndices: [] },
+        ],
+      };
+    });
+  }, []);
+
+  const removeBranchingRule = useCallback((ruleIdx: number) => {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        branchingRules: prev.branchingRules.filter((_, i) => i !== ruleIdx),
+      };
+    });
+  }, []);
+
+  const updateBranchingSource = useCallback((ruleIdx: number, sourceIndex: number) => {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      const rules = [...prev.branchingRules];
+      rules[ruleIdx] = {
+        ...rules[ruleIdx],
+        sourceIndex,
+        skipIndices: rules[ruleIdx].skipIndices.filter((i) => i > sourceIndex),
+      };
+      return { ...prev, branchingRules: rules };
+    });
+  }, []);
+
+  const toggleSkipIndex = useCallback((ruleIdx: number, targetIdx: number) => {
+    setEditing((prev) => {
+      if (!prev) return prev;
+      const rules = [...prev.branchingRules];
+      const current = rules[ruleIdx].skipIndices;
+      rules[ruleIdx] = {
+        ...rules[ruleIdx],
+        skipIndices: current.includes(targetIdx)
+          ? current.filter((i) => i !== targetIdx)
+          : [...current, targetIdx].sort((a, b) => a - b),
+      };
+      return { ...prev, branchingRules: rules };
+    });
+  }, []);
+
   const toggleRef = useCallback((cpIdx: number, label: string) => {
     setEditing((prev) => {
       if (!prev) return prev;
@@ -195,6 +247,7 @@ export function ContentOverrideManagement() {
       evidenceExamples: ov?.evidenceExamples ?? req.evidenceExamples ?? [],
       testSuggestions: ov?.testSuggestions ?? req.testSuggestions ?? [],
       passCriteria: ov?.passCriteria ?? req.passCriteria ?? '',
+      branchingRules: ov?.branchingRules ?? [],
     });
   };
 
@@ -254,10 +307,15 @@ export function ContentOverrideManagement() {
       patch.passCriteria = editing.passCriteria;
     }
 
+    // 분기 규칙
+    if (editing.branchingRules.length > 0) {
+      patch.branchingRules = editing.branchingRules;
+    }
+
     // If nothing changed, delete override
     setBusy(true);
     try {
-      if (!patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria) {
+      if (!patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules) {
         await deleteDoc(doc(db, 'contentOverrides', editing.reqId));
       } else {
         await setDoc(doc(db, 'contentOverrides', editing.reqId), patch);
@@ -513,6 +571,66 @@ export function ContentOverrideManagement() {
                                   );
                                 })}
                               </div>
+                            </div>
+                          )}
+
+                          {/* Branching Rules */}
+                          {req.checkPoints && req.checkPoints.length > 1 && (
+                            <div>
+                              <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">분기 규칙</label>
+                              <p className="text-[9px] text-tx-muted mt-0.5 mb-2">
+                                특정 질문에 &quot;아니오&quot; 답변 시 건너뛸 후속 질문을 지정합니다
+                              </p>
+                              <div className="space-y-2">
+                                {editing.branchingRules.map((rule, ruleIdx) => (
+                                  <div key={ruleIdx} className="flex items-start gap-2 p-2.5 rounded-lg border border-ln bg-surface-base">
+                                    <select
+                                      value={rule.sourceIndex}
+                                      onChange={(e) => updateBranchingSource(ruleIdx, Number(e.target.value))}
+                                      className="shrink-0 text-xs border border-ln rounded px-2 py-1 bg-surface-base text-tx-primary"
+                                    >
+                                      {req.checkPoints!.map((_: string, i: number) => (
+                                        <option key={i} value={i}>Q{i + 1}</option>
+                                      ))}
+                                    </select>
+                                    <span className="shrink-0 text-[10px] text-tx-muted mt-1.5">= NO &rarr;</span>
+                                    <div className="flex flex-wrap gap-1.5 flex-1">
+                                      {req.checkPoints!.map((_: string, i: number) => {
+                                        if (i <= rule.sourceIndex) return null;
+                                        const isSkipped = rule.skipIndices.includes(i);
+                                        return (
+                                          <button
+                                            key={i}
+                                            type="button"
+                                            onClick={() => toggleSkipIndex(ruleIdx, i)}
+                                            className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                                              isSkipped
+                                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-500/30'
+                                                : 'bg-surface-base text-tx-muted border-ln hover:border-ln-strong'
+                                            }`}
+                                          >
+                                            Q{i + 1}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeBranchingRule(ruleIdx)}
+                                      className="shrink-0 rounded p-1 text-tx-muted hover:text-red-500"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={addBranchingRule}
+                                className="mt-2 text-[10px] font-semibold text-accent-text hover:underline"
+                              >
+                                + 분기 규칙 추가
+                              </button>
                             </div>
                           )}
 

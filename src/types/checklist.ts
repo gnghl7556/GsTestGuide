@@ -1,4 +1,5 @@
 import type { DocEntry, AgreementParsed } from './testSetup';
+import type { BranchingRule } from '../lib/content/mergeOverrides';
 
 export type RequirementCategory = 'SETUP' | 'EXECUTION' | 'COMPLETION';
 
@@ -27,6 +28,7 @@ export interface Requirement {
   testSuggestions?: string[];
   passCriteria?: string;
   checkpointImportances?: Record<number, QuestionImportance>;
+  branchingRules?: BranchingRule[];
   excludeConditions?: {
     isSaMD?: boolean;
     noUserInterface?: boolean;
@@ -97,6 +99,7 @@ export interface QuickModeItem {
   quickQuestions: QuickQuestion[];
   evidenceChips: string[];
   expertDetails: ExpertDetails;
+  branchingRules?: BranchingRule[];
 }
 
 export type IpEntry = { label: string; lastOctet: string };

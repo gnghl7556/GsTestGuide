@@ -161,10 +161,33 @@ export function CenterDisplay({
   }, [refItems]);
   const requirementId = quickModeItem?.requirementId ?? activeItem.id;
   const questions = quickModeItem?.quickQuestions ?? [];
+  const branchingRules = quickModeItem?.branchingRules;
+  const hasBranching = Boolean(branchingRules && branchingRules.length > 0);
+
+  // 분기 규칙 기반 건너뛸 질문 계산
+  const computeSkipped = (answers: Record<string, QuickAnswer>): Set<number> => {
+    if (!branchingRules || branchingRules.length === 0) return new Set();
+    const skipped = new Set<number>();
+    for (const rule of branchingRules) {
+      const sourceQ = questions[rule.sourceIndex];
+      if (!sourceQ) continue;
+      if (answers[sourceQ.id] === rule.triggerAnswer) {
+        for (const idx of rule.skipIndices) {
+          if (idx >= 0 && idx < questions.length) skipped.add(idx);
+        }
+      }
+    }
+    return skipped;
+  };
+  const skippedIndices = computeSkipped(quickAnswers);
 
   const isQuestionDisabled = (questionId: string): boolean => {
     const idx = questions.findIndex((q) => q.id === questionId);
     if (idx <= 0) return false;
+    if (hasBranching) {
+      return skippedIndices.has(idx);
+    }
+    // 레거시: 이전 질문이 NO/NA/미답변이면 비활성
     const prevAnswer = quickAnswers[questions[idx - 1].id];
     if (prevAnswer === 'NO' || !prevAnswer || prevAnswer === 'NA') return true;
     return false;
@@ -172,10 +195,31 @@ export function CenterDisplay({
 
   const handleAnswer = (questionId: string, value: QuickAnswer) => {
     onQuickAnswer(requirementId, questionId, value);
+    const idx = questions.findIndex((q) => q.id === questionId);
+
     if (value === 'NO' || value === 'NA') {
-      const idx = questions.findIndex((q) => q.id === questionId);
-      for (let i = idx + 1; i < questions.length; i++) {
-        onQuickAnswer(requirementId, questions[i].id, 'NA');
+      if (hasBranching) {
+        // 분기 모드: 규칙에 해당하는 질문만 NA 처리
+        const newSkipped = computeSkipped({ ...quickAnswers, [questionId]: value });
+        for (const skipIdx of newSkipped) {
+          if (skipIdx > idx) {
+            onQuickAnswer(requirementId, questions[skipIdx].id, 'NA');
+          }
+        }
+      } else {
+        // 레거시: 이후 전체 NA 캐스케이드
+        for (let i = idx + 1; i < questions.length; i++) {
+          onQuickAnswer(requirementId, questions[i].id, 'NA');
+        }
+      }
+    } else if (value === 'YES' && hasBranching) {
+      // YES로 변경 시 이전에 건너뛰었던 질문 해제
+      const newSkipped = computeSkipped({ ...quickAnswers, [questionId]: value });
+      for (const prevIdx of skippedIndices) {
+        if (!newSkipped.has(prevIdx)) {
+          // 더 이상 건너뛰지 않는 질문의 강제 NA 해제
+          onQuickAnswer(requirementId, questions[prevIdx].id, 'NA');
+        }
       }
     }
   };
@@ -266,8 +310,9 @@ export function CenterDisplay({
               ) : (
                 <div className="space-y-3">
                   {(() => {
-                    const firstUnansweredId = questions.find((q) => {
+                    const firstUnansweredId = questions.find((q, idx) => {
                       if (isQuestionDisabled(q.id)) return false;
+                      if (hasBranching && skippedIndices.has(idx)) return false;
                       const ans = quickAnswers[q.id];
                       return !ans || ans === 'NA';
                     })?.id ?? null;

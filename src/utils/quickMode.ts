@@ -146,37 +146,43 @@ export const toQuickModeItem = (req: Requirement): QuickModeItem => {
       evidenceExamples: req.evidenceExamples || [],
       testSuggestions: req.testSuggestions || [],
       passCriteria: req.passCriteria || ''
-    }
+    },
+    ...(req.branchingRules && { branchingRules: req.branchingRules }),
   };
 };
 
 export const getRecommendation = (
   questions: QuickQuestion[],
-  answers: Record<string, QuickAnswer>
+  answers: Record<string, QuickAnswer>,
+  skippedIndices?: Set<number>
 ): QuickDecision => {
-  const allAnswered = questions.every((q) => {
+  const activeQuestions = skippedIndices
+    ? questions.filter((_, idx) => !skippedIndices.has(idx))
+    : questions;
+
+  const allAnswered = activeQuestions.every((q) => {
     const a = answers[q.id];
     return a === 'YES' || a === 'NO' || a === 'NA';
   });
   if (!allAnswered) return 'HOLD';
 
-  // MUST 질문(importance=MUST 또는 첫 번째 질문)에 NO → FAIL
-  for (let i = 0; i < questions.length; i++) {
-    const q = questions[i];
+  // MUST 질문(importance=MUST 또는 첫 번째 활성 질문)에 NO → FAIL
+  for (let i = 0; i < activeQuestions.length; i++) {
+    const q = activeQuestions[i];
     if (answers[q.id] === 'NO' && (q.importance === 'MUST' || i === 0)) {
       return 'FAIL';
     }
   }
 
   // NO 비율 50% 초과 → FAIL
-  const answered = questions.filter((q) => answers[q.id] === 'YES' || answers[q.id] === 'NO');
+  const answered = activeQuestions.filter((q) => answers[q.id] === 'YES' || answers[q.id] === 'NO');
   if (answered.length > 0) {
     const noCount = answered.filter((q) => answers[q.id] === 'NO').length;
     if (noCount / answered.length > 0.5) return 'FAIL';
   }
 
   // NO가 하나라도 있으면 HOLD
-  if (questions.some((q) => answers[q.id] === 'NO')) return 'HOLD';
+  if (activeQuestions.some((q) => answers[q.id] === 'NO')) return 'HOLD';
 
   return 'PASS';
 };

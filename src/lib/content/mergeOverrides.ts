@@ -7,6 +7,12 @@ export interface DocMaterial {
   linkedSteps: string[];
 }
 
+export interface BranchingRule {
+  sourceIndex: number;
+  triggerAnswer: 'NO';
+  skipIndices: number[];
+}
+
 export interface ContentOverride {
   title?: string;
   description?: string;
@@ -15,6 +21,7 @@ export interface ContentOverride {
   evidenceExamples?: string[];
   testSuggestions?: string[];
   passCriteria?: string;
+  branchingRules?: BranchingRule[];
   updatedAt?: unknown;
   updatedBy?: string;
 }
@@ -56,6 +63,7 @@ export function mergeOverrides(
       ...(ov.testSuggestions != null && { testSuggestions: ov.testSuggestions }),
       ...(ov.passCriteria != null && { passCriteria: ov.passCriteria }),
       ...(ov.checkpointImportances != null && { checkpointImportances: ov.checkpointImportances }),
+      ...(ov.branchingRules != null && { branchingRules: ov.branchingRules }),
     };
 
     // 체크포인트가 오버라이드된 경우, requiredDocs를 실제 ref 사용 현황에 맞춰 필터링
