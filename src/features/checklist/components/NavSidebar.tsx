@@ -54,12 +54,13 @@ export function NavSidebar({
   useEffect(() => {
     if (selectedReqId) {
       const item = checklist.find(i => i.id === selectedReqId);
-      if (item) {
-        setExpandedCats([item.category]);
+      if (item && !expandedCats.includes(item.category)) {
+        setExpandedCats(prev =>
+          prev.includes(item.category) ? prev : [item.category]
+        );
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedReqId, checklist]);
 
   const toggleCategory = (catId: string) => {
     setExpandedCats(prev =>
