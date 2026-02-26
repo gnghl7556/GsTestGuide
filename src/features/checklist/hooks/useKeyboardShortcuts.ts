@@ -7,6 +7,7 @@ interface UseKeyboardShortcutsParams {
   isFinalized: boolean;
   answerCurrentQuestion: (value: QuickAnswer) => void;
   setVerdict: (status: ReviewData['status']) => void;
+  undoLastAction: () => void;
   selectNextItem: () => void;
   selectPrevItem: () => void;
   confirmAndMoveNext: () => void;
@@ -34,7 +35,7 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
 
       const {
         isAllQuestionsAnswered, hasVerdict, isFinalized,
-        answerCurrentQuestion, setVerdict: _setVerdict,
+        answerCurrentQuestion, setVerdict: _setVerdict, undoLastAction,
         selectNextItem, selectPrevItem,
         confirmAndMoveNext, openDefectModal
       } = paramsRef.current;
@@ -80,6 +81,10 @@ export function useKeyboardShortcuts(params: UseKeyboardShortcutsParams) {
         case 'Enter':
           e.preventDefault();
           if (isAllQuestionsAnswered && hasVerdict) confirmAndMoveNext();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          undoLastAction();
           break;
         case 'd':
           if (e.ctrlKey) {

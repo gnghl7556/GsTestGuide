@@ -54,6 +54,7 @@ export function ShortcutHelpOverlay({ onDismiss }: ShortcutHelpOverlayProps) {
         <Section
           title="기타"
           items={[
+            ['ESC', '마지막 판정/답변 취소 (연속 가능)'],
             ['Ctrl+D', '결함 보고'],
             ['?', '이 도움말 토글'],
           ]}

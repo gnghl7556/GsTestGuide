@@ -513,6 +513,61 @@ export function ExecutionPage() {
     if (activeItem) updateReviewData(activeItem.id, 'status', status);
   }, [activeItem, updateReviewData]);
 
+  // ESC 키: 판정/답변 역순 취소
+  const undoLastAction = useCallback(() => {
+    if (!activeItem || !quickModeItem) return;
+    const itemId = activeItem.id;
+
+    // 1) 검토 최종 판정이 있으면 → 판정 취소
+    const currentStatus = reviewData[itemId]?.status;
+    if (currentStatus && currentStatus !== 'None') {
+      setVerdict('None');
+      return;
+    }
+
+    // 2) 체크포인트 답변이 있으면 → 마지막 답변한 질문부터 역순 취소
+    const questions = quickModeItem.quickQuestions;
+    const answers = quickReviewById[itemId]?.answers || {};
+
+    // 마지막으로 답변된 질문 인덱스 찾기 (현재 activeQuestionIdx부터 역순)
+    let targetIdx = -1;
+    for (let i = activeQuestionIdx; i >= 0; i--) {
+      if (answers[questions[i].id] !== undefined) {
+        targetIdx = i;
+        break;
+      }
+    }
+    // activeQuestionIdx 이후에도 답변이 있으면 (자동 NA 등)
+    if (targetIdx === -1) {
+      for (let i = questions.length - 1; i >= 0; i--) {
+        if (answers[questions[i].id] !== undefined) {
+          targetIdx = i;
+          break;
+        }
+      }
+    }
+    if (targetIdx === -1) return;
+
+    // 해당 질문 + 후속 자동 NA 답변 모두 제거
+    setQuickReviewById((prev) => {
+      const existing = prev[itemId];
+      if (!existing) return prev;
+      const nextAnswers = { ...existing.answers };
+      const nextAnswered = { ...(existing.answeredQuestions || {}) };
+      // targetIdx부터 끝까지 모두 제거 (자동 NA 포함)
+      for (let i = targetIdx; i < questions.length; i++) {
+        delete nextAnswers[questions[i].id];
+        delete nextAnswered[questions[i].id];
+      }
+      const autoRecommendation = getRecommendation(questions, nextAnswers);
+      return {
+        ...prev,
+        [itemId]: { ...existing, answers: nextAnswers, answeredQuestions: nextAnswered, autoRecommendation }
+      };
+    });
+    setActiveQuestionIdx(targetIdx);
+  }, [activeItem, quickModeItem, reviewData, quickReviewById, activeQuestionIdx, setVerdict]);
+
   // 전체 점검 데이터 초기화
   const handleResetAll = useCallback(() => {
     setReviewData({});
@@ -529,6 +584,7 @@ export function ExecutionPage() {
     isFinalized,
     answerCurrentQuestion,
     setVerdict,
+    undoLastAction,
     selectNextItem: selectNextQuestion,
     selectPrevItem: selectPrevQuestion,
     confirmAndMoveNext,
