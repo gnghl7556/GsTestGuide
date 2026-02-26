@@ -185,7 +185,22 @@ export function CenterDisplay({
     const idx = questions.findIndex((q) => q.id === questionId);
     if (idx <= 0) return false;
     if (hasBranching) {
-      return skippedIndices.has(idx);
+      // skip 대상이면 비활성
+      if (skippedIndices.has(idx)) return true;
+      // skip 대상이 아니어도, 이전 활성 질문이 YES로 답변되지 않았으면 비활성
+      // (이전 활성 질문 = skip되지 않은 바로 앞 질문)
+      for (let i = idx - 1; i >= 0; i--) {
+        if (skippedIndices.has(i)) continue; // skip된 질문은 건너뜀
+        const prevAnswer = quickAnswers[questions[i].id];
+        // 이전 활성 질문이 YES면 현재 질문 활성
+        if (prevAnswer === 'YES') return false;
+        // 이전 활성 질문이 NO면: 현재 질문이 skip 대상이 아니므로 활성
+        // (NO 답변 후 skip 대상이 아닌 질문은 계속 진행 가능)
+        if (prevAnswer === 'NO') return false;
+        // 이전 활성 질문이 미답변이면 비활성
+        return true;
+      }
+      return false;
     }
     // 레거시: 이전 질문이 NO/NA/미답변이면 비활성
     const prevAnswer = quickAnswers[questions[idx - 1].id];
