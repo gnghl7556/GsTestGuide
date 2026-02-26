@@ -3,7 +3,6 @@ import { GlobalProcessHeader } from './GlobalProcessHeader';
 import { ProcessLayout } from './ProcessLayout';
 import { useTestSetupContext } from '../../providers/useTestSetupContext';
 import { useExecutionToolbar } from '../../providers/ExecutionToolbarContext';
-import { RotateCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const getStepFromPath = (pathname: string) => {
@@ -76,17 +75,10 @@ export function WorkspaceLayout() {
           <GlobalProcessHeader
             currentStep={currentStep}
             projectInfo={projectInfo}
-            rightSlot={
-              currentStep === 3 && onReset ? (
-                <button
-                  type="button"
-                  onClick={() => setResetConfirmOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-ln px-2.5 py-1.5 text-[11px] font-semibold text-tx-tertiary hover:text-danger hover:border-danger transition-colors"
-                >
-                  <RotateCcw size={13} />
-                  점검 초기화
-                </button>
-              ) : undefined
+            onReset={
+              currentStep === 3 && onReset
+                ? () => setResetConfirmOpen(true)
+                : undefined
             }
             onLogout={() => {
               setCurrentUserId('');

@@ -1,4 +1,4 @@
-import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon } from 'lucide-react';
+import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '../../providers/ThemeProvider';
 
@@ -19,6 +19,7 @@ type GlobalProcessHeaderProps = {
   currentStep: number;
   projectInfo?: GlobalProjectInfo;
   rightSlot?: ReactNode;
+  onReset?: () => void;
   onLogout?: () => void;
   onOpenTestList?: () => void;
 };
@@ -34,6 +35,7 @@ export function GlobalProcessHeader({
   currentStep,
   projectInfo,
   rightSlot,
+  onReset,
   onLogout,
   onOpenTestList
 }: GlobalProcessHeaderProps) {
@@ -86,6 +88,17 @@ export function GlobalProcessHeader({
           </div>
         )}
         <div className="flex items-center gap-2">
+          {onReset && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="inline-flex items-center gap-1.5 h-9 rounded-lg border border-ln px-2.5 text-[11px] font-semibold text-tx-tertiary hover:text-danger hover:border-danger transition-colors"
+              title="점검 초기화"
+            >
+              <RotateCcw size={14} />
+              <span className="hidden sm:inline">초기화</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={toggleTheme}
