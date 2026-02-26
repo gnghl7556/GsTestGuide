@@ -10,8 +10,6 @@ import { CATEGORY_THEMES } from 'virtual:content/categories';
 import { Ban, FileDown, ExternalLink, Download, User, Phone, Mail, MessageSquare } from 'lucide-react';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 import { RequiredDocChip } from '../../../components/ui';
-import { Setup03Evidence } from './Setup03Evidence';
-import { Setup04Evidence } from './Setup04Evidence';
 import { useEffect, useState } from 'react';
 import { db, storage } from '../../../lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
@@ -53,8 +51,7 @@ export function CenterDisplay({
   const [showDefectBoard, setShowDefectBoard] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [docDescriptions, setDocDescriptions] = useState<Record<string, string>>({});
-  const { currentTestNumber: _currentTestNumber, testSetup } = useTestSetupContext();
-  const agreement = testSetup.agreementParsed;
+  const { currentTestNumber: _currentTestNumber } = useTestSetupContext();
   const contacts = useStepContacts(activeItem?.id, activeItem?.contacts);
 
   // Subscribe to Firestore docMaterials for admin-managed descriptions
@@ -243,21 +240,7 @@ export function CenterDisplay({
               </p>
             )}
             <div className="mt-5 space-y-4">
-              {activeItem.id === 'SETUP-03' ? (
-                <Setup03Evidence
-                  agreement={agreement}
-                  quickAnswers={quickAnswers}
-                  onQuickAnswer={onQuickAnswer}
-                  itemId={activeItem.id}
-                />
-              ) : activeItem.id === 'SETUP-04' ? (
-                <Setup04Evidence
-                  agreement={agreement}
-                  quickAnswers={quickAnswers}
-                  onQuickAnswer={onQuickAnswer}
-                  itemId={activeItem.id}
-                />
-              ) : activeItem.inputFields && activeItem.inputFields.length > 0 ? (
+              {activeItem.inputFields && activeItem.inputFields.length > 0 ? (
                 <div className="space-y-4">
                   {refItems.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
