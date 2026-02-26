@@ -154,14 +154,23 @@ export const toQuickModeItem = (req: Requirement): QuickModeItem => {
 export const getRecommendation = (
   questions: QuickQuestion[],
   answers: Record<string, QuickAnswer>,
-  skippedIndices?: Set<number>
+  skippedIndices?: Set<number>,
+  triggeredSourceIndices?: Set<number>
 ): QuickDecision => {
   const activeQuestions = skippedIndices
     ? questions.filter((_, idx) => !skippedIndices.has(idx))
     : questions;
 
+  // 분기 트리거로 사용된 소스 질문의 NO는 "경로 선택"이므로 실패로 취급하지 않음
+  const effectiveAnswer = (q: QuickQuestion): QuickAnswer => {
+    if (!triggeredSourceIndices) return answers[q.id];
+    const idx = questions.indexOf(q);
+    if (triggeredSourceIndices.has(idx) && answers[q.id] === 'NO') return 'YES';
+    return answers[q.id];
+  };
+
   const allAnswered = activeQuestions.every((q) => {
-    const a = answers[q.id];
+    const a = effectiveAnswer(q);
     return a === 'YES' || a === 'NO' || a === 'NA';
   });
   if (!allAnswered) return 'HOLD';
@@ -169,20 +178,20 @@ export const getRecommendation = (
   // MUST 질문(importance=MUST 또는 첫 번째 활성 질문)에 NO → FAIL
   for (let i = 0; i < activeQuestions.length; i++) {
     const q = activeQuestions[i];
-    if (answers[q.id] === 'NO' && (q.importance === 'MUST' || i === 0)) {
+    if (effectiveAnswer(q) === 'NO' && (q.importance === 'MUST' || i === 0)) {
       return 'FAIL';
     }
   }
 
   // NO 비율 50% 초과 → FAIL
-  const answered = activeQuestions.filter((q) => answers[q.id] === 'YES' || answers[q.id] === 'NO');
+  const answered = activeQuestions.filter((q) => effectiveAnswer(q) === 'YES' || effectiveAnswer(q) === 'NO');
   if (answered.length > 0) {
-    const noCount = answered.filter((q) => answers[q.id] === 'NO').length;
+    const noCount = answered.filter((q) => effectiveAnswer(q) === 'NO').length;
     if (noCount / answered.length > 0.5) return 'FAIL';
   }
 
   // NO가 하나라도 있으면 HOLD
-  if (activeQuestions.some((q) => answers[q.id] === 'NO')) return 'HOLD';
+  if (activeQuestions.some((q) => effectiveAnswer(q) === 'NO')) return 'HOLD';
 
   return 'PASS';
 };

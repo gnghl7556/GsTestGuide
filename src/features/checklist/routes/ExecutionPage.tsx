@@ -3,7 +3,7 @@ import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firest
 import { ChecklistView } from './ChecklistView';
 import { generateChecklist } from '../../../utils/checklistGenerator';
 import { toQuickModeItem, getRecommendation } from '../../../utils/quickMode';
-import { computeSkippedIndices, findNextActiveIndex, findPrevActiveIndex } from '../../../utils/branchingResolver';
+import { computeSkippedIndices, computeTriggeredSourceIndices, findNextActiveIndex, findPrevActiveIndex } from '../../../utils/branchingResolver';
 import { useDefects } from '../../report/hooks/useDefects';
 import { computeExecutionGate } from '../utils/executionGate';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
@@ -279,10 +279,18 @@ export function ExecutionPage() {
     if (!quickModeItem) return new Set<number>();
     return computeSkippedIndices(quickModeItem.quickQuestions, quickAnswers, quickModeItem.branchingRules);
   }, [quickModeItem, quickAnswers]);
+  const triggeredSources = useMemo(() => {
+    if (!quickModeItem) return new Set<number>();
+    return computeTriggeredSourceIndices(quickModeItem.quickQuestions, quickAnswers, quickModeItem.branchingRules);
+  }, [quickModeItem, quickAnswers]);
   const hasBranching = Boolean(quickModeItem?.branchingRules?.length);
 
   const recommendation: QuickDecision = quickModeItem
-    ? getRecommendation(quickModeItem.quickQuestions, quickAnswers, skippedIndices.size > 0 ? skippedIndices : undefined)
+    ? getRecommendation(
+        quickModeItem.quickQuestions, quickAnswers,
+        skippedIndices.size > 0 ? skippedIndices : undefined,
+        triggeredSources.size > 0 ? triggeredSources : undefined
+      )
     : 'HOLD';
 
   // 키보드 단축키: 현재 활성 질문 인덱스
@@ -435,9 +443,11 @@ export function ExecutionPage() {
       const nextAnswers = { ...existing.answers, [questionId]: value };
       const nextAnswered = { ...(existing.answeredQuestions || {}), [questionId]: true };
       const itemSkipped = computeSkippedIndices(item.quickQuestions, nextAnswers, item.branchingRules);
+      const itemTriggered = computeTriggeredSourceIndices(item.quickQuestions, nextAnswers, item.branchingRules);
       const autoRecommendation = getRecommendation(
         item.quickQuestions, nextAnswers,
-        itemSkipped.size > 0 ? itemSkipped : undefined
+        itemSkipped.size > 0 ? itemSkipped : undefined,
+        itemTriggered.size > 0 ? itemTriggered : undefined
       );
       return {
         ...prev,
@@ -631,9 +641,11 @@ export function ExecutionPage() {
       }
 
       const itemSkipped = computeSkippedIndices(questions, nextAnswers, quickModeItem.branchingRules);
+      const itemTriggered = computeTriggeredSourceIndices(questions, nextAnswers, quickModeItem.branchingRules);
       const autoRecommendation = getRecommendation(
         questions, nextAnswers,
-        itemSkipped.size > 0 ? itemSkipped : undefined
+        itemSkipped.size > 0 ? itemSkipped : undefined,
+        itemTriggered.size > 0 ? itemTriggered : undefined
       );
       return {
         ...prev,

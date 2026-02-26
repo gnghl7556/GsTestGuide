@@ -45,6 +45,30 @@ export function findNextActiveIndex(
 }
 
 /**
+ * 분기 규칙에 의해 실제로 트리거된 소스 질문 인덱스 Set을 반환한다.
+ * 이 질문들의 NO 답변은 "실패"가 아니라 "분기 경로 선택"이므로
+ * 판정 계산에서 NO로 취급하지 않아야 한다.
+ */
+export function computeTriggeredSourceIndices(
+  questions: QuickQuestion[],
+  answers: Record<string, QuickAnswer>,
+  branchingRules?: BranchingRule[],
+): Set<number> {
+  const triggered = new Set<number>();
+  if (!branchingRules || branchingRules.length === 0) return triggered;
+
+  for (const rule of branchingRules) {
+    const sourceQ = questions[rule.sourceIndex];
+    if (!sourceQ) continue;
+    if (answers[sourceQ.id] === rule.triggerAnswer) {
+      triggered.add(rule.sourceIndex);
+    }
+  }
+
+  return triggered;
+}
+
+/**
  * 현재 인덱스 이전 첫 번째 활성(건너뛰지 않은) 질문의 인덱스를 반환한다.
  * 없으면 -1.
  */
