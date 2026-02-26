@@ -20,6 +20,7 @@ import { useDocMaterials } from '../../../hooks/useDocMaterials';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { mergeOverrides, mergeDocLinks } from '../../../lib/content/mergeOverrides';
 import { db } from '../../../lib/firebase';
+import { useRegisterExecutionToolbar } from '../../../providers/ExecutionToolbarContext';
 
 const storageKey = 'gs-test-guide:review';
 
@@ -511,6 +512,16 @@ export function ExecutionPage() {
   const setVerdict = useCallback((status: ReviewData['status']) => {
     if (activeItem) updateReviewData(activeItem.id, 'status', status);
   }, [activeItem, updateReviewData]);
+
+  // 전체 점검 데이터 초기화
+  const handleResetAll = useCallback(() => {
+    setReviewData({});
+    setQuickReviewById({});
+    setSelectedReqId(null);
+    localStorage.removeItem(storageKey);
+  }, []);
+
+  useRegisterExecutionToolbar(handleResetAll);
 
   const { showShortcutHelp, dismissHelp } = useKeyboardShortcuts({
     isAllQuestionsAnswered,

@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AppRoutes } from './routes';
 import { TestSetupProvider } from './providers/TestSetupProvider';
 import { ThemeProvider } from './providers/ThemeProvider';
+import { ExecutionToolbarProvider } from './providers/ExecutionToolbarContext';
 import { auth, db, storage } from './lib/firebase';
 import { useAuthReady } from './hooks/useAuthReady';
 import { usePlDirectory } from './features/pl-directory/hooks/usePlDirectory';
@@ -48,9 +49,11 @@ export default function App() {
         initialTestSetup={stored.testSetup}
         initialCurrentUserId={stored.currentUserId}
       >
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <ExecutionToolbarProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </ExecutionToolbarProvider>
       </TestSetupProvider>
     </ThemeProvider>
   );
