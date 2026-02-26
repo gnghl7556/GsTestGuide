@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'react';
-import { Plus, Pencil, Trash2, Check, X, Upload, Image, FileDown, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Upload, Image, FileDown, Loader2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db, storage } from '../../../lib/firebase';
 import { doc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from 'firebase/firestore';
@@ -17,6 +17,7 @@ type DocMaterial = {
   kind: string;
   description: string;
   linkedSteps: string[];
+  hidden?: boolean;
 };
 
 type FormData = DocMaterial;
@@ -31,8 +32,8 @@ export function MaterialManagement() {
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<FormData>(emptyForm);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   // File management state
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export function MaterialManagement() {
   const [uploading, setUploading] = useState<string | null>(null);
   const previewInputRef = useRef<HTMLInputElement>(null);
   const sampleInputRef = useRef<HTMLInputElement>(null);
-  const [activeUpload, setActiveUpload] = useState<{ label: string; type: 'preview' | 'sample' } | null>(null);
+  const activeUploadRef = useRef<{ label: string; type: 'preview' | 'sample' } | null>(null);
 
   // Collect which steps reference each doc label (from markdown)
   const markdownUsageMap = useMemo(() => {
@@ -81,16 +82,21 @@ export function MaterialManagement() {
     const unsub = onSnapshot(collection(db, 'docMaterials'), (snap) => {
       const firestoreDocs: DocMaterial[] = [];
       const firestoreLabels = new Set<string>();
+      const hiddenLabels = new Set<string>();
       snap.forEach((d) => {
         const data = d.data() as DocMaterial;
+        if (data.hidden) {
+          hiddenLabels.add(data.label);
+          return;
+        }
         firestoreDocs.push({ ...data, linkedSteps: data.linkedSteps ?? [] });
         firestoreLabels.add(data.label);
       });
 
-      // Merge: Firestore overrides markdown defaults
+      // Merge: Firestore overrides markdown defaults, hidden items excluded
       const merged: DocMaterial[] = [...firestoreDocs];
       for (const md of markdownDocs) {
-        if (!firestoreLabels.has(md.label)) {
+        if (!firestoreLabels.has(md.label) && !hiddenLabels.has(md.label)) {
           merged.push(md);
         }
       }
@@ -116,7 +122,7 @@ export function MaterialManagement() {
   const handleAdd = async () => {
     if (!form.label.trim() || !db) return;
     const snapshot = { ...form };
-    setSaving(true);
+    setBusy(true);
     await setDoc(doc(db, 'docMaterials', docId(snapshot.label)), {
       label: snapshot.label.trim(),
       kind: snapshot.kind,
@@ -124,7 +130,7 @@ export function MaterialManagement() {
       linkedSteps: snapshot.linkedSteps,
       updatedAt: serverTimestamp(),
     });
-    setSaving(false);
+    setBusy(false);
     setForm(emptyForm);
     setShowAddForm(false);
   };
@@ -141,25 +147,46 @@ export function MaterialManagement() {
 
   const handleEditSave = async () => {
     if (!editingLabel || !db) return;
-    const labelToSave = editingLabel;
+    const oldLabel = editingLabel;
+    const newLabel = form.label.trim();
+    if (!newLabel) return;
     const snapshot = { ...form };
-    setSaving(true);
-    await setDoc(doc(db, 'docMaterials', docId(labelToSave)), {
-      label: labelToSave,
+    setBusy(true);
+
+    // If label changed, delete old doc and create new one
+    if (newLabel !== oldLabel) {
+      await deleteDoc(doc(db, 'docMaterials', docId(oldLabel)));
+    }
+    await setDoc(doc(db, 'docMaterials', docId(newLabel)), {
+      label: newLabel,
       kind: snapshot.kind,
       description: snapshot.description.trim(),
       linkedSteps: snapshot.linkedSteps,
       updatedAt: serverTimestamp(),
     });
-    setSaving(false);
-    setEditingLabel((cur) => (cur === labelToSave ? null : cur));
-    setForm((cur) => (cur.label === labelToSave ? emptyForm : cur));
+    setBusy(false);
+    setEditingLabel((cur) => (cur === oldLabel ? null : cur));
+    setForm((cur) => (cur.label === newLabel ? emptyForm : cur));
   };
 
+  const markdownLabelSet = useMemo(
+    () => new Set(markdownDocs.map((md) => md.label)),
+    [markdownDocs],
+  );
+
   const handleDelete = async (label: string) => {
-    if (!db) return;
-    await deleteDoc(doc(db, 'docMaterials', docId(label)));
-    setDeleteConfirm(null);
+    if (!db || busy) return;
+    setBusy(true);
+    try {
+      if (markdownLabelSet.has(label)) {
+        await setDoc(doc(db, 'docMaterials', docId(label)), { label, hidden: true, updatedAt: serverTimestamp() }, { merge: true });
+      } else {
+        await deleteDoc(doc(db, 'docMaterials', docId(label)));
+      }
+    } finally {
+      setBusy(false);
+      setDeleteTarget(null);
+    }
   };
 
   // --- File management ---
@@ -224,18 +251,19 @@ export function MaterialManagement() {
   };
 
   const triggerUpload = (label: string, type: 'preview' | 'sample') => {
-    setActiveUpload({ label, type });
+    activeUploadRef.current = { label, type };
     if (type === 'preview') previewInputRef.current?.click();
     else sampleInputRef.current?.click();
   };
 
   const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && activeUpload) {
-      void handleFileUpload(file, activeUpload.label, activeUpload.type);
+    const upload = activeUploadRef.current;
+    if (file && upload) {
+      void handleFileUpload(file, upload.label, upload.type);
     }
     e.target.value = '';
-    setActiveUpload(null);
+    activeUploadRef.current = null;
   };
 
   /** Render toggle chips for linkedSteps */
@@ -384,7 +412,7 @@ export function MaterialManagement() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ln bg-surface-raised">
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary w-40">자료명</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary min-w-[280px]">자료명</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary w-20">종류</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary w-48">연결 항목</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">설명</th>
@@ -426,7 +454,7 @@ export function MaterialManagement() {
                   </td>
                   <td className="px-4 py-2 text-right align-top">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={handleAdd} disabled={saving} className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg" title="저장">
+                      <button onClick={handleAdd} disabled={busy} className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg" title="저장">
                         <Check size={16} />
                       </button>
                       <button onClick={() => setShowAddForm(false)} className="rounded p-1 text-tx-muted hover:bg-interactive-hover" title="취소">
@@ -445,7 +473,11 @@ export function MaterialManagement() {
                     <Fragment key={d.label}>
                       <tr className="border-b border-ln bg-accent-subtle">
                         <td className="px-4 py-2">
-                          <span className="text-sm font-semibold text-tx-primary">{d.label}</span>
+                          <input
+                            className="w-full rounded border border-ln px-2 py-1 text-sm font-semibold bg-surface-base text-tx-primary"
+                            value={form.label}
+                            onChange={(e) => setForm({ ...form, label: e.target.value })}
+                          />
                         </td>
                         <td className="px-4 py-2">
                           <select
@@ -469,7 +501,7 @@ export function MaterialManagement() {
                         </td>
                         <td className="px-4 py-2 text-right align-top">
                           <div className="flex items-center justify-end gap-1">
-                            <button onClick={handleEditSave} disabled={saving} className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg" title="저장">
+                            <button onClick={handleEditSave} disabled={busy} className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg" title="저장">
                               <Check size={16} />
                             </button>
                             <button onClick={() => { setEditingLabel(null); setForm(emptyForm); }} className="rounded p-1 text-tx-muted hover:bg-interactive-hover" title="취소">
@@ -492,7 +524,7 @@ export function MaterialManagement() {
                             ? <ChevronUp size={13} className="text-tx-muted shrink-0" />
                             : <ChevronDown size={13} className="text-tx-muted shrink-0" />
                           }
-                          <span className="font-semibold text-tx-primary">{d.label}</span>
+                          <span className="font-semibold text-tx-primary whitespace-nowrap">{d.label}</span>
                         </button>
                       </td>
                       <td className="px-4 py-3">
@@ -511,16 +543,9 @@ export function MaterialManagement() {
                           <button onClick={() => handleEditStart(d)} className="rounded p-1 text-tx-muted hover:text-accent-text hover:bg-accent-subtle" title="수정">
                             <Pencil size={14} />
                           </button>
-                          {deleteConfirm === d.label ? (
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => handleDelete(d.label)} className="rounded px-2 py-0.5 text-xs font-semibold text-danger-text bg-danger-subtle">확인</button>
-                              <button onClick={() => setDeleteConfirm(null)} className="rounded px-2 py-0.5 text-xs font-semibold text-tx-tertiary hover:bg-interactive-hover">취소</button>
-                            </div>
-                          ) : (
-                            <button onClick={() => setDeleteConfirm(d.label)} className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle" title="삭제">
-                              <Trash2 size={14} />
-                            </button>
-                          )}
+                          <button onClick={() => setDeleteTarget(d.label)} disabled={busy} className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle disabled:opacity-40" title="삭제">
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -539,6 +564,54 @@ export function MaterialManagement() {
           </table>
         </div>
       </div>
+
+      {/* 삭제 확인 모달 */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl border border-ln bg-surface-overlay shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-red-50 dark:bg-red-500/10 shrink-0">
+                <AlertTriangle size={20} className="text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-tx-primary">자료 삭제</h3>
+                <p className="text-xs text-tx-tertiary mt-0.5">
+                  <strong className="text-tx-secondary">{deleteTarget}</strong> 자료를 삭제하시겠습니까?
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={busy}
+                className="rounded-lg border border-ln px-4 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover disabled:opacity-40"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(deleteTarget)}
+                disabled={busy}
+                className="rounded-lg bg-red-500 px-4 py-2 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-60 flex items-center gap-1.5"
+              >
+                {busy && <Loader2 size={12} className="animate-spin" />}
+                {busy ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DB 작업 중 차단 오버레이 (삭제 모달 외 작업: 저장, 수정) */}
+      {busy && !deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+          <div className="flex items-center gap-2.5 rounded-xl bg-surface-overlay border border-ln shadow-xl px-5 py-3">
+            <Loader2 size={16} className="animate-spin text-accent" />
+            <span className="text-sm font-semibold text-tx-primary">저장 중...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

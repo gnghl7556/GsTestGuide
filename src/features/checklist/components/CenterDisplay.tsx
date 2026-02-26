@@ -31,6 +31,8 @@ interface CenterDisplayProps {
   onInputChange: (itemId: string, fieldId: string, value: QuickInputValue) => void;
   itemGate?: ExecutionItemGate;
   isFinalized: boolean;
+  activeQuestionIdx?: number;
+  onActiveQuestionChange?: (idx: number) => void;
 }
 
 export function CenterDisplay({
@@ -39,17 +41,19 @@ export function CenterDisplay({
   quickModeItem,
   quickAnswers,
   onQuickAnswer,
-  inputValues,
-  onInputChange,
+  inputValues: _inputValues,
+  onInputChange: _onInputChange,
   itemGate,
-  isFinalized
+  isFinalized: _isFinalized,
+  activeQuestionIdx,
+  onActiveQuestionChange
 }: CenterDisplayProps) {
   const [selectedDoc, setSelectedDoc] = useState<RequiredDoc | null>(null);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const [showDefectBoard, setShowDefectBoard] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [docDescriptions, setDocDescriptions] = useState<Record<string, string>>({});
-  const { currentTestNumber, testSetup } = useTestSetupContext();
+  const { currentTestNumber: _currentTestNumber, testSetup } = useTestSetupContext();
   const agreement = testSetup.agreementParsed;
   const contacts = useStepContacts(activeItem?.id, activeItem?.contacts);
 
@@ -124,9 +128,21 @@ export function CenterDisplay({
     let canceled = false;
     void Promise.all(
       refItems.map(async (doc) => {
-        if (!doc.storagePath) return null;
+        // 1) storagePath가 있으면 직접 로드
+        if (doc.storagePath) {
+          try {
+            const url = await getDownloadURL(ref(previewStorage, doc.storagePath));
+            return { label: doc.label, url };
+          } catch {
+            return null;
+          }
+        }
+        // 2) storagePath 없으면 관리자 업로드 폴더(checklist-previews/{label}/) 조회
         try {
-          const url = await getDownloadURL(ref(previewStorage, doc.storagePath));
+          const folderRef = ref(previewStorage, `checklist-previews/${doc.label}`);
+          const result = await listAll(folderRef);
+          if (result.items.length === 0) return null;
+          const url = await getDownloadURL(result.items[0]);
           return { label: doc.label, url };
         } catch {
           return null;
@@ -159,7 +175,7 @@ export function CenterDisplay({
 
   const handleAnswer = (questionId: string, value: QuickAnswer) => {
     onQuickAnswer(requirementId, questionId, value);
-    if (value === 'NO') {
+    if (value === 'NO' || value === 'NA') {
       const idx = questions.findIndex((q) => q.id === questionId);
       for (let i = idx + 1; i < questions.length; i++) {
         onQuickAnswer(requirementId, questions[i].id, 'NA');
@@ -277,10 +293,12 @@ export function CenterDisplay({
                     const currentAnswer = quickAnswers[question.id] ?? 'NA';
                     const isAnswered = currentAnswer === 'YES' || currentAnswer === 'NO';
                     const isCurrent = question.id === firstUnansweredId;
+                    const isKbFocused = activeQuestionIdx === index;
                     return (
                     <div
                       key={question.id}
                       id={`question-${requirementId}-${question.id}`}
+                      onClick={() => onActiveQuestionChange?.(index)}
                       className={`rounded-xl px-4 py-3.5 transition-all duration-300 ease-out origin-left ${
                         disabled
                           ? 'bg-surface-sunken/50 opacity-25 pointer-events-none scale-[0.97]'
@@ -289,7 +307,7 @@ export function CenterDisplay({
                             : isCurrent
                               ? 'bg-surface-base scale-100 shadow-[0_4px_16px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]'
                               : 'bg-surface-sunken/40 scale-[0.97] opacity-35'
-                      }`}
+                      } ${isKbFocused && !disabled ? 'ring-2 ring-blue-500/50 ring-offset-1' : ''}`}
                     >
                       {(() => {
                         return (
@@ -337,20 +355,6 @@ export function CenterDisplay({
                             type="button"
                             onClick={() => {
                               if (!quickModeItem) return;
-                              handleAnswer(question.id, currentAnswer === 'YES' ? 'NA' : 'YES');
-                            }}
-                            className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
-                              currentAnswer === 'YES'
-                                ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border-[var(--status-pass-border)]'
-                                : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong hover:text-tx-secondary'
-                            }`}
-                          >
-                            예
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!quickModeItem) return;
                               handleAnswer(question.id, currentAnswer === 'NO' ? 'NA' : 'NO');
                             }}
                             className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
@@ -359,7 +363,7 @@ export function CenterDisplay({
                                 : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong hover:text-tx-secondary'
                             }`}
                           >
-                            아니오
+                            ← 아니오
                           </button>
                           <button
                             type="button"
@@ -370,6 +374,20 @@ export function CenterDisplay({
                             className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-tx-muted bg-surface-base border border-ln hover:border-ln-strong hover:text-tx-secondary transition-all duration-200"
                           >
                             해당없음
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!quickModeItem) return;
+                              handleAnswer(question.id, currentAnswer === 'YES' ? 'NA' : 'YES');
+                            }}
+                            className={`px-3.5 py-1.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
+                              currentAnswer === 'YES'
+                                ? 'bg-[var(--status-pass-bg)] text-[var(--status-pass-text)] border-[var(--status-pass-border)]'
+                                : 'bg-surface-base text-tx-tertiary border-ln hover:border-ln-strong hover:text-tx-secondary'
+                            }`}
+                          >
+                            예 →
                           </button>
                         </div>
                       </div>
@@ -385,20 +403,20 @@ export function CenterDisplay({
             {contacts.length > 0 && (
               <div className="mt-6">
                 <div className="text-xs font-bold text-tx-secondary mb-2.5 tracking-wide">담당자</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-2">
                   {contacts.map((c) => (
                     <div key={c.role} className="rounded-xl bg-white/40 dark:bg-white/[0.06] backdrop-blur-md shadow-[0_2px_8px_rgba(0,0,0,0.04),0_0_0_1px_rgba(0,0,0,0.03)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2),0_0_0_1px_rgba(255,255,255,0.06)] px-4 py-3 flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-surface-base flex items-center justify-center shrink-0">
                         <User size={14} className="text-tx-tertiary" />
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 flex items-center gap-4 flex-wrap">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold text-tx-primary">{c.name}</span>
                           <span className="text-[11px] text-tx-muted">{c.role}</span>
                         </div>
-                        <div className="flex items-center gap-3 mt-0.5">
+                        <div className="flex items-center gap-3">
                           {c.phone && (
-                            <span className="flex items-center gap-1 text-xs text-tx-tertiary">
+                            <span className="flex items-center gap-1 text-xs text-tx-tertiary whitespace-nowrap">
                               <Phone size={10} />{c.phone}
                             </span>
                           )}
@@ -410,31 +428,12 @@ export function CenterDisplay({
                         </div>
                       </div>
                       {c.requestMethod && (
-                        <span className="flex items-center gap-1 text-xs text-tx-secondary shrink-0">
-                          <MessageSquare size={10} />
+                        <span className="flex items-center gap-1 text-xs text-tx-secondary">
+                          <MessageSquare size={10} className="shrink-0" />
                           {c.requestUrl ? (
                             <a href={c.requestUrl} target="_blank" rel="noreferrer" className="hover:underline">{c.requestMethod}</a>
                           ) : c.requestMethod}
                         </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
-              <div className="mt-5 rounded-lg border border-ln bg-surface-sunken px-4 py-3 text-sm text-tx-tertiary">
-                <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">참조 정보</div>
-                <div className="space-y-2">
-                  {activeItem.relatedInfo.map((info) => (
-                    <div key={info.label} className="flex flex-wrap items-center gap-2">
-                      <span className="text-tx-muted min-w-[120px]">{info.label}</span>
-                      {info.href ? (
-                        <a href={info.href} target="_blank" rel="noreferrer" className="text-accent-text hover:text-accent-hover underline">
-                          {info.value}
-                        </a>
-                      ) : (
-                        <span className="text-tx-secondary font-semibold">{info.value}</span>
                       )}
                     </div>
                   ))}
@@ -546,30 +545,6 @@ export function CenterDisplay({
                     {docDescriptions[selectedDoc.label] || selectedDoc.description || '이 자료를 확인한 뒤 점검을 진행하세요.'}
                   </p>
                 </div>
-                {selectedDoc.showRelatedInfo && activeItem.relatedInfo && activeItem.relatedInfo.length > 0 && (
-                  <div className="rounded-xl border border-ln bg-surface-sunken px-4 py-3 text-xs text-tx-tertiary">
-                    <div className="text-xs font-semibold text-tx-muted mb-2">관련 정보</div>
-                    <div className="space-y-1.5">
-                      {activeItem.relatedInfo.map((info) => (
-                        <div key={info.label} className="flex flex-wrap items-center gap-2">
-                          <span className="text-tx-muted min-w-[120px]">{info.label}</span>
-                          {info.href ? (
-                            <a
-                              href={info.href}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-accent-text hover:text-accent-hover underline"
-                            >
-                              {info.value}
-                            </a>
-                          ) : (
-                            <span className="text-tx-secondary font-semibold">{info.value}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

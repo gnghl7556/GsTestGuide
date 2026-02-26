@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Copy, Search } from 'lucide-react';
-import { Button, Input } from '../../../components/ui';
+import { Button } from '../../../components/ui';
 import { useDefectForm } from '../hooks/useDefectForm';
+import { DefectFormFields } from './DefectFormFields';
 import { DEFECT_REFERENCES } from 'virtual:content/defects';
 
 type DefectReportFormProps = {
@@ -17,33 +18,13 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
   const tabs = Object.keys(DEFECT_REFERENCES) as Array<keyof typeof DEFECT_REFERENCES>;
 
   const envOptions = [
-    { value: 'ALL_OS', label: '시험환경 모든 OS' },
-    { value: 'NONE', label: '-' }
-  ] as const;
+    { value: 'ALL_OS' as const, label: '시험환경 모든 OS' },
+    { value: 'NONE' as const, label: '-' }
+  ];
   const versionOptions = [
-    { value: 1, label: '1차' },
-    { value: 2, label: '2차' }
-  ] as const;
-  const severityOptions = [
-    { value: 'H', label: 'H (High)' },
-    { value: 'M', label: 'M (Medium)' },
-    { value: 'L', label: 'L (Low)' }
-  ] as const;
-  const frequencyOptions = [
-    { value: 'I', label: 'I (Intermittent)' },
-    { value: 'A', label: 'A (Always)' }
-  ] as const;
-  const qualityOptions = [
-    { value: '기능적합성', label: '기능적합성' },
-    { value: '성능효율성', label: '성능효율성' },
-    { value: '호환성', label: '호환성' },
-    { value: '사용성', label: '사용성' },
-    { value: '신뢰성', label: '신뢰성' },
-    { value: '보안성', label: '보안성' },
-    { value: '유지보수성', label: '유지보수성' },
-    { value: '이식성', label: '이식성' },
-    { value: '일반적 요구사항', label: '일반적 요구사항' }
-  ] as const;
+    { value: 1 as const, label: '1차' },
+    { value: 2 as const, label: '2차' }
+  ];
 
   const applyReference = (refItem: { summary: string; description: string; severity: 'H' | 'M' | 'L'; frequency: 'A' | 'I' }) => {
     if (isFinalized) return;
@@ -55,6 +36,23 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
   };
 
   const formLocked = saving || isFinalized;
+
+  // DefectFormFields 호환 values
+  const formValues = {
+    summary: state.summary,
+    severity: state.severity as 'H' | 'M' | 'L' | '',
+    frequency: state.frequency as 'A' | 'I' | '',
+    qualityCharacteristic: state.qualityCharacteristic,
+    accessPath: state.accessPath,
+    testEnvironment: state.testEnvironment,
+    stepsToReproduce: state.stepsToReproduce,
+    description: state.description,
+    ttaComment: state.ttaComment
+  };
+
+  const handleFieldChange = (key: string, value: string) => {
+    update(key as keyof typeof state, value as never);
+  };
 
   return (
     <div className="h-full bg-surface-base rounded-xl border border-surface-200 shadow-sm flex flex-col overflow-hidden">
@@ -94,19 +92,8 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
             </div>
           )}
 
+          {/* 시험환경 + 차수 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Input
-              label="요약 *"
-              value={state.summary}
-              onChange={(e) => update('summary', e.target.value)}
-              placeholder="예: 로그인 실패 시 오류 메시지 미표시"
-            />
-            <Input
-              label="기능 접근 경로"
-              value={state.accessPath}
-              onChange={(e) => update('accessPath', e.target.value)}
-              placeholder="예: 관리자 > 설정 > 계정"
-            />
             <div className="space-y-2 lg:col-span-2">
               <label className="block text-xs font-semibold text-surface-600">시험 환경</label>
               <div className="flex flex-wrap gap-2">
@@ -145,100 +132,19 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
                 ))}
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-surface-600">결함 정도 *</label>
-              <div className="flex flex-wrap gap-2">
-                {severityOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => update('severity', option.value)}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                      state.severity === option.value
-                        ? 'border-error-500 bg-error-50 text-error-700'
-                        : 'border-surface-200 text-surface-600 hover:border-surface-300'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-surface-600">발생 빈도</label>
-              <div className="flex flex-wrap gap-2">
-                {frequencyOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => update('frequency', option.value)}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                      state.frequency === option.value
-                        ? 'border-warning-500 bg-warning-50 text-warning-700'
-                        : 'border-surface-200 text-surface-600 hover:border-surface-300'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-2 lg:col-span-2">
-              <label className="block text-xs font-semibold text-surface-600">품질 특성 *</label>
-              <div className="flex flex-wrap gap-2">
-                {qualityOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => update('qualityCharacteristic', option.value)}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                      state.qualityCharacteristic === option.value
-                        ? 'border-primary-500 bg-primary-50 text-primary-700'
-                        : 'border-surface-200 text-surface-600 hover:border-surface-300'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-1 lg:col-span-2">
-              <label className="block text-xs font-semibold text-surface-600">결함 상세 설명</label>
-              <textarea
-                className="w-full min-h-[110px] rounded-lg border border-surface-200 bg-surface-base px-3 py-2 text-sm text-primary-800"
-                value={state.description}
-                onChange={(e) => update('description', e.target.value)}
-                placeholder="관찰된 현상과 기대 동작을 구체적으로 작성"
-              />
-            </div>
-            <div className="space-y-1 lg:col-span-2">
-              <label className="block text-xs font-semibold text-surface-600">TTA 의견</label>
-              <textarea
-                className="w-full min-h-[90px] rounded-lg border border-surface-200 bg-surface-base px-3 py-2 text-sm text-primary-800"
-                value={state.ttaComment}
-                onChange={(e) => update('ttaComment', e.target.value)}
-              />
-            </div>
-            <div className="space-y-2 lg:col-span-2">
-              <label className="block text-xs font-semibold text-surface-600">증빙 자료</label>
-              <label className="inline-flex items-center gap-2 rounded-lg border border-surface-200 bg-surface-base px-3 py-2 text-xs font-semibold text-surface-600 hover:text-surface-800">
-                파일 추가
-                <input
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => update('evidenceFiles', Array.from(e.target.files || []))}
-                />
-              </label>
-              {state.evidenceFiles.length > 0 && (
-                <div className="text-xs text-surface-500">
-                  {state.evidenceFiles.map((file) => file.name).join(', ')}
-                </div>
-              )}
-            </div>
           </div>
+
+          {/* 공통 필드 */}
+          <DefectFormFields
+            values={formValues}
+            onChange={handleFieldChange}
+            onFilesChange={(files) => update('evidenceFiles', files)}
+            fileNames={state.evidenceFiles.map((f) => f.name)}
+            disabled={formLocked}
+          />
         </div>
 
+        {/* 품질 특성별 사례 참조 */}
         <div className="flex-1 bg-surface-50/50 flex flex-col min-h-0">
           <div className="px-6 py-3 bg-surface-base border-b border-surface-200 flex items-center gap-4 shadow-sm">
             <div className="flex items-center gap-2 text-surface-500 font-bold text-xs">

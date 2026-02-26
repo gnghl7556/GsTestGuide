@@ -4,7 +4,9 @@ import { NavSidebar } from '../components/NavSidebar';
 import { CenterDisplay } from '../components/CenterDisplay';
 import { RightActionPanel } from '../components/RightActionPanel';
 import { HelperToolsPopup } from '../components/HelperToolsPopup';
+import { ShortcutHelpOverlay } from '../components/ShortcutHelpOverlay';
 import { DefectRefBoardModal } from '../../defects/components/DefectRefBoardModal';
+import { DefectReportModal } from '../../defects/components/DefectReportModal';
 import type {
   ChecklistItem,
   ExecutionItemGate,
@@ -16,6 +18,12 @@ import type {
 
 type QuickInputValues = NonNullable<QuickReviewAnswer['inputValues']>;
 type QuickInputValue = QuickInputValues[string];
+
+const CATEGORY_QUALITY_MAP: Record<string, string> = {
+  EXECUTION: '기능적합성',
+  COMPLETION: '기능적합성'
+};
+const categoryToQuality = (category: string) => CATEGORY_QUALITY_MAP[category] || '';
 
 type ChecklistViewProps = {
   checklist: ChecklistItem[];
@@ -36,6 +44,13 @@ type ChecklistViewProps = {
   updateReviewData: (id: string, field: keyof ReviewData, value: ReviewData[keyof ReviewData]) => void;
   recommendation: QuickReviewAnswer['autoRecommendation'];
   canReview: boolean;
+  activeQuestionIdx: number;
+  onActiveQuestionChange: (idx: number) => void;
+  showShortcutHelp: boolean;
+  onDismissShortcutHelp: () => void;
+  showDefectModal: boolean;
+  onCloseDefectModal: () => void;
+  currentTestNumber: string;
 };
 
 export function ChecklistView({
@@ -56,7 +71,14 @@ export function ChecklistView({
   isFinalized,
   updateReviewData,
   recommendation,
-  canReview
+  canReview,
+  activeQuestionIdx,
+  onActiveQuestionChange,
+  showShortcutHelp,
+  onDismissShortcutHelp,
+  showDefectModal,
+  onCloseDefectModal,
+  currentTestNumber
 }: ChecklistViewProps) {
   const [showDefectBoard, setShowDefectBoard] = useState(false);
   return (
@@ -99,6 +121,8 @@ export function ChecklistView({
           onInputChange={onInputChange}
           itemGate={activeItem ? itemGates[activeItem.id] : undefined}
           isFinalized={isFinalized}
+          activeQuestionIdx={activeQuestionIdx}
+          onActiveQuestionChange={onActiveQuestionChange}
         />
       </div>
 
@@ -112,6 +136,20 @@ export function ChecklistView({
           canReview={canReview}
         />
       </div>
+      {showShortcutHelp && <ShortcutHelpOverlay onDismiss={onDismissShortcutHelp} />}
+      {showDefectModal && currentTestNumber && (
+        <DefectReportModal
+          open={showDefectModal}
+          projectId={currentTestNumber}
+          testCaseId={activeItem?.id || ''}
+          onClose={onCloseDefectModal}
+          initialContext={activeItem ? {
+            linkedTestCaseId: activeItem.id,
+            qualityCharacteristic: categoryToQuality(activeItem.category),
+            accessPath: activeItem.title
+          } : undefined}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Pencil, Trash2, Check, X, User, ChevronDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, User, ChevronDown, AlertTriangle, Loader2 } from 'lucide-react';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db } from '../../../lib/firebase';
 import { doc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from 'firebase/firestore';
@@ -31,8 +31,8 @@ export function ContactManagement() {
   const [editingRole, setEditingRole] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState<FormData>(emptyForm);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   // Build combined person list from PL directory + testers
   const personOptions = useMemo<PersonOption[]>(() => {
@@ -54,6 +54,10 @@ export function ContactManagement() {
   const handlePersonSelect = useCallback((name: string) => {
     if (!name) {
       setForm((prev) => ({ ...prev, name: '', phone: '', email: '' }));
+      return;
+    }
+    if (name === '공용') {
+      setForm((prev) => ({ ...prev, name: '공용', phone: '-', email: '-' }));
       return;
     }
     const person = personOptions.find((p) => p.name === name);
@@ -109,9 +113,10 @@ export function ContactManagement() {
       const firestoreRoles: RoleContact[] = [];
       const firestoreRoleNames = new Set<string>();
       snap.forEach((d) => {
-        const data = d.data() as RoleContact;
-        firestoreRoles.push({ ...data, linkedSteps: data.linkedSteps ?? [] });
+        const data = d.data() as RoleContact & { hidden?: boolean };
         firestoreRoleNames.add(data.role);
+        if (data.hidden) return;
+        firestoreRoles.push({ ...data, linkedSteps: data.linkedSteps ?? [] });
       });
 
       // Merge: Firestore overrides markdown defaults, keep markdown-only roles too
@@ -143,20 +148,23 @@ export function ContactManagement() {
   const handleAdd = async () => {
     if (!form.role.trim() || !form.name.trim() || !db) return;
     const snapshot = { ...form };
-    setSaving(true);
-    await setDoc(doc(db, 'roleContacts', docId(snapshot.role)), {
-      role: snapshot.role.trim(),
-      name: snapshot.name.trim(),
-      phone: snapshot.phone.trim(),
-      email: snapshot.email.trim(),
-      requestMethod: snapshot.requestMethod.trim(),
-      requestUrl: snapshot.requestUrl.trim(),
-      linkedSteps: snapshot.linkedSteps,
-      updatedAt: serverTimestamp(),
-    });
-    setSaving(false);
-    setForm(emptyForm);
-    setShowAddForm(false);
+    setBusy(true);
+    try {
+      await setDoc(doc(db, 'roleContacts', docId(snapshot.role)), {
+        role: snapshot.role.trim(),
+        name: snapshot.name.trim(),
+        phone: snapshot.phone.trim(),
+        email: snapshot.email.trim(),
+        requestMethod: snapshot.requestMethod.trim(),
+        requestUrl: snapshot.requestUrl.trim(),
+        linkedSteps: snapshot.linkedSteps,
+        updatedAt: serverTimestamp(),
+      });
+      setForm(emptyForm);
+      setShowAddForm(false);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleEditStart = (r: RoleContact) => {
@@ -176,27 +184,40 @@ export function ContactManagement() {
     if (!editingRole || !form.name.trim() || !db) return;
     const roleToSave = editingRole;
     const snapshot = { ...form };
-    setSaving(true);
-    await setDoc(doc(db, 'roleContacts', docId(roleToSave)), {
-      role: roleToSave,
-      name: snapshot.name.trim(),
-      phone: snapshot.phone.trim(),
-      email: snapshot.email.trim(),
-      requestMethod: snapshot.requestMethod.trim(),
-      requestUrl: snapshot.requestUrl.trim(),
-      linkedSteps: snapshot.linkedSteps,
-      updatedAt: serverTimestamp(),
-    });
-    setSaving(false);
-    // Only reset if still editing the same role (prevents race when quickly switching)
-    setEditingRole((cur) => (cur === roleToSave ? null : cur));
-    setForm((cur) => (cur.role === roleToSave ? emptyForm : cur));
+    setBusy(true);
+    try {
+      await setDoc(doc(db, 'roleContacts', docId(roleToSave)), {
+        role: roleToSave,
+        name: snapshot.name.trim(),
+        phone: snapshot.phone.trim(),
+        email: snapshot.email.trim(),
+        requestMethod: snapshot.requestMethod.trim(),
+        requestUrl: snapshot.requestUrl.trim(),
+        linkedSteps: snapshot.linkedSteps,
+        updatedAt: serverTimestamp(),
+      });
+      // Only reset if still editing the same role (prevents race when quickly switching)
+      setEditingRole((cur) => (cur === roleToSave ? null : cur));
+      setForm((cur) => (cur.role === roleToSave ? emptyForm : cur));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleDelete = async (role: string) => {
     if (!db) return;
-    await deleteDoc(doc(db, 'roleContacts', docId(role)));
-    setDeleteConfirm(null);
+    setBusy(true);
+    try {
+      const isMarkdownSourced = markdownRoles.some((md) => md.role === role);
+      if (isMarkdownSourced) {
+        await setDoc(doc(db, 'roleContacts', docId(role)), { role, hidden: true });
+      } else {
+        await deleteDoc(doc(db, 'roleContacts', docId(role)));
+      }
+      setDeleteTarget(null);
+    } finally {
+      setBusy(false);
+    }
   };
 
   /** Render linkedSteps toggle chips for edit/add forms */
@@ -255,6 +276,7 @@ export function ContactManagement() {
         </div>
         <Button
           size="sm"
+          disabled={busy}
           onClick={() => {
             setShowAddForm(true);
             setForm(emptyForm);
@@ -299,6 +321,7 @@ export function ContactManagement() {
                         onChange={(e) => handlePersonSelect(e.target.value)}
                       >
                         <option value="">담당자 선택</option>
+                        <option value="공용">공용 (담당자 없음)</option>
                         {personOptions.some((p) => p.source === 'PL') && (
                           <optgroup label="PL">
                             {personOptions.filter((p) => p.source === 'PL').map((p) => (
@@ -352,8 +375,8 @@ export function ContactManagement() {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={handleAdd}
-                        disabled={saving}
-                        className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg"
+                        disabled={busy}
+                        className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg disabled:opacity-40"
                         title="저장"
                       >
                         <Check size={16} />
@@ -388,8 +411,9 @@ export function ContactManagement() {
                             autoFocus
                           >
                             <option value="">담당자 선택</option>
+                            <option value="공용">공용 (담당자 없음)</option>
                             {/* Keep current value visible even if not in list */}
-                            {form.name && !personOptions.some((p) => p.name === form.name) && (
+                            {form.name && form.name !== '공용' && !personOptions.some((p) => p.name === form.name) && (
                               <option value={form.name}>{form.name} (기존)</option>
                             )}
                             {personOptions.some((p) => p.source === 'PL') && (
@@ -443,8 +467,8 @@ export function ContactManagement() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={handleEditSave}
-                            disabled={saving}
-                            className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg"
+                            disabled={busy}
+                            className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg disabled:opacity-40"
                             title="저장"
                           >
                             <Check size={16} />
@@ -493,35 +517,20 @@ export function ContactManagement() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleEditStart(r)}
-                          className="rounded p-1 text-tx-muted hover:text-accent-text hover:bg-accent-subtle"
+                          disabled={busy}
+                          className="rounded p-1 text-tx-muted hover:text-accent-text hover:bg-accent-subtle disabled:opacity-40"
                           title="수정"
                         >
                           <Pencil size={14} />
                         </button>
-                        {deleteConfirm === r.role ? (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleDelete(r.role)}
-                              className="rounded px-2 py-0.5 text-xs font-semibold text-danger-text bg-danger-subtle"
-                            >
-                              확인
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirm(null)}
-                              className="rounded px-2 py-0.5 text-xs font-semibold text-tx-tertiary hover:bg-interactive-hover"
-                            >
-                              취소
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setDeleteConfirm(r.role)}
-                            className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle"
-                            title="삭제"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => setDeleteTarget(r.role)}
+                          disabled={busy}
+                          className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle disabled:opacity-40"
+                          title="삭제"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -538,6 +547,55 @@ export function ContactManagement() {
           </table>
         </div>
       </div>
+
+      {/* 삭제 확인 모달 */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div
+            className="w-full max-w-sm rounded-2xl border border-ln bg-surface-overlay shadow-2xl p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-danger-subtle flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} className="text-danger-text" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-tx-primary">담당자 삭제</h3>
+                <p className="text-xs text-tx-tertiary mt-0.5">
+                  &lsquo;<span className="font-semibold text-tx-secondary">{deleteTarget}</span>&rsquo; 담당자를 삭제하시겠습니까?
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={busy}
+                className="rounded-lg px-4 py-2 text-xs font-semibold text-tx-tertiary hover:bg-interactive-hover disabled:opacity-40"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => handleDelete(deleteTarget)}
+                disabled={busy}
+                className="rounded-lg px-4 py-2 text-xs font-bold text-white bg-danger-text hover:opacity-90 flex items-center gap-1.5 disabled:opacity-40"
+              >
+                {busy && <Loader2 size={12} className="animate-spin" />}
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Busy 오버레이 */}
+      {busy && !deleteTarget && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+          <div className="flex items-center gap-2 rounded-xl bg-surface-overlay border border-ln shadow-lg px-4 py-3">
+            <Loader2 size={16} className="animate-spin text-accent" />
+            <span className="text-xs font-semibold text-tx-secondary">저장 중...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -94,6 +94,11 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
             답변을 모두 입력한 후 판정할 수 있습니다.
           </div>
         )}
+        {canReview && (
+          <div className="mb-1.5 text-[10px] text-tx-muted text-center">
+            판정 선택 후 Enter 확정 · ? 단축키
+          </div>
+        )}
         <div className="flex gap-1.5">
           <StatusButton
             type="Verified"

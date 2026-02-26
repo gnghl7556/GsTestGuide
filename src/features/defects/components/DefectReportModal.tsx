@@ -1,24 +1,32 @@
-import { useState } from 'react';
-import { X, UploadCloud } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { addDoc, collection, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../../../lib/firebase';
+import { DefectFormFields } from './DefectFormFields';
+
+export interface DefectContext {
+  qualityCharacteristic?: string;
+  linkedTestCaseId?: string;
+  accessPath?: string;
+}
 
 interface DefectReportModalProps {
   open: boolean;
   projectId: string;
   testCaseId: string;
   onClose: () => void;
+  initialContext?: DefectContext;
 }
 
 type EvidenceFile = { name: string; url: string };
 
-export function DefectReportModal({ open, projectId, testCaseId, onClose }: DefectReportModalProps) {
+export function DefectReportModal({ open, projectId, testCaseId, onClose, initialContext }: DefectReportModalProps) {
   const [summary, setSummary] = useState('');
   const [reportVersion, setReportVersion] = useState<1 | 2 | 3 | 4>(1);
   const [isDerived, setIsDerived] = useState(false);
-  const [severity, setSeverity] = useState<'H' | 'M' | 'L' | ''>('');
-  const [frequency, setFrequency] = useState<'A' | 'I' | ''>('');
+  const [severity, setSeverity] = useState<'H' | 'M' | 'L' | ''>('M');
+  const [frequency, setFrequency] = useState<'A' | 'I' | ''>('A');
   const [qualityCharacteristic, setQualityCharacteristic] = useState('');
   const [accessPath, setAccessPath] = useState('');
   const [testEnvironment, setTestEnvironment] = useState('');
@@ -29,12 +37,24 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
   const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // 컨텍스트 자동 채움 (모달 열릴 때)
+  useEffect(() => {
+    if (open && initialContext) {
+      if (initialContext.qualityCharacteristic) {
+        setQualityCharacteristic(initialContext.qualityCharacteristic);
+      }
+      if (initialContext.accessPath) {
+        setAccessPath(initialContext.accessPath);
+      }
+    }
+  }, [open, initialContext]);
+
   const resetForm = () => {
     setSummary('');
     setReportVersion(1);
     setIsDerived(false);
-    setSeverity('');
-    setFrequency('');
+    setSeverity('M');
+    setFrequency('A');
     setQualityCharacteristic('');
     setAccessPath('');
     setTestEnvironment('');
@@ -65,7 +85,7 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
       }
       const defectRef = await addDoc(collection(db, 'projects', projectId, 'defects'), {
         defectId: '',
-        linkedTestCaseId: testCaseId,
+        linkedTestCaseId: initialContext?.linkedTestCaseId || testCaseId,
         reportVersion,
         isDerived,
         summary: summary.trim(),
@@ -101,36 +121,53 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
 
   if (!open) return null;
 
+  const formValues = {
+    summary,
+    severity,
+    frequency,
+    qualityCharacteristic,
+    accessPath,
+    testEnvironment,
+    stepsToReproduce,
+    description,
+    ttaComment
+  };
+
+  const handleFieldChange = <K extends keyof typeof formValues>(key: K, value: (typeof formValues)[K]) => {
+    const setters: Record<string, (v: string) => void> = {
+      summary: setSummary,
+      qualityCharacteristic: setQualityCharacteristic,
+      accessPath: setAccessPath,
+      testEnvironment: setTestEnvironment,
+      stepsToReproduce: setStepsToReproduce,
+      description: setDescription,
+      ttaComment: setTtaComment
+    };
+    if (key === 'severity') setSeverity(value as 'H' | 'M' | 'L' | '');
+    else if (key === 'frequency') setFrequency(value as 'A' | 'I' | '');
+    else setters[key]?.(value as string);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-backdrop)] p-6">
-      <div className="w-full max-w-2xl rounded-2xl border border-ln bg-surface-base shadow-xl">
-        <div className="flex items-center justify-between border-b border-ln px-5 py-4">
+      <div className="w-full max-w-2xl max-h-[90vh] rounded-2xl border border-ln bg-surface-base shadow-xl flex flex-col">
+        <div className="flex items-center justify-between border-b border-ln px-5 py-4 shrink-0">
           <div className="text-sm font-extrabold text-tx-primary">결함 보고</div>
           <button
             type="button"
-            onClick={() => {
-              resetForm();
-              onClose();
-            }}
+            onClick={() => { resetForm(); onClose(); }}
             className="rounded-md border border-ln px-2 py-1 text-xs font-semibold text-tx-tertiary hover:text-tx-secondary"
           >
             <X size={14} />
           </button>
         </div>
-        <div className="px-5 py-4 space-y-3 text-xs text-tx-secondary">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[11px] text-tx-tertiary mb-1">요약 *</label>
-              <input
-                className="w-full rounded-md border border-ln px-2 py-1"
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-              />
-            </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 text-xs text-tx-secondary">
+          {/* 차수/파생 */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] text-tx-tertiary mb-1">결함 리포트 차수</label>
               <select
-                className="w-full rounded-md border border-ln px-2 py-1"
+                className="w-full rounded-md border border-ln px-2 py-1 bg-input-bg text-input-text"
                 value={reportVersion}
                 onChange={(e) => setReportVersion(Number(e.target.value) as 1 | 2 | 3 | 4)}
               >
@@ -140,126 +177,35 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose }: Defe
                 <option value={4}>4차 (최종)</option>
               </select>
             </div>
-            <div>
-              <label className="block text-[11px] text-tx-tertiary mb-1">시험 환경</label>
-              <input
-                className="w-full rounded-md border border-ln px-2 py-1"
-                value={testEnvironment}
-                onChange={(e) => setTestEnvironment(e.target.value)}
-              />
-            </div>
             <div className="flex items-center gap-2 pt-5">
               <input
                 id="defect-derived"
                 type="checkbox"
                 checked={isDerived}
                 onChange={(e) => setIsDerived(e.target.checked)}
-                className="h-4 w-4 rounded border-ln-strong text-primary-700 focus:ring-primary-500"
+                className="h-4 w-4 rounded border-ln-strong"
               />
               <label htmlFor="defect-derived" className="text-[11px] text-tx-secondary">
-                파생 결함 (회귀/패치 후 파생)
+                파생 결함
               </label>
             </div>
-            <div>
-              <label className="block text-[11px] text-tx-tertiary mb-1">결함 정도 *</label>
-              <select
-                className="w-full rounded-md border border-ln px-2 py-1"
-                value={severity}
-                onChange={(e) => setSeverity(e.target.value as 'H' | 'M' | 'L' | '')}
-              >
-                <option value="">선택</option>
-                <option value="H">H</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[11px] text-tx-tertiary mb-1">발생 빈도</label>
-              <select
-                className="w-full rounded-md border border-ln px-2 py-1"
-                value={frequency}
-                onChange={(e) => setFrequency(e.target.value as 'A' | 'I' | '')}
-              >
-                <option value="">선택</option>
-                <option value="A">A</option>
-                <option value="I">I</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[11px] text-tx-tertiary mb-1">품질 특성 *</label>
-              <input
-                className="w-full rounded-md border border-ln px-2 py-1"
-                value={qualityCharacteristic}
-                onChange={(e) => setQualityCharacteristic(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] text-tx-tertiary mb-1">기능 접근 경로</label>
-              <input
-                className="w-full rounded-md border border-ln px-2 py-1"
-                value={accessPath}
-                onChange={(e) => setAccessPath(e.target.value)}
-              />
-            </div>
           </div>
-          <div>
-            <label className="block text-[11px] text-tx-tertiary mb-1">재현 절차</label>
-            <textarea
-              className="w-full rounded-md border border-ln px-2 py-1"
-              rows={3}
-              value={stepsToReproduce}
-              onChange={(e) => setStepsToReproduce(e.target.value)}
-              placeholder="줄바꿈으로 구분"
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] text-tx-tertiary mb-1">결함 상세 설명</label>
-            <textarea
-              className="w-full rounded-md border border-ln px-2 py-1"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] text-tx-tertiary mb-1">TTA 의견</label>
-            <textarea
-              className="w-full rounded-md border border-ln px-2 py-1"
-              rows={2}
-              value={ttaComment}
-              onChange={(e) => setTtaComment(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-[11px] text-tx-tertiary mb-1">증빙 자료</label>
-            <label className="inline-flex items-center gap-2 rounded-md border border-ln bg-surface-base px-3 py-2 text-[11px] font-semibold text-tx-secondary hover:bg-interactive-hover">
-              <UploadCloud size={14} />
-              파일 추가
-              <input
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  setEvidenceFiles(files);
-                }}
-              />
-            </label>
-            {evidenceFiles.length > 0 && (
-              <div className="mt-2 text-[11px] text-tx-tertiary">
-                {evidenceFiles.map((file) => file.name).join(', ')}
-              </div>
-            )}
-          </div>
+
+          <DefectFormFields
+            values={formValues}
+            onChange={handleFieldChange}
+            onFilesChange={setEvidenceFiles}
+            fileNames={evidenceFiles.map((f) => f.name)}
+            disabled={saving}
+            compact
+          />
+
           {errorMsg && <div className="text-[11px] text-danger-text">{errorMsg}</div>}
         </div>
-        <div className="border-t border-ln px-5 py-4 flex justify-end gap-2">
+        <div className="border-t border-ln px-5 py-4 flex justify-end gap-2 shrink-0">
           <button
             type="button"
-            onClick={() => {
-              resetForm();
-              onClose();
-            }}
+            onClick={() => { resetForm(); onClose(); }}
             className="rounded-md border border-ln px-4 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover"
           >
             취소

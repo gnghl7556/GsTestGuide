@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { ChecklistView } from './ChecklistView';
 import { generateChecklist } from '../../../utils/checklistGenerator';
 import { toQuickModeItem, getRecommendation } from '../../../utils/quickMode';
 import { useDefects } from '../../report/hooks/useDefects';
 import { computeExecutionGate } from '../utils/executionGate';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import type {
   QuickAnswer,
   QuickDecision,
@@ -15,8 +16,9 @@ import type {
 } from '../../../types';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 import { useContentOverrides } from '../../../hooks/useContentOverrides';
+import { useDocMaterials } from '../../../hooks/useDocMaterials';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
-import { mergeOverrides } from '../../../lib/content/mergeOverrides';
+import { mergeOverrides, mergeDocLinks } from '../../../lib/content/mergeOverrides';
 import { db } from '../../../lib/firebase';
 
 const storageKey = 'gs-test-guide:review';
@@ -29,18 +31,25 @@ type StoredReviewPayload = {
   reviewData?: Record<string, ReviewData>;
   selectedReqId?: string | null;
   quickReviewById?: Record<string, QuickReviewAnswer>;
+  testNumber?: string;
 };
 
-const readStoredReview = (): StoredReviewPayload => {
+const readStoredReview = (currentTestNumber: string): StoredReviewPayload => {
   if (typeof window === 'undefined' || !window.localStorage) return {};
   if (window.sessionStorage?.getItem('gs-test-guide:skip-restore') === '1') {
     window.sessionStorage.removeItem('gs-test-guide:skip-restore');
     return {};
   }
+  if (!currentTestNumber) return {};
   const raw = window.localStorage.getItem(storageKey);
   if (!raw) return {};
   try {
-    return JSON.parse(raw) as StoredReviewPayload;
+    const parsed = JSON.parse(raw) as StoredReviewPayload & { testSetup?: { testNumber?: string } };
+    const storedTestNumber = parsed.testNumber || parsed.testSetup?.testNumber || '';
+    if (currentTestNumber && storedTestNumber && storedTestNumber !== currentTestNumber) {
+      return { profile: parsed.profile };
+    }
+    return parsed;
   } catch {
     window.localStorage.removeItem(storageKey);
     return {};
@@ -54,7 +63,7 @@ export function ExecutionPage() {
     currentTestNumber,
     projects
   } = useTestSetupContext();
-  const stored = useMemo(() => readStoredReview(), []);
+  const stored = useMemo(() => readStoredReview(currentTestNumber), []);
 
   const [profile] = useState<UserProfile>(
     stored.profile || {
@@ -67,17 +76,107 @@ export function ExecutionPage() {
   const [selectedReqId, setSelectedReqId] = useState<string | null>(stored.selectedReqId || null);
   const [reviewData, setReviewData] = useState<Record<string, ReviewData>>(stored.reviewData || {});
   const [quickReviewById, setQuickReviewById] = useState<Record<string, QuickReviewAnswer>>(stored.quickReviewById || {});
+  const [firestoreLoaded, setFirestoreLoaded] = useState(false);
+  const activeTestRef = useRef(currentTestNumber);
   const { defects } = useDefects(currentTestNumber || null);
   const contentOverrides = useContentOverrides();
+  const docMaterials = useDocMaterials();
 
+  // Firestore에서 점검 데이터 로드 (localStorage에 데이터가 없을 때 fallback)
   useEffect(() => {
-    const payload = JSON.stringify({ profile, reviewData, selectedReqId, quickReviewById, testSetup, currentUserId });
+    if (!db || !currentTestNumber) return;
+    activeTestRef.current = currentTestNumber;
+    if (firestoreLoaded) return;
+    const hasLocalData = Object.keys(quickReviewById).length > 0 || Object.keys(reviewData).length > 0;
+    if (hasLocalData) {
+      setFirestoreLoaded(true);
+      return;
+    }
+
+    let alive = true;
+    const load = async () => {
+      try {
+        const snap = await getDoc(doc(db!, 'quickReviews', currentTestNumber));
+        if (!alive || currentTestNumber !== activeTestRef.current) return;
+        setFirestoreLoaded(true);
+        if (!snap.exists()) return;
+        const data = snap.data() as { items?: Record<string, Record<string, unknown>> };
+        if (!data.items || Object.keys(data.items).length === 0) return;
+
+        setQuickReviewById((prev) => {
+          if (Object.keys(prev).length > 0) return prev;
+          const result: Record<string, QuickReviewAnswer> = {};
+          for (const [itemId, item] of Object.entries(data.items!)) {
+            result[itemId] = {
+              requirementId: (item.requirementId as string) || itemId,
+              answers: (item.answers as Record<string, QuickAnswer>) || {},
+              inputValues: (item.inputValues as QuickInputValues) || {},
+              answeredQuestions: (item.answeredQuestions as Record<string, boolean>) || {},
+              autoRecommendation: (item.autoRecommendation as QuickDecision) || 'HOLD',
+              finalDecision: (item.finalDecision as QuickDecision) || undefined,
+              note: (item.note as string) || ''
+            };
+          }
+          return result;
+        });
+
+        setReviewData((prev) => {
+          if (Object.keys(prev).length > 0) return prev;
+          const result: Record<string, ReviewData> = {};
+          for (const [itemId, item] of Object.entries(data.items!)) {
+            const status = item.reviewStatus as ReviewData['status'] | undefined;
+            if (status && status !== 'None') {
+              result[itemId] = {
+                status,
+                comment: (item.reviewComment as string) || '',
+                docName: (item.reviewDocName as string) || '',
+                page: (item.reviewPage as string) || ''
+              };
+            }
+          }
+          return result;
+        });
+      } catch (error) {
+        if (alive) setFirestoreLoaded(true);
+        console.warn('[Firestore] 점검 데이터 로드 실패:', error);
+      }
+    };
+    void load();
+    return () => { alive = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTestNumber, firestoreLoaded]);
+
+  // 시험 전환 감지 — 다른 시험 선택 시 Firestore에서 새 데이터 로드
+  const prevTestRef = useRef(currentTestNumber);
+  useEffect(() => {
+    if (prevTestRef.current === currentTestNumber) return;
+    prevTestRef.current = currentTestNumber;
+    if (!currentTestNumber) {
+      setReviewData({});
+      setQuickReviewById({});
+      setSelectedReqId(null);
+      return;
+    }
+    // 시험 전환 시 기존 데이터 클리어 후 Firestore 로드
+    setReviewData({});
+    setQuickReviewById({});
+    setSelectedReqId(null);
+    setFirestoreLoaded(false);
+  }, [currentTestNumber]);
+
+  // localStorage 캐시 저장 (testNumber 포함)
+  useEffect(() => {
+    if (!currentTestNumber) return;
+    const payload = JSON.stringify({
+      profile, reviewData, selectedReqId, quickReviewById,
+      testSetup, currentUserId, testNumber: currentTestNumber
+    });
     localStorage.setItem(storageKey, payload);
-  }, [profile, reviewData, selectedReqId, quickReviewById, testSetup, currentUserId]);
+  }, [profile, reviewData, selectedReqId, quickReviewById, testSetup, currentUserId, currentTestNumber]);
 
   const mergedRequirements = useMemo(
-    () => mergeOverrides(REQUIREMENTS_DB, contentOverrides),
-    [contentOverrides],
+    () => mergeDocLinks(mergeOverrides(REQUIREMENTS_DB, contentOverrides), docMaterials),
+    [contentOverrides, docMaterials],
   );
   const checklist = useMemo(() => generateChecklist(profile, mergedRequirements), [profile, mergedRequirements]);
   const currentProject = useMemo(
@@ -102,6 +201,47 @@ export function ExecutionPage() {
     );
   }, [currentTestNumber, executionState]);
 
+  const quickModeItems = useMemo(() => checklist.map(toQuickModeItem), [checklist]);
+  const quickModeById = useMemo(() => {
+    return quickModeItems.reduce<Record<string, QuickModeItem>>((acc, item) => {
+      acc[item.requirementId] = item;
+      return acc;
+    }, {});
+  }, [quickModeItems]);
+
+  /** 해당 항목의 모든 체크포인트 응답 + 검토 판정까지 완료되었는지 */
+  const isItemCompleted = useCallback((itemId: string) => {
+    const review = reviewData[itemId];
+    if (!review || review.status === 'None') return false;
+    const item = quickModeById[itemId];
+    const entry = quickReviewById[itemId];
+    if (!item || !entry) return false;
+    const answered = entry.answeredQuestions || {};
+    return item.quickQuestions.every((q) => Boolean(answered[q.id]));
+  }, [reviewData, quickModeById, quickReviewById]);
+
+  /** 체크리스트에서 첫 번째 미완료 항목 ID (enabled 상태만) */
+  const findFirstIncompleteId = useCallback(() => {
+    return checklist.find((item) => {
+      const gate = itemGates[item.id];
+      if (gate && gate.state !== 'enabled') return false;
+      return !isItemCompleted(item.id);
+    })?.id ?? null;
+  }, [checklist, itemGates, isItemCompleted]);
+
+  // 첫 로드 시, 저장된 항목이 완료 상태면 다음 미완료 항목으로 자동 이동 (1회만)
+  const didAutoAdvance = useRef(false);
+  useEffect(() => {
+    if (didAutoAdvance.current || checklist.length === 0) return;
+    didAutoAdvance.current = true;
+    const current = selectedReqId;
+    // 저장된 항목이 없거나 이미 완료된 경우만 자동 이동
+    if (!current || isItemCompleted(current)) {
+      const next = findFirstIncompleteId();
+      if (next) setSelectedReqId(next);
+    }
+  }, [checklist.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const resolvedSelectedReqId = useMemo(() => {
     const selectedExists = selectedReqId && checklist.some((item) => item.id === selectedReqId);
     const fallbackId = checklist[0]?.id ?? null;
@@ -122,14 +262,6 @@ export function ExecutionPage() {
     return checklist.findIndex((item) => item.id === activeItem.id);
   }, [checklist, activeItem]);
 
-  const quickModeItems = useMemo(() => checklist.map(toQuickModeItem), [checklist]);
-  const quickModeById = useMemo(() => {
-    return quickModeItems.reduce<Record<string, QuickModeItem>>((acc, item) => {
-      acc[item.requirementId] = item;
-      return acc;
-    }, {});
-  }, [quickModeItems]);
-
   const quickModeItem = activeItem ? quickModeById[activeItem.id] : undefined;
   const quickReview = quickModeItem ? quickReviewById[quickModeItem.requirementId] : undefined;
   const quickAnswers = quickReview?.answers || {};
@@ -137,6 +269,17 @@ export function ExecutionPage() {
   const recommendation: QuickDecision = quickModeItem
     ? getRecommendation(quickModeItem.quickQuestions, quickAnswers)
     : 'HOLD';
+
+  // 키보드 단축키: 현재 활성 질문 인덱스
+  const [activeQuestionIdx, setActiveQuestionIdx] = useState(0);
+  // 항목 변경 시 질문 인덱스 리셋
+  const prevActiveItemId = useRef(resolvedSelectedReqId);
+  useEffect(() => {
+    if (prevActiveItemId.current !== resolvedSelectedReqId) {
+      prevActiveItemId.current = resolvedSelectedReqId;
+      setActiveQuestionIdx(0);
+    }
+  }, [resolvedSelectedReqId]);
 
   const isItemReadyForReview = (itemId: string) => {
     const gate = itemGates[itemId];
@@ -149,10 +292,15 @@ export function ExecutionPage() {
   };
   const canReview = activeItem ? isItemReadyForReview(activeItem.id) : false;
 
-  const saveQuickReviewItem = async (itemId: string) => {
+  const saveQuickReviewItem = useCallback(async (
+    itemId: string,
+    qrEntry?: QuickReviewAnswer,
+    rdEntry?: ReviewData
+  ) => {
     if (!db || !currentTestNumber) return;
-    const entry = quickReviewById[itemId];
+    const entry = qrEntry || quickReviewById[itemId];
     if (!entry) return;
+    const review = rdEntry || reviewData[itemId];
     try {
       await setDoc(
         doc(db, 'quickReviews', currentTestNumber),
@@ -161,8 +309,16 @@ export function ExecutionPage() {
           items: {
             [itemId]: {
               requirementId: itemId,
-              answers: entry.answers,
+              answers: entry.answers || {},
               inputValues: entry.inputValues || {},
+              answeredQuestions: entry.answeredQuestions || {},
+              autoRecommendation: entry.autoRecommendation || 'HOLD',
+              finalDecision: entry.finalDecision || null,
+              note: entry.note || '',
+              reviewStatus: review?.status || 'None',
+              reviewComment: review?.comment || '',
+              reviewDocName: review?.docName || '',
+              reviewPage: review?.page || '',
               updatedAt: serverTimestamp()
             }
           }
@@ -172,7 +328,7 @@ export function ExecutionPage() {
     } catch (error) {
       console.warn('[Firestore] 질문 저장 실패:', error);
     }
-  };
+  }, [currentTestNumber, quickReviewById, reviewData]);
 
   const statusToDecision: Record<ReviewData['status'], QuickDecision> = {
     Verified: 'PASS',
@@ -186,43 +342,53 @@ export function ExecutionPage() {
     if (field === 'status' && value !== 'None' && !isItemReadyForReview(id)) {
       return;
     }
-    setReviewData((prev) => ({
-      ...prev,
-      [id]: {
-        ...(prev[id] || { docName: '', page: '', status: 'None', comment: '' }),
-        [field]: value
-      }
-    }));
+
+    const baseReview = reviewData[id] || { docName: '', page: '', status: 'None' as const, comment: '' };
+    const updatedReview: ReviewData = { ...baseReview, [field]: value };
+
+    setReviewData((prev) => ({ ...prev, [id]: updatedReview }));
 
     if (field === 'status') {
-      setQuickReviewById((prev) => ({
-        ...prev,
-        [id]: {
-          ...(prev[id] || {
-            requirementId: id,
-            answers: {},
-            autoRecommendation: recommendation
-          }),
-          finalDecision: statusToDecision[value as ReviewData['status']]
-        }
-      }));
+      let savedQr: QuickReviewAnswer | undefined;
+      setQuickReviewById((prev) => {
+        const existing = prev[id] || {
+          requirementId: id,
+          answers: {},
+          autoRecommendation: recommendation
+        };
+        const statusVal = value as ReviewData['status'];
+        const updatedQr: QuickReviewAnswer = {
+          ...existing,
+          finalDecision: statusVal === 'None' ? undefined : statusToDecision[statusVal],
+          ...(statusVal === 'None' ? { answers: {}, answeredQuestions: {}, autoRecommendation: 'HOLD' as const } : {})
+        };
+        savedQr = updatedQr;
+        return { ...prev, [id]: updatedQr };
+      });
       if (value !== 'None') {
-        void saveQuickReviewItem(id);
+        void saveQuickReviewItem(id, savedQr!, updatedReview);
+        // 검토 판정 완료 후 다음 미완료 항목으로 자동 이동
+        requestAnimationFrame(() => {
+          const nextIncomplete = findFirstIncompleteId();
+          if (nextIncomplete && nextIncomplete !== id) {
+            setSelectedReqId(nextIncomplete);
+          }
+        });
       }
-    }
-
-    if (field === 'comment') {
-      setQuickReviewById((prev) => ({
-        ...prev,
-        [id]: {
-          ...(prev[id] || {
-            requirementId: id,
-            answers: {},
-            autoRecommendation: recommendation
-          }),
-          note: value as string
-        }
-      }));
+    } else if (field === 'comment') {
+      const updatedQr: QuickReviewAnswer = {
+        ...(quickReviewById[id] || {
+          requirementId: id,
+          answers: {},
+          autoRecommendation: recommendation
+        }),
+        note: value as string
+      };
+      setQuickReviewById((prev) => ({ ...prev, [id]: updatedQr }));
+      void saveQuickReviewItem(id, updatedQr, updatedReview);
+    } else {
+      // docName, page 변경 시에도 Firestore 저장
+      void saveQuickReviewItem(id, undefined, updatedReview);
     }
   };
 
@@ -230,6 +396,16 @@ export function ExecutionPage() {
     if (itemGates[itemId]?.state !== 'enabled') return;
     const item = quickModeById[itemId];
     if (!item) return;
+
+    // 이미 판정된 항목의 답변이 변경되면 판정 초기화
+    const currentStatus = reviewData[itemId]?.status;
+    if (currentStatus && currentStatus !== 'None') {
+      setReviewData((prev) => ({
+        ...prev,
+        [itemId]: { ...prev[itemId], status: 'None' as const }
+      }));
+    }
+
     setQuickReviewById((prev) => {
       const existing = prev[itemId] || {
         requirementId: itemId,
@@ -245,7 +421,8 @@ export function ExecutionPage() {
           ...existing,
           answers: nextAnswers,
           answeredQuestions: nextAnswered,
-          autoRecommendation
+          autoRecommendation,
+          ...(currentStatus && currentStatus !== 'None' ? { finalDecision: undefined } : {})
         }
       };
     });
@@ -272,6 +449,81 @@ export function ExecutionPage() {
     });
   };
 
+  // 키보드 단축키: 현재 질문 답변
+  const answerCurrentQuestion = useCallback((value: QuickAnswer) => {
+    if (!quickModeItem || !activeItem) return;
+    if (itemGates[activeItem.id]?.state !== 'enabled') return;
+    const questions = quickModeItem.quickQuestions;
+    const q = questions[activeQuestionIdx];
+    if (!q) return;
+
+    updateQuickAnswer(activeItem.id, q.id, value);
+    // NO → 후속 자동 NA
+    if (value === 'NO' || value === 'NA') {
+      for (let i = activeQuestionIdx + 1; i < questions.length; i++) {
+        updateQuickAnswer(activeItem.id, questions[i].id, 'NA');
+      }
+    }
+    // 다음 미답변 질문으로 이동
+    if (value === 'YES') {
+      const nextIdx = activeQuestionIdx + 1;
+      if (nextIdx < questions.length) {
+        setActiveQuestionIdx(nextIdx);
+      }
+    }
+  }, [quickModeItem, activeItem, activeQuestionIdx, itemGates, updateQuickAnswer]);
+
+  // 키보드 단축키: 같은 항목 내 체크포인트 간 이동
+  const selectNextQuestion = useCallback(() => {
+    if (!quickModeItem) return;
+    const total = quickModeItem.quickQuestions.length;
+    if (activeQuestionIdx < total - 1) {
+      setActiveQuestionIdx(activeQuestionIdx + 1);
+    }
+  }, [quickModeItem, activeQuestionIdx]);
+
+  const selectPrevQuestion = useCallback(() => {
+    if (activeQuestionIdx > 0) {
+      setActiveQuestionIdx(activeQuestionIdx - 1);
+    }
+  }, [activeQuestionIdx]);
+
+  // 키보드 단축키: 판정 확정 + 다음 이동
+  const confirmAndMoveNext = useCallback(() => {
+    if (!activeItem) return;
+    const review = reviewData[activeItem.id];
+    if (!review || review.status === 'None') return;
+    // 판정 이미 설정됨 — 다음 미완료 항목으로 이동
+    const next = findFirstIncompleteId();
+    if (next && next !== activeItem.id) {
+      setSelectedReqId(next);
+    }
+  }, [activeItem, reviewData, findFirstIncompleteId]);
+
+  // 결함 모달
+  const [showDefectModal, setShowDefectModal] = useState(false);
+  const openDefectModal = useCallback(() => setShowDefectModal(true), []);
+
+  // 모든 질문 답변 완료 여부 (키보드 모드 전환용)
+  const isAllQuestionsAnswered = canReview;
+  const hasVerdict = Boolean(activeItem && reviewData[activeItem.id]?.status && reviewData[activeItem.id]?.status !== 'None');
+
+  const setVerdict = useCallback((status: ReviewData['status']) => {
+    if (activeItem) updateReviewData(activeItem.id, 'status', status);
+  }, [activeItem, updateReviewData]);
+
+  const { showShortcutHelp, dismissHelp } = useKeyboardShortcuts({
+    isAllQuestionsAnswered,
+    hasVerdict,
+    isFinalized,
+    answerCurrentQuestion,
+    setVerdict,
+    selectNextItem: selectNextQuestion,
+    selectPrevItem: selectPrevQuestion,
+    confirmAndMoveNext,
+    openDefectModal
+  });
+
   return (
     <ChecklistView
       checklist={checklist}
@@ -296,6 +548,13 @@ export function ExecutionPage() {
       updateReviewData={updateReviewData}
       recommendation={recommendation}
       canReview={canReview}
+      activeQuestionIdx={activeQuestionIdx}
+      onActiveQuestionChange={setActiveQuestionIdx}
+      showShortcutHelp={showShortcutHelp}
+      onDismissShortcutHelp={dismissHelp}
+      showDefectModal={showDefectModal}
+      onCloseDefectModal={() => setShowDefectModal(false)}
+      currentTestNumber={currentTestNumber}
     />
   );
 }

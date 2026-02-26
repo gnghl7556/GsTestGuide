@@ -11,6 +11,7 @@ export type DefectFormState = {
   frequency: 'A' | 'I';
   qualityCharacteristic: string;
   accessPath: string;
+  stepsToReproduce: string;
   description: string;
   ttaComment: string;
   evidenceFiles: File[];
@@ -24,6 +25,7 @@ const createInitialState = (): DefectFormState => ({
   frequency: 'A',
   qualityCharacteristic: '기능적합성',
   accessPath: '',
+  stepsToReproduce: '',
   description: '',
   ttaComment: '',
   evidenceFiles: []
@@ -93,7 +95,7 @@ export const useDefectForm = (projectId: string, testCaseId: string, isFinalized
         frequency: state.frequency,
         qualityCharacteristic: state.qualityCharacteristic.trim(),
         accessPath: state.accessPath.trim(),
-        stepsToReproduce: [],
+        stepsToReproduce: state.stepsToReproduce.split('\n').map((s) => s.trim()).filter(Boolean),
         description: state.description.trim(),
         ttaComment: state.ttaComment.trim(),
         evidenceFiles: evidenceMeta

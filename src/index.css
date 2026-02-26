@@ -147,6 +147,13 @@ html.dark #root {
   --status-pending-border: rgba(255, 255, 255, 0.10);
 }
 
+/* 다크 모드 select option 팝업 가시성 */
+.dark select option,
+.dark select optgroup {
+  background-color: #1e293b;
+  color: rgba(255, 255, 255, 0.90);
+}
+
 /* 다크 모드 스크롤바 */
 html.dark ::-webkit-scrollbar {
   width: 6px;

@@ -72,7 +72,7 @@ const toSummary = (text: string) => {
   return sentence.length > 60 ? `${sentence.slice(0, 60)}…` : sentence;
 };
 
-const inferImportance = (text: string): QuestionImportance => {
+export const inferImportance = (text: string): QuestionImportance => {
   if (MUST_HINTS.some((hint) => text.includes(hint))) return 'MUST';
   if (SHOULD_HINTS.some((hint) => text.includes(hint))) return 'SHOULD';
   return 'MUST';
@@ -87,7 +87,11 @@ const parseRefs = (text: string): { clean: string; refs?: string[] } => {
   return { clean: text.replace(REF_PATTERN, '').trim(), refs };
 };
 
-const buildQuestions = (source: string[], description: string): QuickQuestion[] => {
+const buildQuestions = (
+  source: string[],
+  description: string,
+  importanceOverrides?: Record<number, QuestionImportance>,
+): QuickQuestion[] => {
   const pool = source.filter(Boolean).map((raw) => {
     const { clean, refs } = parseRefs(raw);
     return { text: toQuestion(clean), refs };
@@ -99,14 +103,14 @@ const buildQuestions = (source: string[], description: string): QuickQuestion[] 
     return fallback.map((text, index) => ({
       id: `Q${index + 1}`,
       text,
-      importance: inferImportance(text)
+      importance: importanceOverrides?.[index] ?? inferImportance(text)
     }));
   }
 
   return pool.map(({ text, refs }, index) => ({
     id: `Q${index + 1}`,
     text,
-    importance: inferImportance(text),
+    importance: importanceOverrides?.[index] ?? inferImportance(text),
     ...(refs ? { refs } : {})
   }));
 };
@@ -134,7 +138,7 @@ export const toQuickModeItem = (req: Requirement): QuickModeItem => {
     title: req.title,
     summary: toSummary(req.description),
     targetTags: buildTargetTags(req),
-    quickQuestions: buildQuestions(req.checkPoints || [], req.description),
+    quickQuestions: buildQuestions(req.checkPoints || [], req.description, req.checkpointImportances),
     evidenceChips: buildEvidenceChips(req.evidenceExamples),
     expertDetails: {
       description: req.description,
@@ -152,7 +156,27 @@ export const getRecommendation = (
 ): QuickDecision => {
   const allAnswered = questions.every((q) => {
     const a = answers[q.id];
-    return a === 'YES' || a === 'NO';
+    return a === 'YES' || a === 'NO' || a === 'NA';
   });
-  return allAnswered ? 'PASS' : 'HOLD';
+  if (!allAnswered) return 'HOLD';
+
+  // MUST 질문(importance=MUST 또는 첫 번째 질문)에 NO → FAIL
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
+    if (answers[q.id] === 'NO' && (q.importance === 'MUST' || i === 0)) {
+      return 'FAIL';
+    }
+  }
+
+  // NO 비율 50% 초과 → FAIL
+  const answered = questions.filter((q) => answers[q.id] === 'YES' || answers[q.id] === 'NO');
+  if (answered.length > 0) {
+    const noCount = answered.filter((q) => answers[q.id] === 'NO').length;
+    if (noCount / answered.length > 0.5) return 'FAIL';
+  }
+
+  // NO가 하나라도 있으면 HOLD
+  if (questions.some((q) => answers[q.id] === 'NO')) return 'HOLD';
+
+  return 'PASS';
 };

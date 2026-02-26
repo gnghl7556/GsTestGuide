@@ -48,8 +48,8 @@ export function AdminPasswordModal({ open, onClose, onSuccess }: AdminPasswordMo
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-ln bg-surface-base shadow-xl">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-sm rounded-xl border border-ln bg-white dark:bg-slate-800 shadow-xl">
         <div className="border-b border-ln px-4 py-3 text-sm font-extrabold text-tx-primary">
           관리자 인증
         </div>
@@ -67,7 +67,7 @@ export function AdminPasswordModal({ open, onClose, onSuccess }: AdminPasswordMo
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSubmit();
               }}
-              className="w-full rounded-lg border border-ln px-3 py-2 text-sm text-tx-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full rounded-lg border border-ln bg-gray-50 dark:bg-slate-700 px-3 py-2 text-sm text-tx-primary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="관리자 비밀번호 입력"
             />
           </div>

@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "tta-gs-test-guide"
-  }
+  },
+  "targets": {
+    "tta-gs-test-guide": {
+      "hosting": {
+        "app": [
+          "tta-gs-test-guide"
+        ],
+        "showcase": [
+          "gs-test-guide-showcase"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

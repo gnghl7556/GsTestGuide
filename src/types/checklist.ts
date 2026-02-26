@@ -26,6 +26,7 @@ export interface Requirement {
   evidenceExamples?: string[];
   testSuggestions?: string[];
   passCriteria?: string;
+  checkpointImportances?: Record<number, QuestionImportance>;
   excludeConditions?: {
     isSaMD?: boolean;
     noUserInterface?: boolean;
