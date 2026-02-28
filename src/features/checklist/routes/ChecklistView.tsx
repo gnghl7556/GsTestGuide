@@ -20,6 +20,7 @@ type QuickInputValues = NonNullable<QuickReviewAnswer['inputValues']>;
 type QuickInputValue = QuickInputValues[string];
 
 const CATEGORY_QUALITY_MAP: Record<string, string> = {
+  SETUP: '시험환경',
   EXECUTION: '기능적합성',
   COMPLETION: '기능적합성'
 };

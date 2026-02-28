@@ -12,10 +12,6 @@ export interface Requirement {
   relatedInfo?: Array<{ label: string; value: string; href?: string }>;
   contacts?: Array<{ role: string; name: string; phone?: string; email?: string; requestMethod?: string; requestUrl?: string }>;
   requiredDocs?: RequiredDoc[];
-  docRequirements?: {
-    must?: string[];
-    multi?: string[];
-  };
   inputFields?: Array<{
     id: string;
     label: string;
