@@ -17,10 +17,11 @@
         "**/.*",
         "**/node_modules/**"
       ],
-      "rewrites": [
+      "redirects": [
         {
           "source": "**",
-          "destination": "/index.html"
+          "destination": "https://gs-test-guide.vercel.app",
+          "type": 301
         }
       ]
     },

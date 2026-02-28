@@ -2,8 +2,8 @@ import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'rea
 import { Plus, Pencil, Trash2, Check, X, Upload, Image, FileDown, Loader2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db, storage } from '../../../lib/firebase';
-import { doc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage';
+import { doc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, listAll, deleteObject, getBytes } from 'firebase/storage';
 import { Button } from '../../../components/ui';
 
 type FileInfo = {
@@ -18,6 +18,8 @@ type DocMaterial = {
   description: string;
   linkedSteps: string[];
   hidden?: boolean;
+  previewPaths?: string[];
+  samplePaths?: string[];
 };
 
 type FormData = DocMaterial;
@@ -107,6 +109,29 @@ export function MaterialManagement() {
 
   const docId = (label: string) => label.replace(/[\\/\s]/g, '-');
 
+  /** Storage 폴더 내 파일을 새 경로로 복사 후 원본 삭제, 새 경로 목록 반환 */
+  const moveStorageFolder = async (oldLabel: string, newLabel: string) => {
+    const movedPaths: { previewPaths: string[]; samplePaths: string[] } = { previewPaths: [], samplePaths: [] };
+    if (!storage) return movedPaths;
+    const folders = ['checklist-previews', 'sample-downloads'] as const;
+
+    for (const folder of folders) {
+      const oldRef = ref(storage, `${folder}/${oldLabel}`);
+      const result = await listAll(oldRef).catch(() => ({ items: [] as never[] }));
+
+      for (const item of result.items) {
+        const bytes = await getBytes(item);
+        const newPath = `${folder}/${newLabel}/${item.name}`;
+        await uploadBytes(ref(storage, newPath), bytes);
+        await deleteObject(item);
+
+        if (folder === 'checklist-previews') movedPaths.previewPaths.push(newPath);
+        else movedPaths.samplePaths.push(newPath);
+      }
+    }
+    return movedPaths;
+  };
+
   const toggleStep = useCallback((stepId: string) => {
     setForm((prev) => {
       const has = prev.linkedSteps.includes(stepId);
@@ -153,20 +178,46 @@ export function MaterialManagement() {
     const snapshot = { ...form };
     setBusy(true);
 
-    // If label changed, delete old doc and create new one
-    if (newLabel !== oldLabel) {
-      await deleteDoc(doc(db, 'docMaterials', docId(oldLabel)));
+    try {
+      if (newLabel !== oldLabel) {
+        // 1. Storage 파일 이동 (복사 → 삭제)
+        const movedPaths = await moveStorageFolder(oldLabel, newLabel);
+        // 2. 이전 Firestore 문서 삭제
+        await deleteDoc(doc(db, 'docMaterials', docId(oldLabel)));
+        // 3. 새 Firestore 문서 생성 (메타데이터 포함)
+        await setDoc(doc(db, 'docMaterials', docId(newLabel)), {
+          label: newLabel,
+          kind: snapshot.kind,
+          description: snapshot.description.trim(),
+          linkedSteps: snapshot.linkedSteps,
+          previewPaths: movedPaths.previewPaths,
+          samplePaths: movedPaths.samplePaths,
+          updatedAt: serverTimestamp(),
+        });
+        // 4. fileState 캐시 갱신
+        setFileState((prev) => {
+          const next = { ...prev };
+          if (next[oldLabel]) {
+            next[newLabel] = { ...next[oldLabel], loaded: false };
+            delete next[oldLabel];
+          }
+          return next;
+        });
+      } else {
+        // 라벨 미변경: merge로 안전하게 업데이트
+        await setDoc(doc(db, 'docMaterials', docId(newLabel)), {
+          label: newLabel,
+          kind: snapshot.kind,
+          description: snapshot.description.trim(),
+          linkedSteps: snapshot.linkedSteps,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      }
+    } finally {
+      setBusy(false);
+      setEditingLabel((cur) => (cur === oldLabel ? null : cur));
+      setForm((cur) => (cur.label === newLabel ? emptyForm : cur));
     }
-    await setDoc(doc(db, 'docMaterials', docId(newLabel)), {
-      label: newLabel,
-      kind: snapshot.kind,
-      description: snapshot.description.trim(),
-      linkedSteps: snapshot.linkedSteps,
-      updatedAt: serverTimestamp(),
-    });
-    setBusy(false);
-    setEditingLabel((cur) => (cur === oldLabel ? null : cur));
-    setForm((cur) => (cur.label === newLabel ? emptyForm : cur));
   };
 
   const markdownLabelSet = useMemo(
@@ -227,12 +278,19 @@ export function MaterialManagement() {
   };
 
   const handleFileUpload = async (file: File, label: string, type: 'preview' | 'sample') => {
-    if (!storage) return;
+    if (!storage || !db) return;
     const folder = type === 'preview' ? 'checklist-previews' : 'sample-downloads';
     const path = `${folder}/${label}/${file.name}`;
     setUploading(`${label}-${type}`);
     try {
       await uploadBytes(ref(storage, path), file);
+      // 메타데이터 기록
+      const fieldKey = type === 'preview' ? 'previewPaths' : 'samplePaths';
+      const docRef = doc(db, 'docMaterials', docId(label));
+      await setDoc(docRef, {
+        [fieldKey]: arrayUnion(path),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
       await loadFilesForDoc(label);
     } catch (e) {
       console.error('Upload failed:', e);
@@ -241,9 +299,17 @@ export function MaterialManagement() {
   };
 
   const handleFileDelete = async (fullPath: string, label: string) => {
-    if (!storage) return;
+    if (!storage || !db) return;
     try {
       await deleteObject(ref(storage, fullPath));
+      // 메타데이터에서 제거
+      const isPreview = fullPath.startsWith('checklist-previews/');
+      const fieldKey = isPreview ? 'previewPaths' : 'samplePaths';
+      const docRef = doc(db, 'docMaterials', docId(label));
+      await setDoc(docRef, {
+        [fieldKey]: arrayRemove(fullPath),
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
       await loadFilesForDoc(label);
     } catch (e) {
       console.error('Delete failed:', e);
