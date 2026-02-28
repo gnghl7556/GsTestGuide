@@ -1,8 +1,8 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-02-28T08:00:00.000Z",
-  "activeFeatures": ["admin-data-sync"],
-  "primaryFeature": "admin-data-sync",
+  "lastUpdated": "2026-02-28T09:00:00.000Z",
+  "activeFeatures": [],
+  "primaryFeature": null,
   "features": {
     "showcase-website": {
       "phase": "archived",
@@ -13,20 +13,12 @@
       "archivedTo": "docs/archive/2026-02/showcase-website/"
     },
     "admin-data-sync": {
-      "phase": "check",
-      "phaseNumber": 4,
+      "phase": "archived",
       "matchRate": 100,
       "iterationCount": 0,
-      "requirements": ["FR-01", "FR-02", "FR-03"],
-      "documents": {
-        "plan": "docs/01-plan/features/admin-data-sync.plan.md",
-        "design": "docs/02-design/features/admin-data-sync.design.md",
-        "analysis": "docs/03-analysis/admin-data-sync.analysis.md"
-      },
-      "timestamps": {
-        "started": "2026-02-28T07:00:00.000Z",
-        "lastUpdated": "2026-02-28T08:00:00.000Z"
-      }
+      "startedAt": "2026-02-28T07:00:00.000Z",
+      "archivedAt": "2026-02-28T09:00:00.000Z",
+      "archivedTo": "docs/archive/2026-02/admin-data-sync/"
     }
   },
   "pipeline": {
@@ -37,7 +29,7 @@
   "session": {
     "startedAt": "2026-02-09T23:38:02.634Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-02-28T08:00:00.000Z"
+    "lastActivity": "2026-02-28T09:00:00.000Z"
   },
   "history": []
 }
