@@ -435,7 +435,7 @@ export function CenterDisplay({
                       {/* 포커스된 질문 아래 인라인 상세 패널 */}
                       <div
                         className="grid transition-all duration-300 ease-out"
-                        style={{ gridTemplateRows: isKbFocused && !disabled && quickModeItem?.expertDetails?.checkpointDetails?.[index] ? '1fr' : '0fr' }}
+                        style={{ gridTemplateRows: !disabled && quickModeItem?.expertDetails?.checkpointDetails?.[index] && (isKbFocused || isAnswered) ? '1fr' : '0fr' }}
                       >
                         <div className="overflow-hidden">
                           <div className="pt-3 pl-9">
