@@ -480,8 +480,9 @@ export function ContentOverrideManagement() {
                                   const inferredImportance = inferImportance(origCp);
                                   const importanceChanged = currentImportance !== inferredImportance;
                                   return (
-                                    <div key={i} className="flex items-start gap-2">
-                                      <span className="shrink-0 mt-2 text-[10px] font-bold text-tx-tertiary w-5 text-right">{i + 1}</span>
+                                    <div key={i} className="rounded-lg border border-ln bg-surface-base/50 overflow-hidden">
+                                      <div className="flex items-start gap-2 px-3 pt-2.5 pb-2">
+                                      <span className="shrink-0 mt-1.5 text-[10px] font-bold text-tx-tertiary w-5 text-right">{i + 1}</span>
                                       <div className="flex-1 space-y-1">
                                         <div className="flex items-center gap-1.5">
                                           <input
@@ -571,25 +572,25 @@ export function ContentOverrideManagement() {
                                             </div>
                                           )}
                                         </div>
-                                        {/* 상세 메모 */}
-                                        <div>
-                                          <label className="text-[10px] font-bold text-tx-muted">상세 메모</label>
-                                          <textarea
-                                            className="mt-0.5 w-full rounded border border-ln bg-surface-base px-2.5 py-1.5 text-xs text-tx-primary resize-y"
-                                            value={editing.checkpointDetails[i] ?? ''}
-                                            onChange={(e) => setEditing({
-                                              ...editing,
-                                              checkpointDetails: { ...editing.checkpointDetails, [i]: e.target.value },
-                                            })}
-                                            rows={1}
-                                            placeholder="관리자 메모 (선택)"
-                                          />
-                                        </div>
                                         {(editedBody !== origBody || refsChanged) && (
                                           <p className="text-[9px] text-tx-muted truncate">
                                             원본: {origBody}{origRefs.length > 0 ? ` [ref: ${origRefs.join(', ')}]` : ''}
                                           </p>
                                         )}
+                                      </div>
+                                      </div>
+                                      {/* 상세 메모 — 카드 하단 */}
+                                      <div className="border-t border-ln bg-surface-sunken/40 px-3 py-2">
+                                        <textarea
+                                          className="w-full rounded border border-ln bg-surface-base px-2.5 py-1.5 text-xs text-tx-primary resize-y placeholder:text-tx-muted/50"
+                                          value={editing.checkpointDetails[i] ?? ''}
+                                          onChange={(e) => setEditing({
+                                            ...editing,
+                                            checkpointDetails: { ...editing.checkpointDetails, [i]: e.target.value },
+                                          })}
+                                          rows={1}
+                                          placeholder="이 체크포인트에 대한 상세 메모를 입력하세요"
+                                        />
                                       </div>
                                     </div>
                                   );
