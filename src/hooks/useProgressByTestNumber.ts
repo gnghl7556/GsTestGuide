@@ -21,8 +21,10 @@ export function useProgressByTestNumber(
           try {
             const snap = await getDoc(doc(dbRef, 'quickReviews', project.testNumber));
             if (!snap.exists()) return [project.testNumber, 0] as const;
-            const data = snap.data() as { items?: Record<string, unknown> };
-            const count = data.items ? Object.keys(data.items).length : 0;
+            const data = snap.data() as { items?: Record<string, Record<string, unknown>> };
+            const count = data.items
+              ? Object.values(data.items).filter((item) => item.finalDecision != null).length
+              : 0;
             const percent = total > 0 ? Math.round((count / total) * 100) : 0;
             return [project.testNumber, percent] as const;
           } catch (error) {
