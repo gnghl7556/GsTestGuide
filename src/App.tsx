@@ -10,7 +10,7 @@ import { usePlDirectory } from './features/pl-directory/hooks/usePlDirectory';
 import { useUsers } from './hooks/useUsers';
 import { useProjects } from './features/project-management/hooks/useProjects';
 import { useProgressByTestNumber } from './hooks/useProgressByTestNumber';
-import type { ChecklistItem, TestSetupState } from './types';
+import type { TestSetupState } from './types';
 
 function readStoredSetup(): { testSetup?: TestSetupState; currentUserId?: string } {
   if (typeof window === 'undefined' || !window.localStorage) return {};
@@ -34,7 +34,7 @@ export default function App() {
   const plDirectory = usePlDirectory(db, authReady);
   const users = useUsers(db, authReady);
   const projects = useProjects(db, authReady);
-  const progressByTestNumber = useProgressByTestNumber(db, authReady, projects, [] as ChecklistItem[]);
+  const progressByTestNumber = useProgressByTestNumber(db, authReady, projects);
 
   return (
     <ThemeProvider>

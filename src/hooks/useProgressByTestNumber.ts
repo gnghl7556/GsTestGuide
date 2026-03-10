@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react';
 import { doc, getDoc, type Firestore } from 'firebase/firestore';
-import type { ChecklistItem, Project } from '../types';
+import type { Project } from '../types';
+import { REQUIREMENTS_DB } from 'virtual:content/process';
 
 export function useProgressByTestNumber(
   db: Firestore | null | undefined,
   authReady: boolean,
   projects: Project[],
-  checklist: ChecklistItem[]
 ) {
   const [progressByTestNumber, setProgressByTestNumber] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    if (!db || !authReady || projects.length === 0 || checklist.length === 0) return;
+    if (!db || !authReady || projects.length === 0) return;
     const dbRef = db;
     let alive = true;
-    const total = checklist.length;
+    const total = REQUIREMENTS_DB.length;
     const load = async () => {
       const entries = await Promise.all(
         projects.map(async (project) => {
@@ -38,7 +38,7 @@ export function useProgressByTestNumber(
     return () => {
       alive = false;
     };
-  }, [authReady, checklist.length, db, projects]);
+  }, [authReady, db, projects]);
 
   return progressByTestNumber;
 }
