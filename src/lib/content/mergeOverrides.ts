@@ -18,6 +18,7 @@ export interface ContentOverride {
   description?: string;
   checkpoints?: Record<number, string>;
   checkpointImportances?: Record<number, QuestionImportance>;
+  checkpointDetails?: Record<number, string>;
   evidenceExamples?: string[];
   testSuggestions?: string[];
   passCriteria?: string;
@@ -63,6 +64,7 @@ export function mergeOverrides(
       ...(ov.testSuggestions != null && { testSuggestions: ov.testSuggestions }),
       ...(ov.passCriteria != null && { passCriteria: ov.passCriteria }),
       ...(ov.checkpointImportances != null && { checkpointImportances: ov.checkpointImportances }),
+      ...(ov.checkpointDetails != null && { checkpointDetails: ov.checkpointDetails }),
       ...(ov.branchingRules != null && { branchingRules: ov.branchingRules }),
     };
 

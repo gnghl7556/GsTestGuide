@@ -44,6 +44,7 @@ type EditingState = {
   checkpoints: Record<number, string>; // body only (without [ref:~])
   checkpointRefs: Record<number, string[]>; // refs per checkpoint
   checkpointImportances: Record<number, QuestionImportance>;
+  checkpointDetails: Record<number, string>;
   evidenceExamples: string[];
   testSuggestions: string[];
   passCriteria: string;
@@ -244,6 +245,7 @@ export function ContentOverrideManagement() {
       checkpoints: Object.fromEntries(cpEntries.map(({ i, body }: { i: number; body: string; refs: string[] }) => [i, body])),
       checkpointRefs: Object.fromEntries(cpEntries.map(({ i, refs }: { i: number; body: string; refs: string[] }) => [i, refs])),
       checkpointImportances: cpImportances,
+      checkpointDetails: ov?.checkpointDetails ?? {},
       evidenceExamples: ov?.evidenceExamples ?? req.evidenceExamples ?? [],
       testSuggestions: ov?.testSuggestions ?? req.testSuggestions ?? [],
       passCriteria: ov?.passCriteria ?? req.passCriteria ?? '',
@@ -287,6 +289,14 @@ export function ContentOverrideManagement() {
     }
     if (Object.keys(impDiffs).length > 0) patch.checkpointImportances = impDiffs;
 
+    // 체크포인트 상세 메모 (비어있지 않은 항목만 저장)
+    const detailDiffs: Record<number, string> = {};
+    for (const [iStr, detail] of Object.entries(editing.checkpointDetails)) {
+      const trimmed = detail.trim();
+      if (trimmed) detailDiffs[Number(iStr)] = trimmed;
+    }
+    if (Object.keys(detailDiffs).length > 0) patch.checkpointDetails = detailDiffs;
+
     // 증빙 예시
     const origEvidence = req.evidenceExamples ?? [];
     const editedEvidence = editing.evidenceExamples;
@@ -315,7 +325,7 @@ export function ContentOverrideManagement() {
     // If nothing changed, delete override
     setBusy(true);
     try {
-      if (!patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules) {
+      if (!patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.checkpointDetails && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules) {
         await deleteDoc(doc(db, 'contentOverrides', editing.reqId));
       } else {
         await setDoc(doc(db, 'contentOverrides', editing.reqId), patch);
@@ -560,6 +570,20 @@ export function ContentOverrideManagement() {
                                               ))}
                                             </div>
                                           )}
+                                        </div>
+                                        {/* 상세 메모 */}
+                                        <div>
+                                          <label className="text-[10px] font-bold text-tx-muted">상세 메모</label>
+                                          <textarea
+                                            className="mt-0.5 w-full rounded border border-ln bg-surface-base px-2.5 py-1.5 text-xs text-tx-primary resize-y"
+                                            value={editing.checkpointDetails[i] ?? ''}
+                                            onChange={(e) => setEditing({
+                                              ...editing,
+                                              checkpointDetails: { ...editing.checkpointDetails, [i]: e.target.value },
+                                            })}
+                                            rows={1}
+                                            placeholder="관리자 메모 (선택)"
+                                          />
                                         </div>
                                         {(editedBody !== origBody || refsChanged) && (
                                           <p className="text-[9px] text-tx-muted truncate">

@@ -143,6 +143,9 @@ export const toQuickModeItem = (req: Requirement): QuickModeItem => {
     expertDetails: {
       description: req.description,
       checkPoints: req.checkPoints || [],
+      ...(req.checkpointDetails && {
+        checkpointDetails: (req.checkPoints || []).map((_, i) => req.checkpointDetails?.[i] ?? ''),
+      }),
       evidenceExamples: req.evidenceExamples || [],
       testSuggestions: req.testSuggestions || [],
       passCriteria: req.passCriteria || ''

@@ -435,49 +435,13 @@ export function CenterDisplay({
                       {/* 포커스된 질문 아래 인라인 상세 패널 */}
                       <div
                         className="grid transition-all duration-300 ease-out"
-                        style={{ gridTemplateRows: isKbFocused && !disabled ? '1fr' : '0fr' }}
+                        style={{ gridTemplateRows: isKbFocused && !disabled && quickModeItem?.expertDetails?.checkpointDetails?.[index] ? '1fr' : '0fr' }}
                       >
                         <div className="overflow-hidden">
-                          <div className="pt-3 pl-9 space-y-2">
-                            {(() => {
-                              const originalCheckpoint = quickModeItem?.expertDetails?.checkPoints?.[index];
-                              const questionTextBase = question.text.replace(/\?$/, '').trim();
-                              const cpBase = originalCheckpoint?.replace(/\?$/, '').trim();
-                              if (originalCheckpoint && cpBase !== questionTextBase) {
-                                return (
-                                  <p className="text-xs text-tx-tertiary leading-relaxed">
-                                    {originalCheckpoint}
-                                  </p>
-                                );
-                              }
-                              return null;
-                            })()}
-                            {activeItem.evidenceExamples && activeItem.evidenceExamples.length > 0 && (
-                              <div>
-                                <span className="text-[10px] font-bold text-tx-muted uppercase tracking-wide">증빙 예시</span>
-                                <ul className="mt-1 space-y-0.5">
-                                  {activeItem.evidenceExamples.map((example, i) => (
-                                    <li key={i} className="text-xs text-tx-tertiary">• {example}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {activeItem.testSuggestions && activeItem.testSuggestions.length > 0 && (
-                              <div>
-                                <span className="text-[10px] font-bold text-tx-muted uppercase tracking-wide">테스트 제안</span>
-                                <ul className="mt-1 space-y-0.5">
-                                  {activeItem.testSuggestions.map((suggestion, i) => (
-                                    <li key={i} className="text-xs text-tx-tertiary">• {suggestion}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                            {activeItem.passCriteria && (
-                              <div className="rounded-md border border-status-pass-border bg-status-pass-bg px-3 py-2 text-status-pass-text">
-                                <span className="text-[10px] font-bold uppercase tracking-wide">판정 기준</span>
-                                <p className="mt-0.5 text-xs leading-relaxed">{activeItem.passCriteria}</p>
-                              </div>
-                            )}
+                          <div className="pt-3 pl-9">
+                            <p className="text-xs text-tx-tertiary leading-relaxed">
+                              {quickModeItem?.expertDetails?.checkpointDetails?.[index]}
+                            </p>
                           </div>
                         </div>
                       </div>
