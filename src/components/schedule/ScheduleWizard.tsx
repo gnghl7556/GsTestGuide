@@ -24,11 +24,47 @@ import type { Project } from '../../types';
 import {
   MILESTONES,
   MILESTONE_COLOR_MAP,
+  MILESTONE_ICON_MAP,
   buildInitialLists,
   getProjectColor,
   type MilestoneItem,
   type MilestoneColor,
 } from '../../constants/schedule';
+
+/* ── Milestone SVG icons (12×12) ── */
+function MilestoneIcon({ name, className }: { name: string; className?: string }) {
+  const cls = className ?? 'w-3 h-3';
+  switch (name) {
+    case 'contract': return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={cls}>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+    );
+    case 'bug': return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={cls}>
+        <path d="M8 2l1.88 1.88M16 2l-1.88 1.88M9 7.13v-1a3 3 0 1 1 6 0v1" />
+        <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6z" />
+        <path d="M6 13H2M22 13h-4M6 17H3M21 17h-3" />
+      </svg>
+    );
+    case 'wrench': return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={cls}>
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+      </svg>
+    );
+    case 'refresh': return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={cls}>
+        <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+      </svg>
+    );
+    default: return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={cls}>
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+    );
+  }
+}
 
 type ScheduleWizardProps = {
   project: Project;
@@ -48,7 +84,7 @@ const GripIcon = () => (
   </svg>
 );
 
-/* ── Sortable chip (project color) ── */
+/* ── Sortable chip (project color + icon) ── */
 function SortableChip({
   item, color, focused, onClick, onRemove,
 }: {
@@ -57,6 +93,7 @@ function SortableChip({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1 };
   const c = MILESTONE_COLOR_MAP[color];
+  const iconName = MILESTONE_ICON_MAP[item.id] ?? 'star';
 
   return (
     <div
@@ -71,7 +108,7 @@ function SortableChip({
         className="cursor-grab text-tx-muted hover:text-tx-secondary touch-none shrink-0"
         onClick={(e) => e.stopPropagation()}
       ><GripIcon /></button>
-      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${c.dot}`} />
+      <MilestoneIcon name={iconName} className={`w-3 h-3 shrink-0 ${c.text}`} />
       <span className={`flex-1 font-semibold ${c.text} truncate leading-tight`}>{item.label}</span>
       {item.date && <span className={`text-[9px] ${c.text} opacity-60 shrink-0`}>{item.date.slice(5)}</span>}
       {item.type === 'required' && !onRemove && (
@@ -93,10 +130,11 @@ function SortableChip({
 
 function OverlayChip({ item, color }: { item: MilestoneItem; color: MilestoneColor }) {
   const c = MILESTONE_COLOR_MAP[color];
+  const iconName = MILESTONE_ICON_MAP[item.id] ?? 'star';
   return (
     <div className={`flex items-center gap-1 rounded-md border px-1.5 py-1 shadow-lg ${c.border} ${c.bg}`}>
       <GripIcon />
-      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${c.dot}`} />
+      <MilestoneIcon name={iconName} className={`w-3 h-3 shrink-0 ${c.text}`} />
       <span className={`text-[10px] font-semibold ${c.text}`}>{item.label}</span>
     </div>
   );
@@ -136,10 +174,16 @@ function WizardCalendar({
   const toDateStr = (d: number) =>
     `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
-  const assignedDates = useMemo(() => {
-    const set = new Set<string>();
-    for (const m of milestones) { if (m.date) set.add(m.date); }
-    return set;
+  // date → milestone ids assigned on that date (for icon lookup)
+  const assignedDateMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const m of milestones) {
+      if (!m.date) continue;
+      const arr = map.get(m.date) ?? [];
+      arr.push(m.id);
+      map.set(m.date, arr);
+    }
+    return map;
   }, [milestones]);
 
   // Other projects' milestone dates
@@ -192,7 +236,7 @@ function WizardCalendar({
     <div className="select-none">
       {focusItem && (
         <div className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 mb-3 ${pc.border} ${pc.bg}`}>
-          <span className={`w-2 h-2 rounded-full ${pc.dot} animate-pulse`} />
+          <MilestoneIcon name={MILESTONE_ICON_MAP[focusItem.id] ?? 'star'} className={`w-3.5 h-3.5 shrink-0 ${pc.text} animate-pulse`} />
           <span className={`text-[11px] font-semibold ${pc.text}`}>{focusItem.label}</span>
           <span className="text-[10px] text-tx-muted ml-auto">{focusItem.date || '날짜를 선택하세요'}</span>
         </div>
@@ -223,7 +267,7 @@ function WizardCalendar({
           const dateStr = toDateStr(day);
           const dayOfWeek = new Date(year, month, day).getDay();
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-          const hasAssigned = assignedDates.has(dateStr);
+          const assignedIds = assignedDateMap.get(dateStr);
           const isToday = dateStr === todayStr;
           const isFocusDate = focusItem?.date === dateStr;
           const otherEntries = otherDateMap[dateStr];
@@ -244,9 +288,9 @@ function WizardCalendar({
             >
               <span>{day}</span>
               <div className="flex items-center gap-px">
-                {hasAssigned && !isFocusDate && !isWeekend && (
-                  <span className={`w-1.5 h-1.5 rounded-full ${pc.dot}`} />
-                )}
+                {assignedIds && !isFocusDate && !isWeekend && assignedIds.map((id) => (
+                  <MilestoneIcon key={id} name={MILESTONE_ICON_MAP[id] ?? 'star'} className={`w-2.5 h-2.5 ${pc.text}`} />
+                ))}
                 {!isWeekend && otherColors.map((c) => (
                   <span key={c} className={`w-1.5 h-1.5 rounded-full ${MILESTONE_COLOR_MAP[c].dot} opacity-50`} />
                 ))}

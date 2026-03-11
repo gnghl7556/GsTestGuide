@@ -33,7 +33,7 @@ export function TestDetailModal({ open, onClose, project, otherProjects, onSave 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-backdrop)] p-6">
-      <div className="w-full max-w-2xl rounded-2xl border border-ln bg-surface-base shadow-xl max-h-[90vh] flex flex-col">
+      <div className="w-full max-w-2xl rounded-2xl border border-ln bg-surface-overlay shadow-xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between border-b border-ln px-5 py-4 shrink-0">
           <div className="text-sm font-extrabold text-tx-primary">시험 상세 정보</div>
           <button

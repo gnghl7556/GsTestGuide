@@ -1,18 +1,30 @@
 import type { Project } from '../types';
 
 export const MILESTONES = [
-  { key: 'scheduleStartDate', label: '시험 시작일' },
-  { key: 'scheduleDefect1', label: '1차 결함 리포트' },
-  { key: 'schedulePatchDate', label: '패치일' },
-  { key: 'scheduleEndDate', label: '시험 종료일' },
+  { key: 'scheduleStartDate', label: '시험 시작일', icon: 'contract' },
+  { key: 'scheduleDefect1', label: '1차 결함 리포트', icon: 'bug' },
+  { key: 'schedulePatchDate', label: '패치일', icon: 'wrench' },
+  { key: 'scheduleEndDate', label: '시험 종료일', icon: 'contract' },
 ] as const;
 
 export const OPTIONAL_MILESTONES = [
-  { id: 'opt-defect2', label: '2차 결함 리포트' },
-  { id: 'opt-regression1', label: '1차 회귀 리포트' },
-  { id: 'opt-regression2', label: '2차 회귀 리포트' },
-  { id: 'opt-patch2', label: '2차 패치일' },
+  { id: 'opt-defect2', label: '2차 결함 리포트', icon: 'bug' },
+  { id: 'opt-regression1', label: '1차 회귀 리포트', icon: 'refresh' },
+  { id: 'opt-regression2', label: '2차 회귀 리포트', icon: 'refresh' },
+  { id: 'opt-patch2', label: '2차 패치일', icon: 'wrench' },
 ];
+
+/** milestone id/key → icon name */
+export const MILESTONE_ICON_MAP: Record<string, string> = {
+  scheduleStartDate: 'contract',
+  scheduleDefect1: 'bug',
+  schedulePatchDate: 'wrench',
+  scheduleEndDate: 'contract',
+  'opt-defect2': 'bug',
+  'opt-regression1': 'refresh',
+  'opt-regression2': 'refresh',
+  'opt-patch2': 'wrench',
+};
 
 export type MilestoneKey = (typeof MILESTONES)[number]['key'];
 export type MilestoneColor = 'blue' | 'amber' | 'purple' | 'emerald' | 'cyan' | 'orange' | 'rose' | 'teal';
