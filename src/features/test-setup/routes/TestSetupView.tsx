@@ -5,9 +5,10 @@ import { db } from '../../../lib/firebase';
 
 type TestSetupViewProps = {
   onStartProject: () => Promise<{ ok: boolean; reason?: string }>;
+  onQuickStart?: (testNumber: string) => void;
 };
 
-export function TestSetupView({ onStartProject }: TestSetupViewProps) {
+export function TestSetupView({ onStartProject, onQuickStart }: TestSetupViewProps) {
   const {
     testSetup,
     projects,
@@ -72,6 +73,7 @@ export function TestSetupView({ onStartProject }: TestSetupViewProps) {
           void setDoc(doc(db, 'projects', testNumber), { ...updates, updatedAt: serverTimestamp() }, { merge: true });
         }}
         canProceed={canProceed}
+        onQuickStart={onQuickStart}
       />
     </div>
   );

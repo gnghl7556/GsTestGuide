@@ -67,6 +67,7 @@ interface TestSetupPageProps {
   onStartProject: () => Promise<{ ok: boolean; reason?: string }>;
   onUpdateProjectSchedule?: (testNumber: string, updates: Record<string, unknown>) => void;
   canProceed: boolean;
+  onQuickStart?: (testNumber: string) => void;
 }
 
 export function TestSetupPage({
@@ -103,7 +104,8 @@ export function TestSetupPage({
   parsingTestNumber,
   onStartProject,
   onUpdateProjectSchedule,
-  canProceed
+  canProceed,
+  onQuickStart
 }: TestSetupPageProps) {
   const selectedTestStorageKey = 'gs-test-guide:selected-test';
   const [flowMode, setFlowMode] = useState<'create' | 'existing'>('existing');
@@ -491,6 +493,18 @@ export function TestSetupPage({
                           >
                             상세
                           </button>
+                          {onQuickStart && currentUserId && featuredProject.status !== '완료' && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onQuickStart(featuredProject.testNumber);
+                              }}
+                              className="rounded-md bg-gradient-to-r from-blue-500 to-purple-500 px-2.5 py-0.5 text-[10px] font-semibold text-white hover:from-blue-600 hover:to-purple-600 transition shadow-sm"
+                            >
+                              이어하기 →
+                            </button>
+                          )}
                         </div>
                         <div className="text-right text-[11px] text-slate-400 dark:text-white/50 whitespace-nowrap">
                           최근 수정 · {formatDate(featuredProject.updatedAt)}
@@ -558,6 +572,18 @@ export function TestSetupPage({
                                 >
                                   상세
                                 </button>
+                                {onQuickStart && currentUserId && !isCompleted && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onQuickStart(project.testNumber);
+                                    }}
+                                    className="rounded-md bg-gradient-to-r from-blue-500 to-purple-500 px-1.5 py-0.5 text-[10px] font-semibold text-white hover:from-blue-600 hover:to-purple-600 transition shadow-sm"
+                                  >
+                                    이어 →
+                                  </button>
+                                )}
                               </div>
                             </div>
                             <div className="font-semibold tracking-wide">{project.testNumber}</div>

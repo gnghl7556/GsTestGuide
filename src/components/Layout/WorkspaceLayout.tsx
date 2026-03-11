@@ -98,6 +98,11 @@ export function WorkspaceLayout() {
               setTestListOpen(true);
             }}
             onOpenSchedule={() => setScheduleOpen(true)}
+            onNavigateStep={(step) => {
+              const paths: Record<number, string> = { 2: '/design', 3: '/execution', 4: '/report' };
+              const path = paths[step];
+              if (path) navigate(path);
+            }}
           />
         }
         content={<Outlet />}

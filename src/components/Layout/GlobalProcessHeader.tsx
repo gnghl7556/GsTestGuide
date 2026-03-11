@@ -27,6 +27,7 @@ type GlobalProcessHeaderProps = {
   onLogout?: () => void;
   onOpenTestList?: () => void;
   onOpenSchedule?: () => void;
+  onNavigateStep?: (step: number) => void;
 };
 
 const safeValue = (value?: string | number) => {
@@ -46,7 +47,8 @@ export function GlobalProcessHeader({
   isFinalized,
   onLogout,
   onOpenTestList,
-  onOpenSchedule
+  onOpenSchedule,
+  onNavigateStep
 }: GlobalProcessHeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const [companyOpen, setCompanyOpen] = useState(false);
@@ -56,7 +58,6 @@ export function GlobalProcessHeader({
   const testNumber = safeValue(projectInfo?.testNumber);
   const projectName = safeValue(projectInfo?.projectName);
   const companyName = safeValue(projectInfo?.companyName);
-  void currentStep;
   const companyContactName = safeValue(projectInfo?.companyContactName);
   const companyContactPhone = safeValue(projectInfo?.companyContactPhone);
   const companyContactEmail = safeValue(projectInfo?.companyContactEmail);
@@ -75,7 +76,7 @@ export function GlobalProcessHeader({
 
   return (
     <div className="sticky top-0 z-30 w-full">
-      <div className="flex h-16 items-center justify-between border-b border-ln bg-surface-base px-6 text-tx-primary">
+      <div className="flex h-16 items-center border-b border-ln bg-surface-base px-6 text-tx-primary gap-4">
         <div className="text-sm font-semibold flex items-center gap-2 min-w-0">
           <button
             type="button"
@@ -92,12 +93,35 @@ export function GlobalProcessHeader({
           <span className="text-tx-muted">|</span>
           <span className="text-tx-tertiary truncate">{companyName}</span>
         </div>
+        {onNavigateStep && (
+          <nav className="hidden md:flex items-center gap-0.5 rounded-lg bg-surface-sunken p-0.5 shrink-0">
+            {([
+              { step: 2, label: '설계' },
+              { step: 3, label: '점검' },
+              { step: 4, label: '리포트' },
+            ] as const).map(({ step, label }) => (
+              <button
+                key={step}
+                type="button"
+                onClick={() => onNavigateStep(step)}
+                className={`rounded-md px-3 py-1 text-[11px] font-semibold transition-all ${
+                  currentStep === step
+                    ? 'bg-surface-base text-tx-primary shadow-sm'
+                    : 'text-tx-tertiary hover:text-tx-secondary'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+        )}
+        <div className="flex-1 min-w-0" />
         {rightSlot && (
           <div className="hidden md:flex items-center gap-5 text-[11px] text-tx-tertiary">
             {rightSlot}
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {isFinalized && (
             <span className="inline-flex items-center gap-1.5 h-9 rounded-lg border border-ln bg-surface-sunken px-2.5 text-[11px] font-semibold text-tx-tertiary">
               <CheckCircle size={14} />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { FeatureManager } from '../components/FeatureManager';
 import { TestCaseManager } from '../components/TestCaseManager';
 import { ProcessLayout } from '../../../components/Layout/ProcessLayout';
@@ -8,6 +8,7 @@ import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 
 export function DesignPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { testSetup } = useTestSetupContext();
   const initialTab = (location.state as { tab?: 'feature' | 'testcase' } | null)?.tab;
   const [activeTab, setActiveTab] = useState<'feature' | 'testcase'>(initialTab || 'feature');
@@ -27,7 +28,11 @@ export function DesignPage() {
 
   return (
     <ProcessLayout
-      header={<GlobalProcessHeader currentStep={2} projectInfo={projectInfo} />}
+      header={<GlobalProcessHeader currentStep={2} projectInfo={projectInfo} onNavigateStep={(step) => {
+        const paths: Record<number, string> = { 2: '/design', 3: '/execution', 4: '/report' };
+        const path = paths[step];
+        if (path) navigate(path);
+      }} />}
       sidebar={(
         <div className="p-4 space-y-3 text-sm text-tx-secondary">
           <div className="text-xs font-semibold text-tx-tertiary">기능 트리</div>

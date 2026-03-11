@@ -8,7 +8,7 @@ import { AdminPasswordModal } from '../../admin/components/AdminPasswordModal';
 
 export function OverviewPage() {
   const navigate = useNavigate();
-  const { startProject } = useTestSetupContext();
+  const { startProject, selectTestNumber } = useTestSetupContext();
   const { theme, toggleTheme } = useTheme();
   const [adminModalOpen, setAdminModalOpen] = useState(false);
 
@@ -18,6 +18,11 @@ export function OverviewPage() {
       navigate('/execution');
     }
     return result;
+  };
+
+  const handleQuickStart = (testNumber: string) => {
+    selectTestNumber(testNumber);
+    navigate('/execution');
   };
 
   return (
@@ -43,7 +48,7 @@ export function OverviewPage() {
           <span className="hidden sm:inline">관리자</span>
         </button>
       </div>
-      <TestSetupView onStartProject={handleStartProject} />
+      <TestSetupView onStartProject={handleStartProject} onQuickStart={handleQuickStart} />
       <AdminPasswordModal
         open={adminModalOpen}
         onClose={() => setAdminModalOpen(false)}
