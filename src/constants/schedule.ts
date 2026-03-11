@@ -1,10 +1,10 @@
 import type { Project } from '../types';
 
 export const MILESTONES = [
-  { key: 'scheduleStartDate', label: '시험 시작일', icon: 'contract' },
+  { key: 'scheduleStartDate', label: '시험 시작일', icon: 'play' },
   { key: 'scheduleDefect1', label: '1차 결함 리포트', icon: 'bug' },
   { key: 'schedulePatchDate', label: '패치일', icon: 'wrench' },
-  { key: 'scheduleEndDate', label: '시험 종료일', icon: 'contract' },
+  { key: 'scheduleEndDate', label: '시험 종료일', icon: 'flag' },
 ] as const;
 
 export const OPTIONAL_MILESTONES = [
@@ -16,10 +16,10 @@ export const OPTIONAL_MILESTONES = [
 
 /** milestone id/key → icon name */
 export const MILESTONE_ICON_MAP: Record<string, string> = {
-  scheduleStartDate: 'contract',
+  scheduleStartDate: 'play',
   scheduleDefect1: 'bug',
   schedulePatchDate: 'wrench',
-  scheduleEndDate: 'contract',
+  scheduleEndDate: 'flag',
   'opt-defect2': 'bug',
   'opt-regression1': 'refresh',
   'opt-regression2': 'refresh',
