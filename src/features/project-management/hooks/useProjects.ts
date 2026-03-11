@@ -43,6 +43,9 @@ export function useProjects(db: Firestore | null | undefined, authReady: boolean
           endDate?: Timestamp;
           operatingEnvironment?: string;
           executionState?: Project['executionState'];
+          projectColor?: string;
+          customMilestones?: Project['customMilestones'];
+          milestoneOrder?: string[];
         };
         const testNumber = data.testNumber || docSnap.id;
         return {
@@ -77,7 +80,10 @@ export function useProjects(db: Firestore | null | undefined, authReady: boolean
           scheduleDefect1: data.scheduleDefect1,
           scheduleDefect2: data.scheduleDefect2,
           schedulePatchDate: data.schedulePatchDate,
-          scheduleEndDate: data.scheduleEndDate
+          scheduleEndDate: data.scheduleEndDate,
+          projectColor: data.projectColor,
+          customMilestones: data.customMilestones,
+          milestoneOrder: data.milestoneOrder,
         };
       });
       setProjects(next);
