@@ -1,21 +1,25 @@
 import type { Project } from '../types';
 
 export const MILESTONES = [
-  { key: 'scheduleStartDate', label: '시험 시작일', color: 'blue' },
-  { key: 'scheduleDefect1', label: '1차 결함 리포트', color: 'amber' },
-  { key: 'schedulePatchDate', label: '패치일', color: 'purple' },
-  { key: 'scheduleEndDate', label: '시험 종료일', color: 'emerald' },
+  { key: 'scheduleStartDate', label: '시험 시작일' },
+  { key: 'scheduleDefect1', label: '1차 결함 리포트' },
+  { key: 'schedulePatchDate', label: '패치일' },
+  { key: 'scheduleEndDate', label: '시험 종료일' },
 ] as const;
 
 export const OPTIONAL_MILESTONES = [
-  { id: 'opt-defect2', label: '2차 결함 리포트', color: 'orange' as MilestoneColor },
-  { id: 'opt-regression1', label: '1차 회귀 리포트', color: 'cyan' as MilestoneColor },
-  { id: 'opt-regression2', label: '2차 회귀 리포트', color: 'teal' as MilestoneColor },
-  { id: 'opt-patch2', label: '2차 패치일', color: 'rose' as MilestoneColor },
+  { id: 'opt-defect2', label: '2차 결함 리포트' },
+  { id: 'opt-regression1', label: '1차 회귀 리포트' },
+  { id: 'opt-regression2', label: '2차 회귀 리포트' },
+  { id: 'opt-patch2', label: '2차 패치일' },
 ];
 
 export type MilestoneKey = (typeof MILESTONES)[number]['key'];
-export type MilestoneColor = (typeof MILESTONES)[number]['color'] | 'cyan' | 'orange' | 'rose' | 'teal';
+export type MilestoneColor = 'blue' | 'amber' | 'purple' | 'emerald' | 'cyan' | 'orange' | 'rose' | 'teal';
+
+export const PROJECT_COLORS: MilestoneColor[] = [
+  'blue', 'amber', 'purple', 'emerald', 'cyan', 'orange', 'rose', 'teal',
+];
 
 export const MILESTONE_COLOR_MAP: Record<
   MilestoneColor,
@@ -71,14 +75,24 @@ export const MILESTONE_COLOR_MAP: Record<
   },
 };
 
-export const CUSTOM_COLORS: MilestoneColor[] = ['cyan', 'orange', 'rose', 'teal'];
+/** testNumber 기반 결정적 해시로 프로젝트 고유 색상 반환 */
+export function getProjectColor(project: Project): MilestoneColor {
+  if (project.projectColor && PROJECT_COLORS.includes(project.projectColor as MilestoneColor)) {
+    return project.projectColor as MilestoneColor;
+  }
+  const str = project.testNumber || project.id;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  }
+  return PROJECT_COLORS[Math.abs(hash) % PROJECT_COLORS.length];
+}
 
 export type MilestoneItemType = 'required' | 'optional' | 'custom';
 
 export type MilestoneItem = {
   id: string;
   label: string;
-  color: MilestoneColor;
   type: MilestoneItemType;
   date: string;
 };
@@ -86,7 +100,9 @@ export type MilestoneItem = {
 export function buildInitialLists(project: Project): {
   registered: MilestoneItem[];
   pool: MilestoneItem[];
+  projectColor: MilestoneColor;
 } {
+  const projectColor = getProjectColor(project);
   const savedCustom = project.customMilestones ?? [];
   const savedOrder = project.milestoneOrder ?? [];
   const registeredIdSet = new Set(savedOrder);
@@ -94,7 +110,6 @@ export function buildInitialLists(project: Project): {
   const required: MilestoneItem[] = MILESTONES.map((m) => ({
     id: m.key,
     label: m.label,
-    color: m.color as MilestoneColor,
     type: 'required' as const,
     date: (project[m.key] as string) ?? '',
   }));
@@ -104,34 +119,19 @@ export function buildInitialLists(project: Project): {
 
   const optionalItems: MilestoneItem[] = OPTIONAL_MILESTONES.map((m) => {
     const saved = savedCustom.find((c) => c.id === m.id);
-    return {
-      id: m.id,
-      label: m.label,
-      color: m.color,
-      type: 'optional' as const,
-      date: saved?.date ?? '',
-    };
+    return { id: m.id, label: m.label, type: 'optional' as const, date: saved?.date ?? '' };
   });
 
   const customItems: MilestoneItem[] = savedCustom
     .filter((c) => !optionalIds.has(c.id) && !requiredKeys.has(c.id))
-    .map((c) => ({
-      id: c.id,
-      label: c.label,
-      color: c.color as MilestoneColor,
-      type: 'custom' as const,
-      date: c.date,
-    }));
+    .map((c) => ({ id: c.id, label: c.label, type: 'custom' as const, date: c.date }));
 
   const registered = [...required];
   const pool: MilestoneItem[] = [];
 
   for (const item of [...optionalItems, ...customItems]) {
-    if (registeredIdSet.has(item.id)) {
-      registered.push(item);
-    } else {
-      pool.push(item);
-    }
+    if (registeredIdSet.has(item.id)) registered.push(item);
+    else pool.push(item);
   }
 
   if (savedOrder.length) {
@@ -139,5 +139,5 @@ export function buildInitialLists(project: Project): {
     registered.sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999));
   }
 
-  return { registered, pool };
+  return { registered, pool, projectColor };
 }

@@ -72,6 +72,7 @@ export type Project = {
   createdBy?: string | null;
   updatedAt?: Timestamp | number | null;
   executionState?: ExecutionGateState;
+  projectColor?: string;
   customMilestones?: Array<{ id: string; label: string; date: string; color: string }>;
   milestoneOrder?: string[];
 };

@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import type { Project } from '../../../types';
-import { MILESTONES, MILESTONE_COLOR_MAP } from '../../../constants/schedule';
+import { MILESTONES, MILESTONE_COLOR_MAP, getProjectColor } from '../../../constants/schedule';
 import type { MilestoneColor } from '../../../constants/schedule';
 
 interface ScheduleCalendarProps {
@@ -22,7 +22,6 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
   const calendarRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Close popover on outside click
   useEffect(() => {
     if (!popoverDate) return;
     const handler = (e: MouseEvent) => {
@@ -34,10 +33,20 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, [popoverDate]);
 
-  // Build date -> milestones map
+  // Per-project color map
+  const projectColorMap = useMemo(() => {
+    const map = new Map<string, MilestoneColor>();
+    for (const p of projects) {
+      map.set(p.testNumber, getProjectColor(p));
+    }
+    return map;
+  }, [projects]);
+
+  // Build date -> milestones map (using project color, not milestone color)
   const dateMap = useMemo(() => {
     const map: Record<string, MilestoneEntry[]> = {};
     for (const project of projects) {
+      const color = projectColorMap.get(project.testNumber) ?? 'blue';
       for (const ms of MILESTONES) {
         const dateValue = project[ms.key as keyof Project] as string | undefined;
         if (!dateValue) continue;
@@ -45,12 +54,22 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
         map[dateValue].push({
           testNumber: project.testNumber,
           milestoneLabel: ms.label,
-          color: ms.color,
+          color,
+        });
+      }
+      // Custom milestones
+      for (const cm of project.customMilestones ?? []) {
+        if (!cm.date) continue;
+        if (!map[cm.date]) map[cm.date] = [];
+        map[cm.date].push({
+          testNumber: project.testNumber,
+          milestoneLabel: cm.label,
+          color,
         });
       }
     }
     return map;
-  }, [projects]);
+  }, [projects, projectColorMap]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -59,14 +78,16 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
   const startDay = startOfMonth.getDay();
   const daysInMonth = endOfMonth.getDate();
 
-  const cells: Array<{ day: number; dateStr: string } | null> = [];
+  void startOfMonth;
+
+  const cells: Array<{ day: number; dateStr: string; dayOfWeek: number } | null> = [];
   for (let i = 0; i < startDay; i++) {
     cells.push(null);
   }
   for (let d = 1; d <= daysInMonth; d++) {
     const m = String(month + 1).padStart(2, '0');
     const dd = String(d).padStart(2, '0');
-    cells.push({ day: d, dateStr: `${year}-${m}-${dd}` });
+    cells.push({ day: d, dateStr: `${year}-${m}-${dd}`, dayOfWeek: new Date(year, month, d).getDay() });
   }
 
   const handleCellClick = (dateStr: string, e: React.MouseEvent<HTMLButtonElement>) => {
@@ -88,6 +109,18 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
     }
     setPopoverDate(dateStr);
   };
+
+  // Active projects for legend
+  const activeProjects = useMemo(() => {
+    const seen = new Set<string>();
+    const result: Array<{ testNumber: string; color: MilestoneColor }> = [];
+    for (const p of projects) {
+      if (seen.has(p.testNumber)) continue;
+      seen.add(p.testNumber);
+      result.push({ testNumber: p.testNumber, color: projectColorMap.get(p.testNumber) ?? 'blue' });
+    }
+    return result;
+  }, [projects, projectColorMap]);
 
   return (
     <div ref={calendarRef} className="relative rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0b1230]/90 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] p-4">
@@ -114,8 +147,10 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
 
       {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-1 mb-1">
-        {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-          <div key={day} className="text-center text-[10px] font-semibold text-slate-400 dark:text-white/50 py-1">
+        {['일', '월', '화', '수', '목', '금', '토'].map((day, i) => (
+          <div key={day} className={`text-center text-[10px] font-semibold py-1 ${
+            i === 0 || i === 6 ? 'text-slate-300 dark:text-white/30' : 'text-slate-400 dark:text-white/50'
+          }`}>
             {day}
           </div>
         ))}
@@ -125,36 +160,40 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
       <div className="grid grid-cols-7 gap-1">
         {cells.map((cell, idx) => {
           if (!cell) {
-            return <div key={`empty-${idx}`} className="h-10" />;
+            const blankDow = idx % 7;
+            const isWeekend = blankDow === 0 || blankDow === 6;
+            return <div key={`empty-${idx}`} className={`h-10 rounded-lg ${isWeekend ? 'bg-slate-50 dark:bg-white/[0.03]' : ''}`} />;
           }
 
           const isToday = cell.dateStr === todayStr;
+          const isWeekend = cell.dayOfWeek === 0 || cell.dayOfWeek === 6;
           const milestones = dateMap[cell.dateStr] || [];
           const hasMilestones = milestones.length > 0;
-          // Deduplicate colors for dots
           const uniqueColors = [...new Set(milestones.map((m) => m.color))];
 
           return (
             <button
               key={cell.dateStr}
               type="button"
+              disabled={isWeekend && !hasMilestones}
               onClick={(e) => handleCellClick(cell.dateStr, e)}
               className={`relative h-10 rounded-lg text-xs font-medium transition flex flex-col items-center justify-center gap-0.5 ${
-                isToday
-                  ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-500/30 dark:to-purple-500/30 text-blue-700 dark:text-blue-200 ring-1 ring-blue-400/50 dark:ring-blue-400/40'
-                  : hasMilestones
-                    ? 'text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer'
-                    : 'text-slate-500 dark:text-white/60'
+                isWeekend
+                  ? hasMilestones
+                    ? 'bg-slate-50 dark:bg-white/[0.03] text-slate-400 dark:text-white/40 cursor-pointer'
+                    : 'bg-slate-50 dark:bg-white/[0.03] text-slate-300 dark:text-white/20 cursor-not-allowed'
+                  : isToday
+                    ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-500/30 dark:to-purple-500/30 text-blue-700 dark:text-blue-200 ring-1 ring-blue-400/50 dark:ring-blue-400/40'
+                    : hasMilestones
+                      ? 'text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer'
+                      : 'text-slate-500 dark:text-white/60'
               }`}
             >
               <span>{cell.day}</span>
               {uniqueColors.length > 0 && (
                 <div className="flex items-center gap-0.5">
                   {uniqueColors.map((color) => (
-                    <span
-                      key={color}
-                      className={`w-1.5 h-1.5 rounded-full ${MILESTONE_COLOR_MAP[color].dot}`}
-                    />
+                    <span key={color} className={`w-1.5 h-1.5 rounded-full ${MILESTONE_COLOR_MAP[color].dot}`} />
                   ))}
                 </div>
               )}
@@ -189,12 +228,12 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
         </div>
       )}
 
-      {/* Legend */}
+      {/* Legend: per-project */}
       <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10 flex flex-wrap items-center gap-3">
-        {MILESTONES.map((ms) => (
-          <div key={ms.key} className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-white/60">
-            <span className={`w-2 h-2 rounded-full ${MILESTONE_COLOR_MAP[ms.color].dot}`} />
-            {ms.label}
+        {activeProjects.map((p) => (
+          <div key={p.testNumber} className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-white/60">
+            <span className={`w-2 h-2 rounded-full ${MILESTONE_COLOR_MAP[p.color].dot}`} />
+            {p.testNumber}
           </div>
         ))}
       </div>
