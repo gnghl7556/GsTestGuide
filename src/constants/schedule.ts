@@ -7,6 +7,13 @@ export const MILESTONES = [
   { key: 'scheduleEndDate', label: '시험 종료일', color: 'emerald' },
 ] as const;
 
+export const OPTIONAL_MILESTONES = [
+  { id: 'opt-defect2', label: '2차 결함 리포트', color: 'orange' as MilestoneColor },
+  { id: 'opt-regression1', label: '1차 회귀 리포트', color: 'cyan' as MilestoneColor },
+  { id: 'opt-regression2', label: '2차 회귀 리포트', color: 'teal' as MilestoneColor },
+  { id: 'opt-patch2', label: '2차 패치일', color: 'rose' as MilestoneColor },
+];
+
 export type MilestoneKey = (typeof MILESTONES)[number]['key'];
 export type MilestoneColor = (typeof MILESTONES)[number]['color'] | 'cyan' | 'orange' | 'rose' | 'teal';
 
@@ -66,41 +73,71 @@ export const MILESTONE_COLOR_MAP: Record<
 
 export const CUSTOM_COLORS: MilestoneColor[] = ['cyan', 'orange', 'rose', 'teal'];
 
+export type MilestoneItemType = 'required' | 'optional' | 'custom';
+
 export type MilestoneItem = {
   id: string;
   label: string;
   color: MilestoneColor;
-  builtIn: boolean;
+  type: MilestoneItemType;
   date: string;
 };
 
-export function buildMilestoneList(project: Project): MilestoneItem[] {
-  const builtInItems: MilestoneItem[] = MILESTONES.map((m) => ({
+export function buildInitialLists(project: Project): {
+  registered: MilestoneItem[];
+  pool: MilestoneItem[];
+} {
+  const savedCustom = project.customMilestones ?? [];
+  const savedOrder = project.milestoneOrder ?? [];
+  const registeredIdSet = new Set(savedOrder);
+
+  const required: MilestoneItem[] = MILESTONES.map((m) => ({
     id: m.key,
     label: m.label,
     color: m.color as MilestoneColor,
-    builtIn: true,
+    type: 'required' as const,
     date: (project[m.key] as string) ?? '',
   }));
 
-  const customItems: MilestoneItem[] = (project.customMilestones ?? []).map((cm) => ({
-    id: cm.id,
-    label: cm.label,
-    color: cm.color as MilestoneColor,
-    builtIn: false,
-    date: cm.date,
-  }));
+  const optionalIds = new Set(OPTIONAL_MILESTONES.map((m) => m.id));
+  const requiredKeys = new Set<string>(MILESTONES.map((m) => m.key));
 
-  const allItems = [...builtInItems, ...customItems];
+  const optionalItems: MilestoneItem[] = OPTIONAL_MILESTONES.map((m) => {
+    const saved = savedCustom.find((c) => c.id === m.id);
+    return {
+      id: m.id,
+      label: m.label,
+      color: m.color,
+      type: 'optional' as const,
+      date: saved?.date ?? '',
+    };
+  });
 
-  if (project.milestoneOrder?.length) {
-    const orderMap = new Map(project.milestoneOrder.map((id, idx) => [id, idx]));
-    allItems.sort((a, b) => {
-      const ai = orderMap.get(a.id) ?? 999;
-      const bi = orderMap.get(b.id) ?? 999;
-      return ai - bi;
-    });
+  const customItems: MilestoneItem[] = savedCustom
+    .filter((c) => !optionalIds.has(c.id) && !requiredKeys.has(c.id))
+    .map((c) => ({
+      id: c.id,
+      label: c.label,
+      color: c.color as MilestoneColor,
+      type: 'custom' as const,
+      date: c.date,
+    }));
+
+  const registered = [...required];
+  const pool: MilestoneItem[] = [];
+
+  for (const item of [...optionalItems, ...customItems]) {
+    if (registeredIdSet.has(item.id)) {
+      registered.push(item);
+    } else {
+      pool.push(item);
+    }
   }
 
-  return allItems;
+  if (savedOrder.length) {
+    const orderMap = new Map(savedOrder.map((id, idx) => [id, idx]));
+    registered.sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999));
+  }
+
+  return { registered, pool };
 }

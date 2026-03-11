@@ -1,11 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
   DndContext,
-  closestCenter,
-  KeyboardSensor,
+  DragOverlay,
+  closestCorners,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
+  useDroppable,
+  type DragStartEvent,
+  type DragOverEvent,
   type DragEndEvent,
 } from '@dnd-kit/core';
 import {
@@ -21,7 +25,7 @@ import {
   MILESTONES,
   MILESTONE_COLOR_MAP,
   CUSTOM_COLORS,
-  buildMilestoneList,
+  buildInitialLists,
   type MilestoneItem,
   type MilestoneColor,
 } from '../../constants/schedule';
@@ -32,17 +36,27 @@ type ScheduleWizardProps = {
   onClose: () => void;
 };
 
-/* ── Step 1: Sortable Item ── */
+const REGISTERED_ID = 'registered-zone';
+const POOL_ID = 'pool-zone';
 
-function SortableItem({
+/* ── Grip icon ── */
+const GripIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" className="shrink-0">
+    <circle cx="4" cy="3" r="1.2" />
+    <circle cx="10" cy="3" r="1.2" />
+    <circle cx="4" cy="7" r="1.2" />
+    <circle cx="10" cy="7" r="1.2" />
+    <circle cx="4" cy="11" r="1.2" />
+    <circle cx="10" cy="11" r="1.2" />
+  </svg>
+);
+
+/* ── Compact sortable chip ── */
+function SortableChip({
   item,
-  checked,
-  onToggle,
   onRemove,
 }: {
   item: MilestoneItem;
-  checked: boolean;
-  onToggle: () => void;
   onRemove?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -51,7 +65,7 @@ function SortableItem({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.3 : 1,
   };
   const colors = MILESTONE_COLOR_MAP[item.color];
 
@@ -59,9 +73,7 @@ function SortableItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 transition-all ${
-        checked ? `${colors.border} ${colors.bg}` : 'border-ln bg-surface-raised opacity-60'
-      }`}
+      className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 ${colors.border} ${colors.bg}`}
     >
       <button
         type="button"
@@ -69,46 +81,25 @@ function SortableItem({
         {...listeners}
         className="cursor-grab text-tx-muted hover:text-tx-secondary touch-none"
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-          <circle cx="4" cy="3" r="1.2" />
-          <circle cx="10" cy="3" r="1.2" />
-          <circle cx="4" cy="7" r="1.2" />
-          <circle cx="10" cy="7" r="1.2" />
-          <circle cx="4" cy="11" r="1.2" />
-          <circle cx="10" cy="11" r="1.2" />
-        </svg>
+        <GripIcon />
       </button>
-      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${colors.dot}`} />
-      <span className={`flex-1 text-xs font-semibold ${checked ? colors.text : 'text-tx-muted'}`}>
+      <span className={`w-2 h-2 rounded-full shrink-0 ${colors.dot}`} />
+      <span className={`flex-1 text-[11px] font-semibold ${colors.text} truncate`}>
         {item.label}
       </span>
-      <label className="relative flex items-center cursor-pointer">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={onToggle}
-          className="sr-only"
-        />
-        <div
-          className={`w-8 h-[18px] rounded-full transition-colors ${
-            checked ? 'bg-accent' : 'bg-surface-sunken'
-          }`}
-        >
-          <div
-            className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm absolute top-[2px] transition-transform ${
-              checked ? 'translate-x-[18px]' : 'translate-x-[2px]'
-            }`}
-          />
-        </div>
-      </label>
-      {!item.builtIn && onRemove && (
+      {item.type === 'required' && (
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-tx-muted shrink-0">
+          <rect x="3" y="11" width="18" height="11" rx="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      )}
+      {onRemove && item.type !== 'required' && (
         <button
           type="button"
           onClick={onRemove}
-          className="text-tx-muted hover:text-red-500 transition-colors ml-1"
-          title="삭제"
+          className="text-tx-muted hover:text-red-500 transition-colors shrink-0"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
@@ -118,8 +109,50 @@ function SortableItem({
   );
 }
 
-/* ── Step 2: Calendar ── */
+/* ── Overlay chip (non-interactive) ── */
+function OverlayChip({ item }: { item: MilestoneItem }) {
+  const colors = MILESTONE_COLOR_MAP[item.color];
+  return (
+    <div className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 shadow-lg ${colors.border} ${colors.bg}`}>
+      <GripIcon />
+      <span className={`w-2 h-2 rounded-full shrink-0 ${colors.dot}`} />
+      <span className={`text-[11px] font-semibold ${colors.text}`}>{item.label}</span>
+    </div>
+  );
+}
 
+/* ── Droppable zone wrapper ── */
+function DroppableZone({
+  id,
+  label,
+  hint,
+  isOver,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  isOver: boolean;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-xl border-2 border-dashed p-3 transition-colors min-h-[60px] ${
+        isOver ? 'border-accent/50 bg-accent/5' : 'border-ln bg-surface-raised/50'
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[11px] font-bold text-tx-secondary">{label}</span>
+        {hint && <span className="text-[10px] text-tx-muted">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ── Step 2: Calendar ── */
 function WizardCalendar({
   milestones,
   focusId,
@@ -130,7 +163,6 @@ function WizardCalendar({
   onSelectDate: (date: string) => void;
 }) {
   const [viewDate, setViewDate] = useState(() => new Date());
-
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
   const startDay = new Date(year, month, 1).getDay();
@@ -227,21 +259,14 @@ function WizardCalendar({
 export function ScheduleWizard({ project, onSave, onClose }: ScheduleWizardProps) {
   const [step, setStep] = useState<1 | 2>(1);
 
-  // Build initial items from project
-  const initialItems = useMemo(() => buildMilestoneList(project), [project]);
-
-  const [items, setItems] = useState<MilestoneItem[]>(initialItems);
-  const [enabled, setEnabled] = useState<Set<string>>(() => {
-    const set = new Set<string>();
-    for (const item of initialItems) {
-      // built-in always enabled by default; custom always enabled
-      set.add(item.id);
-    }
-    return set;
-  });
+  const initial = useMemo(() => buildInitialLists(project), [project]);
+  const [registered, setRegistered] = useState<MilestoneItem[]>(initial.registered);
+  const [pool, setPool] = useState<MilestoneItem[]>(initial.pool);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
+  const recentlyMovedRef = useRef(false);
 
-  // Custom milestone add form
+  // Custom add form
   const [showAddForm, setShowAddForm] = useState(false);
   const [newLabel, setNewLabel] = useState('');
   const [newColor, setNewColor] = useState<MilestoneColor>(CUSTOM_COLORS[0]);
@@ -251,109 +276,171 @@ export function ScheduleWizard({ project, onSave, onClose }: ScheduleWizardProps
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const activeItems = useMemo(() => items.filter((i) => enabled.has(i.id)), [items, enabled]);
+  const allItems = useMemo(() => [...registered, ...pool], [registered, pool]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  function findContainer(id: string | number): 'registered' | 'pool' | null {
+    const sid = String(id);
+    if (sid === REGISTERED_ID) return 'registered';
+    if (sid === POOL_ID) return 'pool';
+    if (registered.some((i) => i.id === sid)) return 'registered';
+    if (pool.some((i) => i.id === sid)) return 'pool';
+    return null;
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id));
+  }
+
+  function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    setItems((prev) => {
-      const oldIndex = prev.findIndex((i) => i.id === active.id);
-      const newIndex = prev.findIndex((i) => i.id === over.id);
+    if (!over) return;
+
+    const activeContainer = findContainer(active.id);
+    const overContainer = findContainer(over.id);
+    if (!activeContainer || !overContainer || activeContainer === overContainer) return;
+
+    const item = allItems.find((i) => i.id === String(active.id));
+    if (!item) return;
+
+    // Required items can't leave registered
+    if (item.type === 'required' && overContainer === 'pool') return;
+
+    recentlyMovedRef.current = true;
+    const overId = String(over.id);
+    const isOverContainer = overId === REGISTERED_ID || overId === POOL_ID;
+
+    if (activeContainer === 'pool' && overContainer === 'registered') {
+      setPool((prev) => prev.filter((i) => i.id !== item.id));
+      setRegistered((prev) => {
+        if (isOverContainer) return [...prev, item];
+        const idx = prev.findIndex((i) => i.id === overId);
+        return [...prev.slice(0, idx + 1), item, ...prev.slice(idx + 1)];
+      });
+    } else if (activeContainer === 'registered' && overContainer === 'pool') {
+      setRegistered((prev) => prev.filter((i) => i.id !== item.id));
+      setPool((prev) => {
+        if (isOverContainer) return [...prev, item];
+        const idx = prev.findIndex((i) => i.id === overId);
+        return [...prev.slice(0, idx + 1), item, ...prev.slice(idx + 1)];
+      });
+    }
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    setActiveId(null);
+    if (!over) return;
+
+    const activeContainer = findContainer(active.id);
+    const overContainer = findContainer(over.id);
+    if (!activeContainer || !overContainer) return;
+
+    // Cross-container handled in onDragOver
+    if (activeContainer !== overContainer) return;
+    if (active.id === over.id) return;
+
+    const setList = activeContainer === 'registered' ? setRegistered : setPool;
+    setList((prev) => {
+      const oldIndex = prev.findIndex((i) => i.id === String(active.id));
+      const newIndex = prev.findIndex((i) => i.id === String(over.id));
+      if (oldIndex === -1 || newIndex === -1) return prev;
       return arrayMove(prev, oldIndex, newIndex);
     });
-  };
+  }
 
-  const handleToggle = (id: string) => {
-    setEnabled((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  function handleDragCancel() {
+    setActiveId(null);
+  }
 
-  const handleAddCustom = () => {
+  // Move item between zones via button
+  function moveToPool(id: string) {
+    const item = registered.find((i) => i.id === id);
+    if (!item || item.type === 'required') return;
+    setRegistered((prev) => prev.filter((i) => i.id !== id));
+    setPool((prev) => [...prev, item]);
+  }
+
+  function deleteCustom(id: string) {
+    setPool((prev) => prev.filter((i) => i.id !== id));
+    setRegistered((prev) => prev.filter((i) => i.id !== id));
+  }
+
+  // Add custom milestone to pool
+  function handleAddCustom() {
     if (!newLabel.trim()) return;
     const id = `custom-${Date.now()}`;
-    const usedColors = items.filter((i) => !i.builtIn).map((i) => i.color);
+    const usedColors = [...registered, ...pool].filter((i) => i.type !== 'required').map((i) => i.color);
     const availColor = CUSTOM_COLORS.find((c) => !usedColors.includes(c)) ?? newColor;
     const newItem: MilestoneItem = {
       id,
       label: newLabel.trim(),
       color: availColor,
-      builtIn: false,
+      type: 'custom',
       date: '',
     };
-    setItems((prev) => [...prev, newItem]);
-    setEnabled((prev) => new Set(prev).add(id));
+    setPool((prev) => [...prev, newItem]);
     setNewLabel('');
     setNewColor(CUSTOM_COLORS[(CUSTOM_COLORS.indexOf(availColor) + 1) % CUSTOM_COLORS.length]);
     setShowAddForm(false);
-  };
+  }
 
-  const handleRemoveCustom = (id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
-    setEnabled((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-  };
-
-  // Step 2: focus logic
-  const handleDateSelect = (dateStr: string) => {
+  // Step 2 logic
+  function handleDateSelect(dateStr: string) {
     if (!focusId) return;
-    setItems((prev) =>
+    setRegistered((prev) =>
       prev.map((i) => (i.id === focusId ? { ...i, date: dateStr } : i))
     );
-    // Auto-advance to next unfilled active item
-    const currentIdx = activeItems.findIndex((i) => i.id === focusId);
-    const nextUnfilled = activeItems.find(
-      (i, idx) => idx > currentIdx && !i.date && i.id !== focusId
-    );
+    const currentIdx = registered.findIndex((i) => i.id === focusId);
+    const nextUnfilled = registered.find((i, idx) => idx > currentIdx && !i.date);
     if (nextUnfilled) {
       setFocusId(nextUnfilled.id);
     } else {
-      // Check remaining unfilled
-      const anyUnfilled = activeItems.find((i) => !items.find((it) => it.id === i.id)?.date && i.id !== focusId);
+      const anyUnfilled = registered.find((i) => !i.date && i.id !== focusId);
       if (anyUnfilled) setFocusId(anyUnfilled.id);
     }
-  };
+  }
 
-  const goToStep2 = () => {
+  function goToStep2() {
     setStep(2);
-    // Set focus to first unfilled active item
-    const updatedActive = items.filter((i) => enabled.has(i.id));
-    const firstUnfilled = updatedActive.find((i) => !i.date);
-    setFocusId(firstUnfilled?.id ?? updatedActive[0]?.id ?? null);
-  };
+    const firstUnfilled = registered.find((i) => !i.date);
+    setFocusId(firstUnfilled?.id ?? registered[0]?.id ?? null);
+  }
 
-  const handleSave = () => {
+  function handleSave() {
     const updates: Record<string, unknown> = {};
-    const activeList = items.filter((i) => enabled.has(i.id));
-
-    // Built-in milestones
     for (const m of MILESTONES) {
-      const item = activeList.find((i) => i.id === m.key);
+      const item = registered.find((i) => i.id === m.key);
       updates[m.key] = item?.date || '';
     }
-
-    // Custom milestones
-    const customMs = activeList
-      .filter((i) => !i.builtIn)
-      .map((i) => ({ id: i.id, label: i.label, date: i.date, color: i.color }));
-    updates.customMilestones = customMs;
-
-    // Order
-    updates.milestoneOrder = activeList.map((i) => i.id);
-
+    const nonRequired = registered.filter((i) => i.type !== 'required');
+    updates.customMilestones = nonRequired.map((i) => ({
+      id: i.id,
+      label: i.label,
+      date: i.date,
+      color: i.color,
+    }));
+    updates.milestoneOrder = registered.map((i) => i.id);
     onSave(updates);
-  };
+  }
 
-  const allActiveFilled = useMemo(
-    () => activeItems.every((i) => items.find((it) => it.id === i.id)?.date),
-    [activeItems, items]
+  const allRegisteredFilled = useMemo(
+    () => registered.every((i) => !!i.date),
+    [registered]
   );
+
+  const activeItem = activeId ? allItems.find((i) => i.id === activeId) : null;
+
+  const isOverRegistered = (() => {
+    if (!activeId) return false;
+    const item = allItems.find((i) => i.id === activeId);
+    return item ? findContainer(activeId) !== 'registered' : false;
+  })();
+
+  const isOverPool = (() => {
+    if (!activeId) return false;
+    const item = allItems.find((i) => i.id === activeId);
+    return item ? item.type !== 'required' && findContainer(activeId) !== 'pool' : false;
+  })();
 
   return (
     <div className="flex flex-col h-full">
@@ -390,92 +477,133 @@ export function ScheduleWizard({ project, onSave, onClose }: ScheduleWizardProps
       <div className="flex-1 overflow-y-auto">
         {step === 1 ? (
           <div className="px-5 py-4 space-y-3">
-            <div className="text-[11px] font-semibold text-tx-muted mb-1">
-              마일스톤을 선택하고 드래그하여 순서를 변경하세요
-            </div>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2">
-                  {items.map((item) => (
-                    <SortableItem
-                      key={item.id}
-                      item={item}
-                      checked={enabled.has(item.id)}
-                      onToggle={() => handleToggle(item.id)}
-                      onRemove={!item.builtIn ? () => handleRemoveCustom(item.id) : undefined}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-
-            {/* Add custom milestone */}
-            {!showAddForm ? (
-              <button
-                type="button"
-                onClick={() => setShowAddForm(true)}
-                className="w-full rounded-xl border border-dashed border-ln px-3 py-2.5 text-xs font-semibold text-tx-tertiary hover:text-accent hover:border-accent/40 transition-colors"
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
+            >
+              {/* 시험 일정 등록 영역 */}
+              <DroppableZone
+                id={REGISTERED_ID}
+                label="시험 일정 등록"
+                hint="— 필수 일정 + 선택 일정"
+                isOver={isOverRegistered}
               >
-                + 일정 추가
-              </button>
-            ) : (
-              <div className="rounded-xl border border-accent/30 bg-accent/5 px-3 py-3 space-y-2.5">
-                <input
-                  type="text"
-                  placeholder="마일스톤 이름"
-                  value={newLabel}
-                  onChange={(e) => setNewLabel(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddCustom()}
-                  autoFocus
-                  className="w-full h-8 rounded-lg border border-ln bg-surface-base px-3 text-xs text-tx-primary placeholder:text-tx-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
-                />
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-tx-muted shrink-0">색상</span>
-                  <div className="flex gap-1.5">
-                    {CUSTOM_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setNewColor(c)}
-                        className={`w-5 h-5 rounded-full ${MILESTONE_COLOR_MAP[c].dot} transition-all ${
-                          newColor === c ? 'ring-2 ring-offset-1 ring-accent scale-110' : 'opacity-60 hover:opacity-100'
-                        }`}
+                <SortableContext items={registered.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-1.5">
+                    {registered.map((item) => (
+                      <SortableChip
+                        key={item.id}
+                        item={item}
+                        onRemove={item.type !== 'required' ? () => moveToPool(item.id) : undefined}
                       />
                     ))}
                   </div>
-                </div>
-                <div className="flex gap-2">
+                </SortableContext>
+                {registered.length === 0 && (
+                  <div className="text-[11px] text-tx-muted text-center py-3">
+                    아래에서 일정을 드래그하여 추가하세요
+                  </div>
+                )}
+              </DroppableZone>
+
+              {/* 시험 일정 목록 영역 */}
+              <DroppableZone
+                id={POOL_ID}
+                label="시험 일정 목록"
+                hint="— 후보 일정 (드래그하여 등록)"
+                isOver={isOverPool}
+              >
+                <SortableContext items={pool.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-1.5">
+                    {pool.map((item) => (
+                      <SortableChip
+                        key={item.id}
+                        item={item}
+                        onRemove={item.type === 'custom' ? () => deleteCustom(item.id) : undefined}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+                {pool.length === 0 && !showAddForm && (
+                  <div className="text-[11px] text-tx-muted text-center py-2">
+                    모든 일정이 등록되었습니다
+                  </div>
+                )}
+
+                {/* + 일정 추가 */}
+                {!showAddForm ? (
                   <button
                     type="button"
-                    onClick={() => { setShowAddForm(false); setNewLabel(''); }}
-                    className="flex-1 rounded-lg border border-ln px-2 py-1.5 text-[11px] font-semibold text-tx-tertiary hover:text-tx-primary"
+                    onClick={() => setShowAddForm(true)}
+                    className="w-full mt-2 rounded-lg border border-dashed border-ln px-2.5 py-1.5 text-[11px] font-semibold text-tx-tertiary hover:text-accent hover:border-accent/40 transition-colors"
                   >
-                    취소
+                    + 일정 추가
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleAddCustom}
-                    disabled={!newLabel.trim()}
-                    className={`flex-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-white ${
-                      newLabel.trim() ? 'bg-accent hover:bg-accent-hover' : 'bg-accent/40 cursor-not-allowed'
-                    }`}
-                  >
-                    추가
-                  </button>
-                </div>
-              </div>
-            )}
+                ) : (
+                  <div className="mt-2 rounded-lg border border-accent/30 bg-accent/5 px-2.5 py-2 space-y-2">
+                    <input
+                      type="text"
+                      placeholder="마일스톤 이름"
+                      value={newLabel}
+                      onChange={(e) => setNewLabel(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddCustom()}
+                      autoFocus
+                      className="w-full h-7 rounded-md border border-ln bg-surface-base px-2.5 text-[11px] text-tx-primary placeholder:text-tx-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-tx-muted shrink-0">색상</span>
+                      <div className="flex gap-1.5">
+                        {CUSTOM_COLORS.map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setNewColor(c)}
+                            className={`w-4 h-4 rounded-full ${MILESTONE_COLOR_MAP[c].dot} transition-all ${
+                              newColor === c ? 'ring-2 ring-offset-1 ring-accent scale-110' : 'opacity-50 hover:opacity-100'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex-1" />
+                      <button
+                        type="button"
+                        onClick={() => { setShowAddForm(false); setNewLabel(''); }}
+                        className="rounded-md border border-ln px-2 py-1 text-[10px] font-semibold text-tx-tertiary hover:text-tx-primary"
+                      >
+                        취소
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddCustom}
+                        disabled={!newLabel.trim()}
+                        className={`rounded-md px-2 py-1 text-[10px] font-semibold text-white ${
+                          newLabel.trim() ? 'bg-accent hover:bg-accent-hover' : 'bg-accent/40 cursor-not-allowed'
+                        }`}
+                      >
+                        추가
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </DroppableZone>
+
+              <DragOverlay>
+                {activeItem ? <OverlayChip item={activeItem} /> : null}
+              </DragOverlay>
+            </DndContext>
           </div>
         ) : (
           <div className="px-5 py-4 space-y-4">
-            {/* Milestone chips - horizontal */}
+            {/* Milestone chips */}
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {activeItems.map((item) => {
-                const current = items.find((i) => i.id === item.id)!;
+              {registered.map((item) => {
                 const isFocused = focusId === item.id;
-                const hasFilled = !!current.date;
-                const colors = MILESTONE_COLOR_MAP[current.color];
-
+                const hasFilled = !!item.date;
+                const colors = MILESTONE_COLOR_MAP[item.color];
                 return (
                   <button
                     key={item.id}
@@ -498,11 +626,11 @@ export function ScheduleWizard({ project, onSave, onClose }: ScheduleWizardProps
                         <span className={`w-2 h-2 rounded-full ${colors.dot} ${isFocused ? 'animate-pulse' : ''}`} />
                       )}
                       <span className={`text-[11px] font-semibold ${isFocused ? colors.text : hasFilled ? colors.text : 'text-tx-muted'}`}>
-                        {current.label}
+                        {item.label}
                       </span>
                     </div>
                     {hasFilled && (
-                      <div className={`text-[10px] ${colors.text} opacity-70`}>{current.date}</div>
+                      <div className={`text-[10px] ${colors.text} opacity-70`}>{item.date}</div>
                     )}
                   </button>
                 );
@@ -511,7 +639,7 @@ export function ScheduleWizard({ project, onSave, onClose }: ScheduleWizardProps
 
             {/* Calendar */}
             <WizardCalendar
-              milestones={items.filter((i) => enabled.has(i.id))}
+              milestones={registered}
               focusId={focusId}
               onSelectDate={handleDateSelect}
             />
@@ -533,9 +661,9 @@ export function ScheduleWizard({ project, onSave, onClose }: ScheduleWizardProps
             <button
               type="button"
               onClick={goToStep2}
-              disabled={activeItems.length === 0}
+              disabled={registered.length === 0}
               className={`rounded-lg px-4 py-1.5 text-xs font-semibold text-white ${
-                activeItems.length > 0 ? 'bg-accent hover:bg-accent-hover' : 'bg-accent/40 cursor-not-allowed'
+                registered.length > 0 ? 'bg-accent hover:bg-accent-hover' : 'bg-accent/40 cursor-not-allowed'
               }`}
             >
               다음 →
@@ -553,9 +681,9 @@ export function ScheduleWizard({ project, onSave, onClose }: ScheduleWizardProps
             <button
               type="button"
               onClick={handleSave}
-              disabled={!allActiveFilled}
+              disabled={!allRegisteredFilled}
               className={`rounded-lg px-4 py-1.5 text-xs font-semibold text-white ${
-                allActiveFilled ? 'bg-accent hover:bg-accent-hover' : 'bg-accent/40 cursor-not-allowed'
+                allRegisteredFilled ? 'bg-accent hover:bg-accent-hover' : 'bg-accent/40 cursor-not-allowed'
               }`}
             >
               저장
