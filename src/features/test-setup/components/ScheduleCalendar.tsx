@@ -13,6 +13,21 @@ type MilestoneEntry = {
   color: MilestoneColor;
 };
 
+type ProjectSpan = {
+  testNumber: string;
+  color: MilestoneColor;
+  minDate: string;
+  maxDate: string;
+  lane: number;
+};
+
+type PeriodBar = {
+  color: MilestoneColor;
+  lane: number;
+  isStart: boolean;
+  isEnd: boolean;
+};
+
 export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
   const today = new Date();
   const todayStr = toLocalDateString(today);
@@ -33,16 +48,12 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, [popoverDate]);
 
-  // Per-project color map
   const projectColorMap = useMemo(() => {
     const map = new Map<string, MilestoneColor>();
-    for (const p of projects) {
-      map.set(p.testNumber, getProjectColor(p));
-    }
+    for (const p of projects) map.set(p.testNumber, getProjectColor(p));
     return map;
   }, [projects]);
 
-  // Build date -> milestones map (using project color, not milestone color)
   const dateMap = useMemo(() => {
     const map: Record<string, MilestoneEntry[]> = {};
     for (const project of projects) {
@@ -51,66 +62,95 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
         const dateValue = project[ms.key as keyof Project] as string | undefined;
         if (!dateValue) continue;
         if (!map[dateValue]) map[dateValue] = [];
-        map[dateValue].push({
-          testNumber: project.testNumber,
-          milestoneLabel: ms.label,
-          color,
-        });
+        map[dateValue].push({ testNumber: project.testNumber, milestoneLabel: ms.label, color });
       }
-      // Custom milestones
       for (const cm of project.customMilestones ?? []) {
         if (!cm.date) continue;
         if (!map[cm.date]) map[cm.date] = [];
-        map[cm.date].push({
-          testNumber: project.testNumber,
-          milestoneLabel: cm.label,
-          color,
-        });
+        map[cm.date].push({ testNumber: project.testNumber, milestoneLabel: cm.label, color });
       }
     }
     return map;
   }, [projects, projectColorMap]);
 
+  // Compute project spans + lane assignment
+  const projectSpans = useMemo(() => {
+    const spans: Array<Omit<ProjectSpan, 'lane'>> = [];
+    for (const project of projects) {
+      const color = projectColorMap.get(project.testNumber) ?? 'blue';
+      const dates: string[] = [];
+      for (const ms of MILESTONES) {
+        const d = project[ms.key as keyof Project] as string | undefined;
+        if (d) dates.push(d);
+      }
+      for (const cm of project.customMilestones ?? []) {
+        if (cm.date) dates.push(cm.date);
+      }
+      if (dates.length >= 2) {
+        dates.sort();
+        spans.push({ testNumber: project.testNumber, color, minDate: dates[0], maxDate: dates[dates.length - 1] });
+      }
+    }
+    // Greedy lane assignment
+    spans.sort((a, b) => a.minDate.localeCompare(b.minDate));
+    const laneEnds: string[] = [];
+    const result: ProjectSpan[] = [];
+    for (const span of spans) {
+      let lane = -1;
+      for (let i = 0; i < laneEnds.length; i++) {
+        if (laneEnds[i] < span.minDate) { lane = i; laneEnds[i] = span.maxDate; break; }
+      }
+      if (lane === -1) { lane = laneEnds.length; laneEnds.push(span.maxDate); }
+      result.push({ ...span, lane });
+    }
+    return result;
+  }, [projects, projectColorMap]);
+
+  // Precompute date -> period bars
+  const datePeriodMap = useMemo(() => {
+    const map = new Map<string, PeriodBar[]>();
+    for (const span of projectSpans) {
+      const d = new Date(span.minDate + 'T00:00:00');
+      const end = new Date(span.maxDate + 'T00:00:00');
+      while (d <= end) {
+        const ds = toLocalDateString(d);
+        const arr = map.get(ds) ?? [];
+        arr.push({ color: span.color, lane: span.lane, isStart: ds === span.minDate, isEnd: ds === span.maxDate });
+        map.set(ds, arr);
+        d.setDate(d.getDate() + 1);
+      }
+    }
+    return map;
+  }, [projectSpans]);
+
+  const maxLanes = projectSpans.length > 0 ? Math.max(...projectSpans.map((s) => s.lane)) + 1 : 0;
+  const cellHeight = 40 + maxLanes * 5;
+
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
-  const startOfMonth = new Date(year, month, 1);
-  const endOfMonth = new Date(year, month + 1, 0);
-  const startDay = startOfMonth.getDay();
-  const daysInMonth = endOfMonth.getDate();
-
-  void startOfMonth;
+  const startDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const cells: Array<{ day: number; dateStr: string; dayOfWeek: number } | null> = [];
-  for (let i = 0; i < startDay; i++) {
-    cells.push(null);
-  }
+  for (let i = 0; i < startDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
-    const m = String(month + 1).padStart(2, '0');
+    const mm = String(month + 1).padStart(2, '0');
     const dd = String(d).padStart(2, '0');
-    cells.push({ day: d, dateStr: `${year}-${m}-${dd}`, dayOfWeek: new Date(year, month, d).getDay() });
+    cells.push({ day: d, dateStr: `${year}-${mm}-${dd}`, dayOfWeek: new Date(year, month, d).getDay() });
   }
 
   const handleCellClick = (dateStr: string, e: React.MouseEvent<HTMLButtonElement>) => {
     const milestones = dateMap[dateStr];
     if (!milestones || milestones.length === 0) return;
-
-    if (popoverDate === dateStr) {
-      setPopoverDate(null);
-      return;
-    }
-
+    if (popoverDate === dateStr) { setPopoverDate(null); return; }
     const rect = e.currentTarget.getBoundingClientRect();
     const calRect = calendarRef.current?.getBoundingClientRect();
     if (calRect) {
-      setPopoverPos({
-        top: rect.bottom - calRect.top + 4,
-        left: rect.left - calRect.left + rect.width / 2,
-      });
+      setPopoverPos({ top: rect.bottom - calRect.top + 4, left: rect.left - calRect.left + rect.width / 2 });
     }
     setPopoverDate(dateStr);
   };
 
-  // Active projects for legend
   const activeProjects = useMemo(() => {
     const seen = new Set<string>();
     const result: Array<{ testNumber: string; color: MilestoneColor }> = [];
@@ -124,45 +164,28 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
 
   return (
     <div ref={calendarRef} className="relative rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0b1230]/90 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] p-4">
-      {/* Month navigation */}
       <div className="flex items-center justify-between mb-3">
-        <button
-          type="button"
-          onClick={() => setViewDate(new Date(year, month - 1, 1))}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 transition"
-        >
-          이전
-        </button>
-        <span className="text-sm font-bold text-slate-700 dark:text-white/90">
-          {year}년 {month + 1}월
-        </span>
-        <button
-          type="button"
-          onClick={() => setViewDate(new Date(year, month + 1, 1))}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 transition"
-        >
-          다음
-        </button>
+        <button type="button" onClick={() => setViewDate(new Date(year, month - 1, 1))}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 transition">이전</button>
+        <span className="text-sm font-bold text-slate-700 dark:text-white/90">{year}년 {month + 1}월</span>
+        <button type="button" onClick={() => setViewDate(new Date(year, month + 1, 1))}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 transition">다음</button>
       </div>
 
-      {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-1 mb-1">
         {['일', '월', '화', '수', '목', '금', '토'].map((day, i) => (
           <div key={day} className={`text-center text-[10px] font-semibold py-1 ${
             i === 0 || i === 6 ? 'text-slate-300 dark:text-white/30' : 'text-slate-400 dark:text-white/50'
-          }`}>
-            {day}
-          </div>
+          }`}>{day}</div>
         ))}
       </div>
 
-      {/* Date cells */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-x-0 gap-y-1">
         {cells.map((cell, idx) => {
           if (!cell) {
             const blankDow = idx % 7;
             const isWeekend = blankDow === 0 || blankDow === 6;
-            return <div key={`empty-${idx}`} className={`h-10 rounded-lg ${isWeekend ? 'bg-slate-50 dark:bg-white/[0.03]' : ''}`} />;
+            return <div key={`empty-${idx}`} style={{ height: cellHeight }} className={`rounded-lg ${isWeekend ? 'bg-slate-50 dark:bg-white/[0.03]' : ''}`} />;
           }
 
           const isToday = cell.dateStr === todayStr;
@@ -170,6 +193,7 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
           const milestones = dateMap[cell.dateStr] || [];
           const hasMilestones = milestones.length > 0;
           const uniqueColors = [...new Set(milestones.map((m) => m.color))];
+          const periods = datePeriodMap.get(cell.dateStr) ?? [];
 
           return (
             <button
@@ -177,7 +201,8 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
               type="button"
               disabled={isWeekend && !hasMilestones}
               onClick={(e) => handleCellClick(cell.dateStr, e)}
-              className={`relative h-10 rounded-lg text-xs font-medium transition flex flex-col items-center justify-center gap-0.5 ${
+              style={{ height: cellHeight }}
+              className={`relative rounded-lg text-xs font-medium transition flex flex-col items-center justify-start pt-1.5 gap-0.5 overflow-hidden ${
                 isWeekend
                   ? hasMilestones
                     ? 'bg-slate-50 dark:bg-white/[0.03] text-slate-400 dark:text-white/40 cursor-pointer'
@@ -189,14 +214,26 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
                       : 'text-slate-500 dark:text-white/60'
               }`}
             >
-              <span>{cell.day}</span>
+              <span className="relative z-10">{cell.day}</span>
               {uniqueColors.length > 0 && (
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-0.5 relative z-10">
                   {uniqueColors.map((color) => (
                     <span key={color} className={`w-1.5 h-1.5 rounded-full ${MILESTONE_COLOR_MAP[color].dot}`} />
                   ))}
                 </div>
               )}
+              {/* Period bars */}
+              {periods.map((p, pi) => (
+                <div
+                  key={pi}
+                  className={`absolute left-0 right-0 ${MILESTONE_COLOR_MAP[p.color].dot} opacity-20 ${
+                    p.isStart && p.isEnd ? 'rounded-full mx-1' :
+                    p.isStart ? 'rounded-l-full ml-0.5' :
+                    p.isEnd ? 'rounded-r-full mr-0.5' : ''
+                  }`}
+                  style={{ bottom: 2 + p.lane * 5, height: 4 }}
+                />
+              ))}
             </button>
           );
         })}
@@ -204,21 +241,14 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
 
       {/* Popover */}
       {popoverDate && dateMap[popoverDate] && (
-        <div
-          ref={popoverRef}
+        <div ref={popoverRef}
           className="absolute z-40 w-56 rounded-xl border border-slate-200 dark:border-white/15 bg-white/95 dark:bg-[#0b1230]/95 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.5)] p-3"
-          style={{
-            top: popoverPos.top,
-            left: Math.max(0, Math.min(popoverPos.left - 112, (calendarRef.current?.offsetWidth ?? 224) - 224)),
-          }}
-        >
+          style={{ top: popoverPos.top, left: Math.max(0, Math.min(popoverPos.left - 112, (calendarRef.current?.offsetWidth ?? 224) - 224)) }}>
           <div className="text-[11px] font-semibold text-slate-500 dark:text-white/60 mb-2">{popoverDate}</div>
           <div className="space-y-1.5">
             {dateMap[popoverDate].map((entry, i) => (
-              <div
-                key={`${entry.testNumber}-${entry.milestoneLabel}-${i}`}
-                className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] ${MILESTONE_COLOR_MAP[entry.color].border} ${MILESTONE_COLOR_MAP[entry.color].bg}`}
-              >
+              <div key={`${entry.testNumber}-${entry.milestoneLabel}-${i}`}
+                className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] ${MILESTONE_COLOR_MAP[entry.color].border} ${MILESTONE_COLOR_MAP[entry.color].bg}`}>
                 <span className={`w-2 h-2 rounded-full shrink-0 ${MILESTONE_COLOR_MAP[entry.color].dot}`} />
                 <span className={`font-semibold ${MILESTONE_COLOR_MAP[entry.color].text}`}>{entry.testNumber}</span>
                 <span className={`${MILESTONE_COLOR_MAP[entry.color].text} opacity-80`}>{entry.milestoneLabel}</span>
