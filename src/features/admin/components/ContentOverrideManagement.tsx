@@ -1,11 +1,15 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Pencil, Check, X, RotateCcw, ChevronDown, ChevronRight, FileDown, AlertTriangle, Loader2, Trash2 } from 'lucide-react';
+import { Pencil, RotateCcw, ChevronDown, ChevronRight, AlertTriangle, Trash2 } from 'lucide-react';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db } from '../../../lib/firebase';
 import { doc, setDoc, deleteDoc, getDocs, collection, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import type { ContentOverride, BranchingRule } from '../../../lib/content/mergeOverrides';
+import type { ContentOverride } from '../../../lib/content/mergeOverrides';
 import type { RequirementCategory, QuestionImportance } from '../../../types';
 import { inferImportance } from '../../../utils/quickMode';
+import { AdminPageHeader, BusyOverlay } from '../shared';
+import { ConfirmModal } from '../../../components/ui/ConfirmModal';
+import { ContentEditForm } from './content/ContentEditForm';
+import { splitRef, joinRef, type EditingState } from './content/types';
 
 const CATEGORY_LABELS: Record<RequirementCategory, string> = {
   SETUP: '시험 준비',
@@ -14,42 +18,6 @@ const CATEGORY_LABELS: Record<RequirementCategory, string> = {
 };
 
 const CATEGORY_ORDER: RequirementCategory[] = ['SETUP', 'EXECUTION', 'COMPLETION'];
-
-const REF_PATTERN = /\s*\[ref:\s*(.+?)\]\s*$/;
-
-/** 체크포인트 텍스트에서 본문과 [ref:~] 부분을 분리 */
-const splitRef = (text: string): { body: string; refSuffix: string; refs: string[] } => {
-  const match = text.match(REF_PATTERN);
-  if (!match) return { body: text, refSuffix: '', refs: [] };
-  const refs = match[1].split(',').map((r) => r.trim()).filter(Boolean);
-  return {
-    body: text.replace(REF_PATTERN, '').trim(),
-    refSuffix: match[0],
-    refs,
-  };
-};
-
-/** refs 배열로부터 [ref:~] 접미사를 생성 */
-const buildRefSuffix = (refs: string[]): string =>
-  refs.length > 0 ? ` [ref: ${refs.join(', ')}]` : '';
-
-/** 편집된 본문 + refs 배열을 합침 */
-const joinRef = (body: string, refs: string[]): string =>
-  `${body.trim()}${buildRefSuffix(refs)}`;
-
-type EditingState = {
-  reqId: string;
-  title: string;
-  description: string;
-  checkpoints: Record<number, string>; // body only (without [ref:~])
-  checkpointRefs: Record<number, string[]>; // refs per checkpoint
-  checkpointImportances: Record<number, QuestionImportance>;
-  checkpointDetails: Record<number, string>;
-  evidenceExamples: string[];
-  testSuggestions: string[];
-  passCriteria: string;
-  branchingRules: BranchingRule[];
-};
 
 export function ContentOverrideManagement() {
   const [overrides, setOverrides] = useState<Record<string, ContentOverride>>({});
@@ -103,9 +71,8 @@ export function ContentOverrideManagement() {
     return () => document.removeEventListener('mousedown', handler);
   }, [refDropdownIdx]);
 
-  /** 자료를 카테고리별로 그룹화 (마크다운 + Firestore 병합) */
+  /** Group materials by category (markdown + Firestore merged) */
   const groupedMaterials = useMemo(() => {
-    // label → 연관된 step IDs (마크다운 requiredDocs + Firestore linkedSteps 합산)
     const labelSteps = new Map<string, Set<string>>();
     for (const req of REQUIREMENTS_DB) {
       for (const d of req.requiredDocs ?? []) {
@@ -132,7 +99,6 @@ export function ContentOverrideManagement() {
       groups[category].push(label);
     }
 
-    // 그룹 내 정렬
     for (const g of groupOrder) groups[g].sort();
     return groupOrder.map((name) => ({ name, labels: groups[name] })).filter((g) => g.labels.length > 0);
   }, [docMaterialsList]);
@@ -231,7 +197,6 @@ export function ContentOverrideManagement() {
       const { body, refs } = splitRef(full);
       return { i, body, refs };
     });
-    // 중요도: 오버라이드 → 추론값 순으로 초기화
     const cpImportances: Record<number, QuestionImportance> = {};
     (req.checkPoints ?? []).forEach((cp: string, i: number) => {
       const ovText = ov?.checkpoints?.[i] ?? cp;
@@ -258,7 +223,6 @@ export function ContentOverrideManagement() {
     const req = REQUIREMENTS_DB.find((r) => r.id === editing.reqId);
     if (!req) return;
 
-    // Only save fields that differ from markdown original
     const patch: ContentOverride = { updatedAt: serverTimestamp(), updatedBy: 'admin' };
     if (editing.title !== req.title) patch.title = editing.title;
     if (editing.description !== req.description) patch.description = editing.description;
@@ -277,7 +241,6 @@ export function ContentOverrideManagement() {
     }
     if (Object.keys(cpDiffs).length > 0) patch.checkpoints = cpDiffs;
 
-    // 체크포인트 중요도 (추론값과 다른 것만 저장)
     const impDiffs: Record<number, QuestionImportance> = {};
     for (const [iStr, importance] of Object.entries(editing.checkpointImportances)) {
       const i = Number(iStr);
@@ -289,7 +252,6 @@ export function ContentOverrideManagement() {
     }
     if (Object.keys(impDiffs).length > 0) patch.checkpointImportances = impDiffs;
 
-    // 체크포인트 상세 메모 (비어있지 않은 항목만 저장)
     const detailDiffs: Record<number, string> = {};
     for (const [iStr, detail] of Object.entries(editing.checkpointDetails)) {
       const trimmed = detail.trim();
@@ -297,32 +259,27 @@ export function ContentOverrideManagement() {
     }
     if (Object.keys(detailDiffs).length > 0) patch.checkpointDetails = detailDiffs;
 
-    // 증빙 예시
     const origEvidence = req.evidenceExamples ?? [];
     const editedEvidence = editing.evidenceExamples;
     if (JSON.stringify(editedEvidence) !== JSON.stringify(origEvidence)) {
       patch.evidenceExamples = editedEvidence;
     }
 
-    // 테스트 제안
     const origSuggestions = req.testSuggestions ?? [];
     const editedSuggestions = editing.testSuggestions;
     if (JSON.stringify(editedSuggestions) !== JSON.stringify(origSuggestions)) {
       patch.testSuggestions = editedSuggestions;
     }
 
-    // 판정 기준
     const origCriteria = req.passCriteria ?? '';
     if (editing.passCriteria !== origCriteria) {
       patch.passCriteria = editing.passCriteria;
     }
 
-    // 분기 규칙
     if (editing.branchingRules.length > 0) {
       patch.branchingRules = editing.branchingRules;
     }
 
-    // If nothing changed, delete override
     setBusy(true);
     try {
       if (!patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.checkpointDetails && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules) {
@@ -373,14 +330,10 @@ export function ContentOverrideManagement() {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-extrabold text-tx-primary">콘텐츠 관리</h1>
-          <p className="text-xs text-tx-tertiary mt-1">
-            점검항목의 제목, 설명, 체크포인트, 상세 정보(증빙 예시·테스트 제안·판정 기준)를 수정합니다. 원본과 다른 항목은 뱃지로 표시됩니다. ({overrideCount}건 수정됨)
-          </p>
-        </div>
-        {overrideCount > 0 && (
+      <AdminPageHeader
+        title="콘텐츠 관리"
+        description={`점검항목의 제목, 설명, 체크포인트, 상세 정보(증빙 예시·테스트 제안·판정 기준)를 수정합니다. 원본과 다른 항목은 뱃지로 표시됩니다. (${overrideCount}건 수정됨)`}
+        action={overrideCount > 0 ? (
           <button
             type="button"
             onClick={() => setResetAllConfirm(true)}
@@ -390,8 +343,8 @@ export function ContentOverrideManagement() {
             <Trash2 size={13} />
             전체 초기화
           </button>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       <div className="space-y-4">
         {CATEGORY_ORDER.map((cat) => {
@@ -421,297 +374,24 @@ export function ContentOverrideManagement() {
 
                     if (isEditing && editing) {
                       return (
-                        <div key={req.id} className="p-4 bg-accent-subtle space-y-3">
-                          {/* Header */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-bold text-tx-tertiary bg-surface-sunken px-1.5 py-0.5 rounded">{req.id}</span>
-                              <span className="text-xs font-semibold text-accent-text">편집 중</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <button onClick={handleSave} disabled={busy} className="rounded p-1.5 text-status-pass-text hover:bg-status-pass-bg disabled:opacity-40" title="저장">
-                                <Check size={16} />
-                              </button>
-                              <button onClick={() => setEditing(null)} disabled={busy} className="rounded p-1.5 text-tx-muted hover:bg-interactive-hover disabled:opacity-40" title="취소">
-                                <X size={16} />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Title field */}
-                          <div>
-                            <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">제목</label>
-                            <input
-                              className="mt-1 w-full rounded border border-ln bg-surface-base px-3 py-2 text-sm text-tx-primary"
-                              value={editing.title}
-                              onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                            />
-                            {editing.title !== req.title && (
-                              <p className="mt-0.5 text-[10px] text-tx-muted">원본: {req.title}</p>
-                            )}
-                          </div>
-
-                          {/* Description field */}
-                          <div>
-                            <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">설명</label>
-                            <textarea
-                              className="mt-1 w-full rounded border border-ln bg-surface-base px-3 py-2 text-sm text-tx-primary resize-y min-h-[60px]"
-                              value={editing.description}
-                              onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                              rows={3}
-                            />
-                            {editing.description !== req.description && (
-                              <p className="mt-0.5 text-[10px] text-tx-muted line-clamp-2">원본: {req.description}</p>
-                            )}
-                          </div>
-
-                          {/* Checkpoints */}
-                          {req.checkPoints && req.checkPoints.length > 0 && (
-                            <div>
-                              <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">체크포인트</label>
-                              <div className="mt-1 space-y-2.5">
-                                {req.checkPoints.map((origCp: string, i: number) => {
-                                  const { body: origBody, refs: origRefs } = splitRef(origCp);
-                                  const editedBody = editing.checkpoints[i] ?? origBody;
-                                  const editedRefs = editing.checkpointRefs[i] ?? [];
-                                  const refsChanged = JSON.stringify(editedRefs) !== JSON.stringify(origRefs);
-                                  const isDropdownOpen = refDropdownIdx === i;
-                                  const currentImportance = editing.checkpointImportances[i] ?? inferImportance(origCp);
-                                  const inferredImportance = inferImportance(origCp);
-                                  const importanceChanged = currentImportance !== inferredImportance;
-                                  return (
-                                    <div key={i} className="rounded-lg border border-ln bg-surface-base/50 overflow-hidden">
-                                      <div className="flex items-start gap-2 px-3 pt-2.5 pb-2">
-                                      <span className="shrink-0 mt-1.5 text-[10px] font-bold text-tx-tertiary w-5 text-right">{i + 1}</span>
-                                      <div className="flex-1 space-y-1">
-                                        <div className="flex items-center gap-1.5">
-                                          <input
-                                            className="flex-1 rounded border border-ln bg-surface-base px-2.5 py-1.5 text-xs text-tx-primary"
-                                            value={editedBody}
-                                            onChange={(e) => setEditing({
-                                              ...editing,
-                                              checkpoints: { ...editing.checkpoints, [i]: e.target.value },
-                                            })}
-                                          />
-                                          {/* MUST/SHOULD 토글 */}
-                                          <button
-                                            type="button"
-                                            onClick={() => setEditing({
-                                              ...editing,
-                                              checkpointImportances: {
-                                                ...editing.checkpointImportances,
-                                                [i]: currentImportance === 'MUST' ? 'SHOULD' : 'MUST',
-                                              },
-                                            })}
-                                            className={`shrink-0 px-2 py-1.5 rounded text-[10px] font-bold transition-colors ${
-                                              currentImportance === 'MUST'
-                                                ? 'bg-red-500/15 text-red-600 dark:text-red-400'
-                                                : 'bg-slate-500/10 text-slate-500 dark:text-slate-400'
-                                            } ${importanceChanged ? 'ring-1 ring-amber-400' : ''}`}
-                                            title={`클릭하여 ${currentImportance === 'MUST' ? 'SHOULD' : 'MUST'}로 변경`}
-                                          >
-                                            {currentImportance}
-                                          </button>
-                                        </div>
-                                        {/* Ref dropdown */}
-                                        <div className="relative" ref={isDropdownOpen ? dropdownRef : undefined}>
-                                          <button
-                                            type="button"
-                                            onClick={() => setRefDropdownIdx(isDropdownOpen ? null : i)}
-                                            className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded border transition-colors ${
-                                              editedRefs.length > 0
-                                                ? 'bg-accent/10 text-accent-text border-accent/30'
-                                                : 'bg-surface-sunken text-tx-muted border-ln hover:border-ln-strong'
-                                            }`}
-                                          >
-                                            <FileDown size={10} />
-                                            {editedRefs.length > 0
-                                              ? `참고 자료 ${editedRefs.length}건`
-                                              : '참고 자료 선택'}
-                                            <ChevronDown size={10} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                                          </button>
-                                          {/* Selected ref labels (inline preview) */}
-                                          {editedRefs.length > 0 && !isDropdownOpen && (
-                                            <span className="ml-1.5 text-[9px] text-tx-tertiary">
-                                              {editedRefs.join(', ')}
-                                            </span>
-                                          )}
-                                          {isDropdownOpen && (
-                                            <div className="absolute z-30 left-0 top-full mt-1 w-72 max-h-64 overflow-y-auto rounded-lg border border-ln bg-surface-overlay shadow-lg">
-                                              {groupedMaterials.map((group) => (
-                                                <div key={group.name}>
-                                                  <div className="sticky top-0 px-3 py-1.5 text-[9px] font-bold text-tx-muted uppercase tracking-wider bg-surface-raised border-b border-ln">
-                                                    {group.name}
-                                                  </div>
-                                                  {group.labels.map((label) => {
-                                                    const selected = editedRefs.includes(label);
-                                                    return (
-                                                      <button
-                                                        key={label}
-                                                        type="button"
-                                                        onClick={() => toggleRef(i, label)}
-                                                        className={`flex items-center gap-2 w-full px-3 py-1.5 text-left text-xs transition-colors ${
-                                                          selected
-                                                            ? 'bg-accent/10 text-accent-text'
-                                                            : 'text-tx-secondary hover:bg-interactive-hover'
-                                                        }`}
-                                                      >
-                                                        <span className={`shrink-0 h-3.5 w-3.5 rounded border flex items-center justify-center text-[8px] ${
-                                                          selected
-                                                            ? 'bg-accent border-accent text-white'
-                                                            : 'border-ln bg-surface-base'
-                                                        }`}>
-                                                          {selected && '✓'}
-                                                        </span>
-                                                        {label}
-                                                      </button>
-                                                    );
-                                                  })}
-                                                </div>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                        {(editedBody !== origBody || refsChanged) && (
-                                          <p className="text-[9px] text-tx-muted truncate">
-                                            원본: {origBody}{origRefs.length > 0 ? ` [ref: ${origRefs.join(', ')}]` : ''}
-                                          </p>
-                                        )}
-                                      </div>
-                                      </div>
-                                      {/* 상세 메모 — 카드 하단 */}
-                                      <div className="border-t border-ln bg-surface-sunken/40 px-3 py-2">
-                                        <textarea
-                                          className="w-full rounded border border-ln bg-surface-base px-2.5 py-1.5 text-xs text-tx-primary resize-y placeholder:text-tx-muted/50"
-                                          value={editing.checkpointDetails[i] ?? ''}
-                                          onChange={(e) => setEditing({
-                                            ...editing,
-                                            checkpointDetails: { ...editing.checkpointDetails, [i]: e.target.value },
-                                          })}
-                                          rows={1}
-                                          placeholder="이 체크포인트에 대한 상세 메모를 입력하세요"
-                                        />
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Branching Rules */}
-                          {req.checkPoints && req.checkPoints.length > 1 && (
-                            <div>
-                              <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">분기 규칙</label>
-                              <p className="text-[9px] text-tx-muted mt-0.5 mb-2">
-                                특정 질문에 &quot;아니오&quot; 답변 시 건너뛸 후속 질문을 지정합니다
-                              </p>
-                              <div className="space-y-2">
-                                {editing.branchingRules.map((rule, ruleIdx) => (
-                                  <div key={ruleIdx} className="flex items-start gap-2 p-2.5 rounded-lg border border-ln bg-surface-base">
-                                    <select
-                                      value={rule.sourceIndex}
-                                      onChange={(e) => updateBranchingSource(ruleIdx, Number(e.target.value))}
-                                      className="shrink-0 text-xs border border-ln rounded px-2 py-1 bg-surface-base text-tx-primary"
-                                    >
-                                      {req.checkPoints!.map((_: string, i: number) => (
-                                        <option key={i} value={i}>Q{i + 1}</option>
-                                      ))}
-                                    </select>
-                                    <span className="shrink-0 text-[10px] text-tx-muted mt-1.5">= NO &rarr;</span>
-                                    <div className="flex flex-wrap gap-1.5 flex-1">
-                                      {req.checkPoints!.map((_: string, i: number) => {
-                                        if (i <= rule.sourceIndex) return null;
-                                        const isSkipped = rule.skipIndices.includes(i);
-                                        return (
-                                          <button
-                                            key={i}
-                                            type="button"
-                                            onClick={() => toggleSkipIndex(ruleIdx, i)}
-                                            className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
-                                              isSkipped
-                                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-500/30'
-                                                : 'bg-surface-base text-tx-muted border-ln hover:border-ln-strong'
-                                            }`}
-                                          >
-                                            Q{i + 1}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeBranchingRule(ruleIdx)}
-                                      className="shrink-0 rounded p-1 text-tx-muted hover:text-red-500"
-                                    >
-                                      <X size={14} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={addBranchingRule}
-                                className="mt-2 text-[10px] font-semibold text-accent-text hover:underline"
-                              >
-                                + 분기 규칙 추가
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Evidence Examples */}
-                          <div>
-                            <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">증빙 예시</label>
-                            <p className="text-[9px] text-tx-muted mt-0.5 mb-1">줄바꿈으로 항목을 구분합니다</p>
-                            <textarea
-                              className="w-full rounded border border-ln bg-surface-base px-3 py-2 text-xs text-tx-primary resize-y min-h-[60px]"
-                              value={editing.evidenceExamples.join('\n')}
-                              onChange={(e) => setEditing({
-                                ...editing,
-                                evidenceExamples: e.target.value ? e.target.value.split('\n') : [],
-                              })}
-                              rows={3}
-                              placeholder="예: 테스트 결과 보고서 캡처"
-                            />
-                            {JSON.stringify(editing.evidenceExamples) !== JSON.stringify(req.evidenceExamples ?? []) && (
-                              <p className="mt-0.5 text-[9px] text-tx-muted">원본과 다름</p>
-                            )}
-                          </div>
-
-                          {/* Test Suggestions */}
-                          <div>
-                            <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">테스트 제안</label>
-                            <p className="text-[9px] text-tx-muted mt-0.5 mb-1">줄바꿈으로 항목을 구분합니다</p>
-                            <textarea
-                              className="w-full rounded border border-ln bg-surface-base px-3 py-2 text-xs text-tx-primary resize-y min-h-[60px]"
-                              value={editing.testSuggestions.join('\n')}
-                              onChange={(e) => setEditing({
-                                ...editing,
-                                testSuggestions: e.target.value ? e.target.value.split('\n') : [],
-                              })}
-                              rows={3}
-                              placeholder="예: 기능 테스트 시나리오 작성"
-                            />
-                            {JSON.stringify(editing.testSuggestions) !== JSON.stringify(req.testSuggestions ?? []) && (
-                              <p className="mt-0.5 text-[9px] text-tx-muted">원본과 다름</p>
-                            )}
-                          </div>
-
-                          {/* Pass Criteria */}
-                          <div>
-                            <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">판정 기준</label>
-                            <textarea
-                              className="mt-1 w-full rounded border border-ln bg-surface-base px-3 py-2 text-xs text-tx-primary resize-y min-h-[40px]"
-                              value={editing.passCriteria}
-                              onChange={(e) => setEditing({ ...editing, passCriteria: e.target.value })}
-                              rows={2}
-                              placeholder="예: 모든 체크포인트 충족 시 적합"
-                            />
-                            {editing.passCriteria !== (req.passCriteria ?? '') && (
-                              <p className="mt-0.5 text-[9px] text-tx-muted">원본: {req.passCriteria}</p>
-                            )}
-                          </div>
-                        </div>
+                        <ContentEditForm
+                          key={req.id}
+                          req={req}
+                          editing={editing}
+                          setEditing={(s) => setEditing(s)}
+                          onSave={handleSave}
+                          onCancel={() => setEditing(null)}
+                          busy={busy}
+                          groupedMaterials={groupedMaterials}
+                          toggleRef={toggleRef}
+                          refDropdownIdx={refDropdownIdx}
+                          setRefDropdownIdx={setRefDropdownIdx}
+                          dropdownRef={dropdownRef}
+                          addBranchingRule={addBranchingRule}
+                          removeBranchingRule={removeBranchingRule}
+                          updateBranchingSource={updateBranchingSource}
+                          toggleSkipIndex={toggleSkipIndex}
+                        />
                       );
                     }
 
@@ -756,91 +436,50 @@ export function ContentOverrideManagement() {
         })}
       </div>
 
-      {/* 되돌리기 확인 모달 */}
-      {resetTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl border border-ln bg-surface-overlay shadow-2xl p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-amber-50 dark:bg-amber-500/10 shrink-0">
-                <AlertTriangle size={20} className="text-amber-500" />
-              </div>
-              <div>
-                <h3 className="text-sm font-extrabold text-tx-primary">원본으로 되돌리기</h3>
-                <p className="text-xs text-tx-tertiary mt-0.5">
-                  <strong className="text-tx-secondary">{resetTarget}</strong> 항목의 수정 내용을 삭제하고 원본으로 복원하시겠습니까?
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setResetTarget(null)}
-                disabled={busy}
-                className="rounded-lg border border-ln px-4 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover disabled:opacity-40"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => handleReset(resetTarget)}
-                disabled={busy}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-60 flex items-center gap-1.5"
-              >
-                {busy && <Loader2 size={12} className="animate-spin" />}
-                {busy ? '처리 중...' : '되돌리기'}
-              </button>
-            </div>
+      {/* Reset single item confirm modal */}
+      <ConfirmModal
+        open={!!resetTarget}
+        title="원본으로 되돌리기"
+        description={
+          <p className="text-xs text-tx-tertiary">
+            <strong className="text-tx-secondary">{resetTarget}</strong> 항목의 수정 내용을 삭제하고 원본으로 복원하시겠습니까?
+          </p>
+        }
+        confirmLabel={busy ? '처리 중...' : '되돌리기'}
+        confirmVariant="warning"
+        onConfirm={() => resetTarget && handleReset(resetTarget)}
+        onCancel={() => setResetTarget(null)}
+        busy={busy}
+        icon={
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-amber-50 dark:bg-amber-500/10 shrink-0">
+            <AlertTriangle size={20} className="text-amber-500" />
           </div>
-        </div>
-      )}
+        }
+      />
 
-      {/* 전체 초기화 확인 모달 */}
-      {resetAllConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl border border-ln bg-surface-overlay shadow-2xl p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-red-50 dark:bg-red-500/10 shrink-0">
-                <AlertTriangle size={20} className="text-red-500" />
-              </div>
-              <div>
-                <h3 className="text-sm font-extrabold text-tx-primary">전체 초기화</h3>
-                <p className="text-xs text-tx-tertiary mt-0.5">
-                  수정된 <strong className="text-tx-secondary">{overrideCount}건</strong>의 오버라이드를 모두 삭제하고 원본으로 복원하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setResetAllConfirm(false)}
-                disabled={busy}
-                className="rounded-lg border border-ln px-4 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover disabled:opacity-40"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={handleResetAll}
-                disabled={busy}
-                className="rounded-lg bg-red-500 px-4 py-2 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-60 flex items-center gap-1.5"
-              >
-                {busy && <Loader2 size={12} className="animate-spin" />}
-                {busy ? '처리 중...' : '전체 초기화'}
-              </button>
-            </div>
+      {/* Reset all confirm modal */}
+      <ConfirmModal
+        open={resetAllConfirm}
+        title="전체 초기화"
+        description={
+          <p className="text-xs text-tx-tertiary">
+            수정된 <strong className="text-tx-secondary">{overrideCount}건</strong>의 오버라이드를 모두 삭제하고 원본으로 복원하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+          </p>
+        }
+        confirmLabel={busy ? '처리 중...' : '전체 초기화'}
+        confirmVariant="danger"
+        onConfirm={handleResetAll}
+        onCancel={() => setResetAllConfirm(false)}
+        busy={busy}
+        icon={
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-red-50 dark:bg-red-500/10 shrink-0">
+            <AlertTriangle size={20} className="text-red-500" />
           </div>
-        </div>
-      )}
+        }
+      />
 
-      {/* DB 작업 중 차단 오버레이 (저장/수정) */}
-      {busy && !resetTarget && !resetAllConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
-          <div className="flex items-center gap-2.5 rounded-xl bg-surface-overlay border border-ln shadow-xl px-5 py-3">
-            <Loader2 size={16} className="animate-spin text-accent" />
-            <span className="text-sm font-semibold text-tx-primary">저장 중...</span>
-          </div>
-        </div>
-      )}
+      {/* Busy overlay for save operations */}
+      <BusyOverlay visible={busy && !resetTarget && !resetAllConfirm} />
     </div>
   );
 }

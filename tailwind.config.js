@@ -123,6 +123,16 @@ export default {
             text: 'var(--input-text)',
             placeholder: 'var(--input-placeholder)',
           },
+          'admin-sidebar': {
+            bg: 'var(--admin-sidebar-bg)',
+            text: 'var(--admin-sidebar-text)',
+            border: 'var(--admin-sidebar-border)',
+            label: 'var(--admin-sidebar-label)',
+            'active-bg': 'var(--admin-sidebar-active-bg)',
+            'active-text': 'var(--admin-sidebar-active-text)',
+            'item-text': 'var(--admin-sidebar-item-text)',
+            'hover-bg': 'var(--admin-sidebar-hover-bg)',
+          },
           status: {
             'pass-bg': 'var(--status-pass-bg)',
             'pass-text': 'var(--status-pass-text)',

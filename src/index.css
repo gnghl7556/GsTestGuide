@@ -76,6 +76,16 @@ html.dark #root {
   /* Overlay */
   --overlay-backdrop: rgba(0, 0, 0, 0.3);
 
+  /* Admin Sidebar */
+  --admin-sidebar-bg: #0f172a;
+  --admin-sidebar-text: #cbd5e1;
+  --admin-sidebar-border: #334155;
+  --admin-sidebar-label: #64748b;
+  --admin-sidebar-active-bg: #1e293b;
+  --admin-sidebar-active-text: #ffffff;
+  --admin-sidebar-item-text: #94a3b8;
+  --admin-sidebar-hover-bg: rgba(30, 41, 59, 0.5);
+
   /* Status */
   --status-pass-bg: #ecfdf5;
   --status-pass-text: #047857;
@@ -145,6 +155,16 @@ html.dark #root {
   --status-pending-bg: rgba(255, 255, 255, 0.05);
   --status-pending-text: rgba(255, 255, 255, 0.50);
   --status-pending-border: rgba(255, 255, 255, 0.10);
+
+  /* Admin Sidebar */
+  --admin-sidebar-bg: rgba(0, 0, 0, 0.3);
+  --admin-sidebar-text: rgba(255, 255, 255, 0.7);
+  --admin-sidebar-border: rgba(255, 255, 255, 0.08);
+  --admin-sidebar-label: rgba(255, 255, 255, 0.35);
+  --admin-sidebar-active-bg: rgba(255, 255, 255, 0.1);
+  --admin-sidebar-active-text: rgba(255, 255, 255, 0.95);
+  --admin-sidebar-item-text: rgba(255, 255, 255, 0.5);
+  --admin-sidebar-hover-bg: rgba(255, 255, 255, 0.05);
 }
 
 /* 다크 모드 select option 팝업 가시성 */

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 import { Button } from '../../../components/ui';
+import { AdminPageHeader, AdminTable } from '../shared';
 import type { UserRank } from '../../../types';
 
 const RANK_OPTIONS: UserRank[] = ['전임', '선임', '책임', '수석'];
@@ -58,36 +59,34 @@ export function UserManagement() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-extrabold text-tx-primary">사용자 관리</h1>
-          <p className="text-xs text-tx-tertiary mt-1">시험원 계정을 관리합니다. ({users.length}명)</p>
-        </div>
-        <Button
-          size="sm"
-          onClick={() => {
-            setShowAddForm(true);
-            setForm(emptyForm);
-          }}
-        >
-          <Plus size={14} className="mr-1" />
-          사용자 추가
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="사용자 관리"
+        description={`시험원 계정을 관리합니다. (${users.length}명)`}
+        action={
+          <Button
+            size="sm"
+            onClick={() => {
+              setShowAddForm(true);
+              setForm(emptyForm);
+            }}
+          >
+            <Plus size={14} className="mr-1" />
+            사용자 추가
+          </Button>
+        }
+      />
 
-      <div className="rounded-xl border border-ln bg-surface-base overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-ln bg-surface-raised">
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">이름</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">직급</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">이메일</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">연락처</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-tx-secondary w-28">작업</th>
-              </tr>
-            </thead>
-            <tbody>
+      <AdminTable
+        columns={[
+          { label: '이름' },
+          { label: '직급' },
+          { label: '이메일' },
+          { label: '연락처' },
+          { label: '작업', align: 'right', className: 'w-28' },
+        ]}
+        isEmpty={users.length === 0 && !showAddForm}
+        emptyMessage="등록된 사용자가 없습니다."
+      >
               {showAddForm && (
                 <tr className="border-b border-ln bg-accent-subtle">
                   <td className="px-4 py-2">
@@ -246,17 +245,7 @@ export function UserManagement() {
                   )}
                 </tr>
               ))}
-              {users.length === 0 && !showAddForm && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-tx-muted">
-                    등록된 사용자가 없습니다.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </AdminTable>
     </div>
   );
 }

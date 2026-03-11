@@ -22,8 +22,8 @@ export function AdminLayout() {
 
   return (
     <div className="flex h-screen bg-surface-raised">
-      <aside className="flex w-56 flex-col bg-slate-900 text-slate-300">
-        <div className="px-4 py-4 border-b border-slate-700 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+      <aside className="flex w-56 flex-col bg-admin-sidebar-bg text-admin-sidebar-text">
+        <div className="px-4 py-4 border-b border-admin-sidebar-border text-[10px] font-bold uppercase tracking-wider text-admin-sidebar-label">
           관리자 메뉴
         </div>
         <nav className="flex-1 space-y-1 px-2">
@@ -34,8 +34,8 @@ export function AdminLayout() {
               className={({ isActive }) =>
                 `flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors ${
                   isActive
-                    ? 'bg-slate-800 text-white'
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    ? 'bg-admin-sidebar-active-bg text-admin-sidebar-active-text'
+                    : 'text-admin-sidebar-item-text hover:bg-admin-sidebar-hover-bg hover:text-admin-sidebar-text'
                 }`
               }
             >
@@ -44,11 +44,11 @@ export function AdminLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-slate-700 p-3">
+        <div className="border-t border-admin-sidebar-border p-3">
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-red-400"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-admin-sidebar-item-text hover:bg-admin-sidebar-active-bg hover:text-red-400"
           >
             <LogOut size={14} />
             관리자 나가기

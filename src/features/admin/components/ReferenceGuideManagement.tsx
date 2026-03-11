@@ -4,6 +4,7 @@ import { REFERENCES } from 'virtual:content/references';
 import { db } from '../../../lib/firebase';
 import { doc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { Button } from '../../../components/ui';
+import { AdminPageHeader } from '../shared';
 import type { ReferenceGuide } from 'virtual:content/references';
 
 type GuideForm = {
@@ -236,18 +237,16 @@ export function ReferenceGuideManagement() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-extrabold text-tx-primary">참조 가이드 관리</h1>
-          <p className="text-xs text-tx-tertiary mt-1">
-            체크리스트 좌측 하단의 참조 가이드 내용을 추가·수정합니다. ({guides.length}건)
-          </p>
-        </div>
-        <Button size="sm" onClick={handleAddStart} disabled={adding}>
-          <Plus size={14} className="mr-1" />
-          가이드 추가
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="참조 가이드 관리"
+        description={`체크리스트 좌측 하단의 참조 가이드 내용을 추가·수정합니다. (${guides.length}건)`}
+        action={
+          <Button size="sm" onClick={handleAddStart} disabled={adding}>
+            <Plus size={14} className="mr-1" />
+            가이드 추가
+          </Button>
+        }
+      />
 
       <div className="space-y-3">
         {adding && renderForm()}

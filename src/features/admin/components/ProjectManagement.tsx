@@ -4,6 +4,7 @@ import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 import { db } from '../../../lib/firebase';
 import { Button } from '../../../components/ui';
+import { AdminPageHeader, AdminTable } from '../shared';
 import type { ProjectStatus } from '../../../types';
 
 const STATUS_OPTIONS: ProjectStatus[] = ['대기', '진행', '중단', '완료', '재시험'];
@@ -72,19 +73,19 @@ export function ProjectManagement() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-extrabold text-tx-primary">프로젝트 관리</h1>
-          <p className="text-xs text-tx-tertiary mt-1">시험 프로젝트를 관리합니다. ({projects.length}건)</p>
-        </div>
-        <Button
-          size="sm"
-          onClick={() => setShowCreateForm(true)}
-        >
-          <Plus size={14} className="mr-1" />
-          프로젝트 생성
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="프로젝트 관리"
+        description={`시험 프로젝트를 관리합니다. (${projects.length}건)`}
+        action={
+          <Button
+            size="sm"
+            onClick={() => setShowCreateForm(true)}
+          >
+            <Plus size={14} className="mr-1" />
+            프로젝트 생성
+          </Button>
+        }
+      />
 
       {showCreateForm && (
         <div className="mb-4 rounded-xl border border-ln bg-surface-base p-4">
@@ -130,20 +131,18 @@ export function ProjectManagement() {
         </div>
       )}
 
-      <div className="rounded-xl border border-ln bg-surface-base overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-ln bg-surface-raised">
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">시험번호</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">제품명</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">업체</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">상태</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-tx-secondary">시험원</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-tx-secondary w-32">작업</th>
-              </tr>
-            </thead>
-            <tbody>
+      <AdminTable
+        columns={[
+          { label: '시험번호' },
+          { label: '제품명' },
+          { label: '업체' },
+          { label: '상태' },
+          { label: '시험원' },
+          { label: '작업', align: 'right', className: 'w-32' },
+        ]}
+        isEmpty={projects.length === 0}
+        emptyMessage="등록된 프로젝트가 없습니다."
+      >
               {projects.map((project) => (
                 <tr key={project.id} className="border-b border-ln hover:bg-interactive-hover">
                   <td className="px-4 py-3 font-semibold text-tx-primary">{project.testNumber}</td>
@@ -217,17 +216,7 @@ export function ProjectManagement() {
                   </td>
                 </tr>
               ))}
-              {projects.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-tx-muted">
-                    등록된 프로젝트가 없습니다.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </AdminTable>
     </div>
   );
 }
