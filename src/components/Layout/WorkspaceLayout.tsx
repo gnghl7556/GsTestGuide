@@ -180,7 +180,7 @@ export function WorkspaceLayout() {
           open={scheduleOpen}
           onClose={() => setScheduleOpen(false)}
           project={currentProject}
-          otherProjects={projects.filter((p) => p.id !== currentProject.id)}
+          otherProjects={visibleProjects.filter((p) => p.id !== currentProject.id)}
           onSave={async (updates) => {
             if (!db || !testSetup.testNumber) return;
             await setDoc(
