@@ -199,9 +199,60 @@ function WizardCalendar({
     return result;
   }, [otherProjects]);
 
+  // Compute period bar: current project's date range from registered milestones
+  const periodDates = useMemo(() => {
+    const dates = milestones.filter((m) => m.date).map((m) => m.date).sort();
+    if (dates.length < 2) return null;
+    return { min: dates[0], max: dates[dates.length - 1] };
+  }, [milestones]);
+
+  // Compute other projects' periods for liquid fill
+  const otherPeriods = useMemo(() => {
+    if (!otherProjects) return [];
+    const spans: Array<{ color: MilestoneColor; min: string; max: string }> = [];
+    for (const p of otherProjects) {
+      const color = getProjectColor(p);
+      const dates: string[] = [];
+      for (const ms of MILESTONES) {
+        const d = p[ms.key as keyof Project] as string | undefined;
+        if (d) dates.push(d);
+      }
+      for (const cm of p.customMilestones ?? []) { if (cm.date) dates.push(cm.date); }
+      if (dates.length >= 2) {
+        dates.sort();
+        spans.push({ color, min: dates[0], max: dates[dates.length - 1] });
+      }
+    }
+    return spans;
+  }, [otherProjects]);
+
+  // date → liquid fill colors (weekday only)
+  const liquidFillMap = useMemo(() => {
+    const map = new Map<string, MilestoneColor[]>();
+    const addRange = (min: string, max: string, color: MilestoneColor) => {
+      const d = new Date(min + 'T00:00:00');
+      const end = new Date(max + 'T00:00:00');
+      while (d <= end) {
+        const dow = d.getDay();
+        if (dow !== 0 && dow !== 6) {
+          const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          const arr = map.get(ds) ?? [];
+          if (!arr.includes(color)) arr.push(color);
+          map.set(ds, arr);
+        }
+        d.setDate(d.getDate() + 1);
+      }
+    };
+    if (periodDates) addRange(periodDates.min, periodDates.max, projectColor);
+    for (const sp of otherPeriods) addRange(sp.min, sp.max, sp.color);
+    return map;
+  }, [periodDates, otherPeriods, projectColor]);
+
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const focusItem = milestones.find((m) => m.id === focusId);
+
+  const cellHeight = 44;
 
   return (
     <div className="select-none">
@@ -221,17 +272,16 @@ function WizardCalendar({
           className="rounded-md border border-ln px-2 py-0.5 text-[11px] font-medium text-tx-tertiary hover:text-tx-primary hover:bg-surface-raised transition-colors">›</button>
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5 text-[9px] font-semibold mb-1">
+      <div className="grid grid-cols-7 gap-1 text-[9px] font-semibold mb-1">
         {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
-          <div key={d} className={`text-center py-0.5 ${i === 0 || i === 6 ? 'text-tx-muted/50' : 'text-tx-muted'}`}>{d}</div>
+          <div key={d} className={`text-center py-0.5 ${i === 0 || i === 6 ? 'text-slate-300 dark:text-white/30' : 'text-slate-400 dark:text-white/50'}`}>{d}</div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5">
+      <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: startDay }, (_, i) => {
-          const dayOfWeek = i;
-          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-          return <div key={`b-${i}`} className={`h-9 rounded-md border ${isWeekend ? 'bg-surface-sunken/60 border-ln/40' : 'border-transparent'}`} />;
+          const isWeekend = i % 7 === 0 || i % 7 === 6;
+          return <div key={`b-${i}`} style={{ height: cellHeight }} className={`rounded-xl ${isWeekend ? 'bg-slate-50/80 dark:bg-white/[0.02]' : ''}`} />;
         })}
         {Array.from({ length: daysInMonth }, (_, i) => {
           const day = i + 1;
@@ -243,6 +293,7 @@ function WizardCalendar({
           const isFocusDate = focusItem?.date === dateStr;
           const otherEntries = otherDateMap[dateStr];
           const otherColors = otherEntries ? [...new Set(otherEntries.map((e) => e.color))] : [];
+          const fills = liquidFillMap.get(dateStr) ?? [];
 
           return (
             <button
@@ -250,16 +301,32 @@ function WizardCalendar({
               type="button"
               disabled={isWeekend}
               onClick={() => !isWeekend && onSelectDate(dateStr)}
-              className={`h-9 rounded-md text-[11px] font-medium transition-all flex flex-col items-center justify-center gap-0.5 border
-                ${isWeekend ? 'bg-surface-sunken/60 border-ln/40 text-tx-muted/40 cursor-not-allowed' : ''}
-                ${!isWeekend && isFocusDate ? 'bg-accent border-accent text-white ring-2 ring-accent/40' : ''}
-                ${!isWeekend && !isFocusDate && isToday ? 'bg-surface-raised border-accent/30 text-accent font-bold ring-1 ring-accent/30' : ''}
-                ${!isWeekend && !isFocusDate && !isToday && assignedIds ? 'bg-surface-raised border-ln text-tx-primary shadow-sm hover:shadow-md hover:border-ln-strong' : ''}
-                ${!isWeekend && !isFocusDate && !isToday && !assignedIds ? 'bg-surface-base border-ln/50 text-tx-secondary hover:bg-surface-raised hover:border-ln' : ''}
-              `}
+              style={{ height: cellHeight }}
+              className={`relative rounded-xl text-[11px] font-medium transition-all duration-150 flex flex-col items-center justify-start pt-1.5 gap-0.5 overflow-hidden ${
+                isWeekend
+                  ? 'bg-slate-50/80 dark:bg-white/[0.02] text-slate-300 dark:text-white/15 cursor-not-allowed'
+                  : isFocusDate
+                    ? 'bg-accent border border-accent text-white ring-2 ring-accent/40 shadow-[0_2px_8px_rgba(var(--color-accent-rgb,59,130,246),0.3)]'
+                    : isToday
+                      ? 'bg-gradient-to-br from-blue-500/15 to-purple-500/15 dark:from-blue-500/25 dark:to-purple-500/25 border border-blue-300/60 dark:border-blue-400/30 text-blue-700 dark:text-blue-200 shadow-[0_2px_8px_rgba(59,130,246,0.15)]'
+                      : assignedIds
+                        ? 'bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-slate-700 dark:text-white/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.15)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_3px_12px_rgba(0,0,0,0.3)] hover:scale-[1.03] cursor-pointer'
+                        : 'bg-white/60 dark:bg-white/[0.025] border border-slate-100/60 dark:border-white/[0.04] text-slate-500 dark:text-white/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)] dark:shadow-none hover:bg-white dark:hover:bg-white/[0.04] cursor-pointer'
+              }`}
             >
-              <span>{day}</span>
-              <div className="flex items-center gap-px">
+              {/* Liquid fill */}
+              {fills.length > 0 && !isWeekend && !isFocusDate && (() => {
+                const layerH = Math.min(30, 50 / Math.max(fills.length, 1));
+                return fills.map((c, ci) => (
+                  <div
+                    key={ci}
+                    className={`absolute inset-x-0 ${MILESTONE_COLOR_MAP[c].dot} transition-all duration-300 ${ci === 0 ? 'rounded-b-xl' : ''}`}
+                    style={{ bottom: `${ci * layerH}%`, height: `${layerH}%`, opacity: 0.18 }}
+                  />
+                ));
+              })()}
+              <span className="relative z-10">{day}</span>
+              <div className="flex items-center gap-px relative z-10">
                 {assignedIds && !isFocusDate && !isWeekend && assignedIds.map((id) => (
                   <MilestoneIcon key={id} name={MILESTONE_ICON_MAP[id] ?? 'star'} className={`w-2.5 h-2.5 ${pc.text}`} />
                 ))}
@@ -274,10 +341,10 @@ function WizardCalendar({
 
       {/* Other projects legend */}
       {otherLegend.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-ln flex flex-wrap items-center gap-2">
+        <div className="mt-2 pt-2 border-t border-slate-200 dark:border-white/10 flex flex-wrap items-center gap-2">
           <span className="text-[9px] text-tx-muted font-semibold">다른 시험:</span>
           {otherLegend.map((p) => (
-            <div key={p.testNumber} className="flex items-center gap-1 text-[9px] text-tx-tertiary">
+            <div key={p.testNumber} className="flex items-center gap-1 text-[9px] text-slate-500 dark:text-white/60">
               <span className={`w-1.5 h-1.5 rounded-full ${MILESTONE_COLOR_MAP[p.color].dot} opacity-50`} />
               {p.testNumber}
             </div>
