@@ -144,18 +144,24 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
     return result;
   }, [projects, projectColorMap]);
 
-  // Precompute date -> period bars
+  // Precompute date -> period bars (skip weekends)
   const datePeriodMap = useMemo(() => {
     const map = new Map<string, PeriodBar[]>();
     for (const span of projectSpans) {
       const d = new Date(span.minDate + 'T00:00:00');
       const end = new Date(span.maxDate + 'T00:00:00');
+      // Collect weekday-only dates in range
+      const weekdays: string[] = [];
       while (d <= end) {
-        const ds = toLocalDateString(d);
-        const arr = map.get(ds) ?? [];
-        arr.push({ color: span.color, lane: span.lane, isStart: ds === span.minDate, isEnd: ds === span.maxDate });
-        map.set(ds, arr);
+        const dow = d.getDay();
+        if (dow !== 0 && dow !== 6) weekdays.push(toLocalDateString(d));
         d.setDate(d.getDate() + 1);
+      }
+      for (let i = 0; i < weekdays.length; i++) {
+        const ds = weekdays[i];
+        const arr = map.get(ds) ?? [];
+        arr.push({ color: span.color, lane: span.lane, isStart: i === 0, isEnd: i === weekdays.length - 1 });
+        map.set(ds, arr);
       }
     }
     return map;
