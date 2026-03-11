@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { doc, getDoc, type Firestore } from 'firebase/firestore';
 import type { Project } from '../types';
+import { isProjectFinalized } from '../utils/projectUtils';
 
 export function useProgressByTestNumber(
   db: Firestore | null | undefined,
@@ -9,6 +10,12 @@ export function useProgressByTestNumber(
 ) {
   const [progressByTestNumber, setProgressByTestNumber] = useState<Record<string, number>>({});
 
+  // Fix 9: testNumbers 문자열로 메모이제이션하여 projects 배열 참조 변경 시 불필요한 재실행 방지
+  const testNumbersKey = useMemo(
+    () => projects.map((p) => p.testNumber).sort().join(','),
+    [projects]
+  );
+
   useEffect(() => {
     if (!db || !authReady || projects.length === 0) return;
     const dbRef = db;
@@ -16,8 +23,8 @@ export function useProgressByTestNumber(
     const load = async () => {
       const entries = await Promise.all(
         projects.map(async (project) => {
-          // 완료된 시험은 100%
-          if (project.status === '완료') return [project.testNumber, 100] as const;
+          // Fix 10: isProjectFinalized 유틸로 통일
+          if (isProjectFinalized(project)) return [project.testNumber, 100] as const;
           try {
             const snap = await getDoc(doc(dbRef, 'quickReviews', project.testNumber));
             if (!snap.exists()) return [project.testNumber, 0] as const;
@@ -42,7 +49,8 @@ export function useProgressByTestNumber(
     return () => {
       alive = false;
     };
-  }, [authReady, db, projects]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authReady, db, testNumbersKey]);
 
   return progressByTestNumber;
 }

@@ -22,6 +22,7 @@ import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { mergeOverrides, mergeDocLinks } from '../../../lib/content/mergeOverrides';
 import { db } from '../../../lib/firebase';
 import { useRegisterExecutionToolbar } from '../../../providers/ExecutionToolbarContext';
+import { isProjectFinalized } from '../../../utils/projectUtils';
 
 const storageKey = 'gs-test-guide:review';
 
@@ -186,7 +187,7 @@ export function ExecutionPage() {
     [projects, currentTestNumber]
   );
   const isFinalized = useMemo(
-    () => Boolean(currentProject?.executionState?.finalizedAt) || currentProject?.status === '완료',
+    () => isProjectFinalized(currentProject),
     [currentProject]
   );
   const { itemGates, executionState } = useMemo(
@@ -676,14 +677,18 @@ export function ExecutionPage() {
   // 최종 검토 완료 처리
   const handleFinalize = useCallback(async () => {
     if (!db || !currentTestNumber) return;
-    await setDoc(
-      doc(db, 'projects', currentTestNumber),
-      {
-        status: '완료',
-        executionState: { finalizedAt: serverTimestamp() },
-      },
-      { merge: true },
-    );
+    try {
+      await setDoc(
+        doc(db, 'projects', currentTestNumber),
+        {
+          status: '완료',
+          executionState: { finalizedAt: serverTimestamp() },
+        },
+        { merge: true },
+      );
+    } catch (error) {
+      console.error('[Firestore] 최종 검토 완료 저장 실패:', error);
+    }
   }, [currentTestNumber]);
 
   useRegisterExecutionToolbar({

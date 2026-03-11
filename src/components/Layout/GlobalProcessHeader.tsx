@@ -1,6 +1,7 @@
 import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '../../providers/ThemeProvider';
+import { ConfirmModal } from '../ui/ConfirmModal';
 
 export type GlobalProjectInfo = {
   testNumber?: string;
@@ -184,68 +185,24 @@ export function GlobalProcessHeader({
           </button>
         </div>
       </div>
-      {logoutConfirmOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[var(--overlay-backdrop)] p-4">
-          <div className="w-full max-w-sm rounded-xl border border-ln bg-surface-overlay shadow-xl">
-            <div className="border-b border-ln px-4 py-3 text-sm font-extrabold text-tx-primary">
-              로그아웃 확인
-            </div>
-            <div className="px-4 py-3 text-sm text-tx-secondary">
-              현재 사용자를 로그아웃하시겠습니까?
-            </div>
-            <div className="flex justify-end gap-2 border-t border-ln px-4 py-3">
-              <button
-                type="button"
-                onClick={() => setLogoutConfirmOpen(false)}
-                className="rounded-lg border border-ln px-3 py-1.5 text-xs font-semibold text-tx-tertiary hover:text-tx-primary"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setLogoutConfirmOpen(false);
-                  onLogout?.();
-                }}
-                className="rounded-lg bg-danger px-3 py-1.5 text-xs font-semibold text-white hover:bg-danger-hover"
-              >
-                로그아웃
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {finalizeConfirmOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[var(--overlay-backdrop)] p-4">
-          <div className="w-full max-w-sm rounded-xl border border-ln bg-surface-overlay shadow-xl">
-            <div className="border-b border-ln px-4 py-3 text-sm font-extrabold text-tx-primary">
-              최종 검토 완료
-            </div>
-            <div className="px-4 py-3 text-sm text-tx-secondary">
-              최종 검토를 완료하시겠습니까? 완료 후에는 점검 데이터가 읽기 전용으로 전환됩니다.
-            </div>
-            <div className="flex justify-end gap-2 border-t border-ln px-4 py-3">
-              <button
-                type="button"
-                onClick={() => setFinalizeConfirmOpen(false)}
-                className="rounded-lg border border-ln px-3 py-1.5 text-xs font-semibold text-tx-tertiary hover:text-tx-primary"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFinalizeConfirmOpen(false);
-                  onFinalize?.();
-                }}
-                className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
-              >
-                완료
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={logoutConfirmOpen}
+        title="로그아웃 확인"
+        description="현재 사용자를 로그아웃하시겠습니까?"
+        confirmLabel="로그아웃"
+        confirmVariant="danger"
+        onConfirm={() => { setLogoutConfirmOpen(false); onLogout?.(); }}
+        onCancel={() => setLogoutConfirmOpen(false)}
+      />
+      <ConfirmModal
+        open={finalizeConfirmOpen}
+        title="최종 검토 완료"
+        description="최종 검토를 완료하시겠습니까? 완료 후에는 점검 데이터가 읽기 전용으로 전환됩니다."
+        confirmLabel="완료"
+        confirmVariant="success"
+        onConfirm={() => { setFinalizeConfirmOpen(false); onFinalize?.(); }}
+        onCancel={() => setFinalizeConfirmOpen(false)}
+      />
     </div>
   );
 }
