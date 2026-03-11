@@ -65,6 +65,7 @@ interface TestSetupPageProps {
   isParsingAgreement: boolean;
   parsingTestNumber: string | null;
   onStartProject: () => Promise<{ ok: boolean; reason?: string }>;
+  onUpdateProjectSchedule?: (testNumber: string, updates: Record<string, string>) => void;
   canProceed: boolean;
 }
 
@@ -101,6 +102,7 @@ export function TestSetupPage({
   isParsingAgreement,
   parsingTestNumber,
   onStartProject,
+  onUpdateProjectSchedule,
   canProceed
 }: TestSetupPageProps) {
   const selectedTestStorageKey = 'gs-test-guide:selected-test';
@@ -916,6 +918,10 @@ export function TestSetupPage({
           open={!!testDetailProject}
           onClose={() => setTestDetailProject(null)}
           project={testDetailProject}
+          onSave={onUpdateProjectSchedule ? (updates) => {
+            onUpdateProjectSchedule(testDetailProject.testNumber, updates);
+            setTestDetailProject(null);
+          } : undefined}
         />
       )}
     </div>

@@ -1,5 +1,7 @@
 import { TestSetupPage } from '../components/TestSetupPage';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../../lib/firebase';
 
 type TestSetupViewProps = {
   onStartProject: () => Promise<{ ok: boolean; reason?: string }>;
@@ -65,6 +67,10 @@ export function TestSetupView({ onStartProject }: TestSetupViewProps) {
         isParsingAgreement={agreementParsing}
         parsingTestNumber={agreementParsingTestNumber}
         onStartProject={onStartProject}
+        onUpdateProjectSchedule={(testNumber, updates) => {
+          if (!db) return;
+          void setDoc(doc(db, 'projects', testNumber), { ...updates, updatedAt: serverTimestamp() }, { merge: true });
+        }}
         canProceed={canProceed}
       />
     </div>
