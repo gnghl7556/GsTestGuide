@@ -46,8 +46,7 @@ export const computeExecutionGate = ({
         ? 'DERIVED_FOUND'
         : 'PASS',
     allowSecurityPerformance,
-    derivedFoundInFeatureRegression,
-    ...(finalized ? { finalizedAt: Date.now() } : {})
+    derivedFoundInFeatureRegression
   };
 
   const itemGates: Record<string, ExecutionItemGate> = {};

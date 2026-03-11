@@ -424,6 +424,7 @@ export function ScheduleWizard({ project, otherProjects, onSave, onClose }: Sche
     const updates: Record<string, unknown> = {};
     for (const m of MILESTONES) { updates[m.key] = registered.find((i) => i.id === m.key)?.date || ''; }
     updates.projectColor = projectColor;
+    // registered의 custom/optional 항목만 저장 — pool로 이동된 항목은 빈 배열로 대체되어 Firestore의 stale 데이터 제거
     updates.customMilestones = registered.filter((i) => i.type !== 'required')
       .map((i) => ({ id: i.id, label: i.label, date: i.date, color: projectColor }));
     updates.milestoneOrder = registered.map((i) => i.id);

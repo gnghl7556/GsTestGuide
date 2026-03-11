@@ -450,13 +450,12 @@ export function TestSetupPage({
                   최근 작업 시험
                 </div>
                 {featuredProject ? (
-                  <button
-                    type="button"
+                  <div
                     onClick={() => {
                       onSelectProject(featuredProject.testNumber);
                       setFlowMode('existing');
                     }}
-                    className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+                    className={`w-full rounded-2xl border px-4 py-4 text-left transition cursor-pointer ${
                       featuredProject.status === '완료'
                         ? 'opacity-60 border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60'
                         : trimmedTestNumber === featuredProject.testNumber
@@ -513,7 +512,7 @@ export function TestSetupPage({
                         style={{ width: `${Math.min(100, Math.max(0, featuredProject.progress))}%` }}
                       />
                     </div>
-                  </button>
+                  </div>
                 ) : (
                   <div className="rounded-xl border border-dashed border-slate-300 dark:border-white/15 bg-slate-100 dark:bg-white/5 px-4 py-6 text-center text-xs text-slate-400 dark:text-white/40">
                     현재 할당된 시험이 없습니다.
@@ -527,14 +526,13 @@ export function TestSetupPage({
                         const isActive = trimmedTestNumber === project.testNumber;
                         const isCompleted = project.status === '완료';
                         return (
-                          <button
+                          <div
                             key={project.id}
-                            type="button"
                             onClick={() => {
                               onSelectProject(project.testNumber);
                               setFlowMode('existing');
                             }}
-                            className={`flex-1 rounded-xl border px-3 py-3 text-left text-sm transition ${
+                            className={`flex-1 rounded-xl border px-3 py-3 text-left text-sm transition cursor-pointer ${
                               isCompleted
                                 ? 'opacity-60 border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60'
                                 : isActive
@@ -571,7 +569,7 @@ export function TestSetupPage({
                               <span>진행율 {project.progress}%</span>
                               <span>{formatDate(project.updatedAt)}</span>
                             </div>
-                          </button>
+                          </div>
                         );
                       })}
                       {hasMoreProjects && (

@@ -196,12 +196,13 @@ export function ExecutionPage() {
 
   useEffect(() => {
     if (!db || !currentTestNumber) return;
+    const existingFinalizedAt = currentProject?.executionState?.finalizedAt;
     void setDoc(
       doc(db, 'projects', currentTestNumber),
-      { executionState: { ...executionState, updatedAt: serverTimestamp() } },
+      { executionState: { ...executionState, ...(existingFinalizedAt ? { finalizedAt: existingFinalizedAt } : {}), updatedAt: serverTimestamp() } },
       { merge: true }
     );
-  }, [currentTestNumber, executionState]);
+  }, [currentTestNumber, executionState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const quickModeItems = useMemo(() => checklist.map(toQuickModeItem), [checklist]);
   const quickModeById = useMemo(() => {
