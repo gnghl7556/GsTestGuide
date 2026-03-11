@@ -72,6 +72,8 @@ export type Project = {
   createdBy?: string | null;
   updatedAt?: Timestamp | number | null;
   executionState?: ExecutionGateState;
+  customMilestones?: Array<{ id: string; label: string; date: string; color: string }>;
+  milestoneOrder?: string[];
 };
 
 export type ProjectCreateInput = Omit<Project, 'id'> & { id?: string };

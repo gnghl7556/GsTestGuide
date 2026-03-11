@@ -65,7 +65,7 @@ interface TestSetupPageProps {
   isParsingAgreement: boolean;
   parsingTestNumber: string | null;
   onStartProject: () => Promise<{ ok: boolean; reason?: string }>;
-  onUpdateProjectSchedule?: (testNumber: string, updates: Record<string, string>) => void;
+  onUpdateProjectSchedule?: (testNumber: string, updates: Record<string, unknown>) => void;
   canProceed: boolean;
 }
 
