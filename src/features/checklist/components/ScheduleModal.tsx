@@ -6,10 +6,11 @@ type ScheduleModalProps = {
   open: boolean;
   onClose: () => void;
   project: Project;
+  otherProjects?: Project[];
   onSave: (updates: Record<string, unknown>) => void;
 };
 
-export function ScheduleModal({ open, onClose, project, onSave }: ScheduleModalProps) {
+export function ScheduleModal({ open, onClose, project, otherProjects, onSave }: ScheduleModalProps) {
   useEffect(() => {
     if (!open) return;
     const handleEsc = (e: KeyboardEvent) => {
@@ -45,7 +46,7 @@ export function ScheduleModal({ open, onClose, project, onSave }: ScheduleModalP
 
         {/* Wizard */}
         <div className="flex-1 flex flex-col min-h-0">
-          <ScheduleWizard project={project} onSave={onSave} onClose={onClose} />
+          <ScheduleWizard project={project} otherProjects={otherProjects} onSave={onSave} onClose={onClose} />
         </div>
       </div>
     </div>

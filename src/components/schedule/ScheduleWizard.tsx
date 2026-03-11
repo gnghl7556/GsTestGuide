@@ -25,12 +25,14 @@ import {
   MILESTONES,
   MILESTONE_COLOR_MAP,
   buildInitialLists,
+  getProjectColor,
   type MilestoneItem,
   type MilestoneColor,
 } from '../../constants/schedule';
 
 type ScheduleWizardProps = {
   project: Project;
+  otherProjects?: Project[];
   onSave: (updates: Record<string, unknown>) => void;
   onClose: () => void;
 };
@@ -114,11 +116,15 @@ function DroppableZone({ id, label, isOver, children }: {
   );
 }
 
+/* ── Other-project date entry ── */
+type OtherDateEntry = { testNumber: string; color: MilestoneColor; label: string };
+
 /* ── Calendar (weekend disabled) ── */
 function WizardCalendar({
-  milestones, focusId, projectColor, onSelectDate,
+  milestones, focusId, projectColor, otherProjects, onSelectDate,
 }: {
-  milestones: MilestoneItem[]; focusId: string | null; projectColor: MilestoneColor; onSelectDate: (date: string) => void;
+  milestones: MilestoneItem[]; focusId: string | null; projectColor: MilestoneColor;
+  otherProjects?: Project[]; onSelectDate: (date: string) => void;
 }) {
   const [viewDate, setViewDate] = useState(() => new Date());
   const year = viewDate.getFullYear();
@@ -135,6 +141,48 @@ function WizardCalendar({
     for (const m of milestones) { if (m.date) set.add(m.date); }
     return set;
   }, [milestones]);
+
+  // Other projects' milestone dates
+  const otherDateMap = useMemo(() => {
+    const map: Record<string, OtherDateEntry[]> = {};
+    if (!otherProjects) return map;
+    for (const p of otherProjects) {
+      const color = getProjectColor(p);
+      for (const ms of MILESTONES) {
+        const d = p[ms.key as keyof Project] as string | undefined;
+        if (!d) continue;
+        (map[d] ??= []).push({ testNumber: p.testNumber, color, label: ms.label });
+      }
+      for (const cm of p.customMilestones ?? []) {
+        if (!cm.date) continue;
+        (map[cm.date] ??= []).push({ testNumber: p.testNumber, color, label: cm.label });
+      }
+    }
+    return map;
+  }, [otherProjects]);
+
+  // Legend: unique other projects visible this month
+  const otherLegend = useMemo(() => {
+    if (!otherProjects) return [];
+    const seen = new Set<string>();
+    const result: Array<{ testNumber: string; color: MilestoneColor }> = [];
+    for (const p of otherProjects) {
+      if (seen.has(p.testNumber)) continue;
+      // Check if any milestone falls in current month view
+      const color = getProjectColor(p);
+      const dates: string[] = [];
+      for (const ms of MILESTONES) {
+        const d = p[ms.key as keyof Project] as string | undefined;
+        if (d) dates.push(d);
+      }
+      for (const cm of p.customMilestones ?? []) { if (cm.date) dates.push(cm.date); }
+      if (dates.length > 0) {
+        seen.add(p.testNumber);
+        result.push({ testNumber: p.testNumber, color });
+      }
+    }
+    return result;
+  }, [otherProjects]);
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -178,6 +226,8 @@ function WizardCalendar({
           const hasAssigned = assignedDates.has(dateStr);
           const isToday = dateStr === todayStr;
           const isFocusDate = focusItem?.date === dateStr;
+          const otherEntries = otherDateMap[dateStr];
+          const otherColors = otherEntries ? [...new Set(otherEntries.map((e) => e.color))] : [];
 
           return (
             <button
@@ -193,20 +243,38 @@ function WizardCalendar({
               `}
             >
               <span>{day}</span>
-              {hasAssigned && !isFocusDate && !isWeekend && (
-                <span className={`w-1.5 h-1.5 rounded-full ${pc.dot}`} />
-              )}
+              <div className="flex items-center gap-px">
+                {hasAssigned && !isFocusDate && !isWeekend && (
+                  <span className={`w-1.5 h-1.5 rounded-full ${pc.dot}`} />
+                )}
+                {!isWeekend && otherColors.map((c) => (
+                  <span key={c} className={`w-1.5 h-1.5 rounded-full ${MILESTONE_COLOR_MAP[c].dot} opacity-50`} />
+                ))}
+              </div>
             </button>
           );
         })}
       </div>
+
+      {/* Other projects legend */}
+      {otherLegend.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-ln flex flex-wrap items-center gap-2">
+          <span className="text-[9px] text-tx-muted font-semibold">다른 시험:</span>
+          {otherLegend.map((p) => (
+            <div key={p.testNumber} className="flex items-center gap-1 text-[9px] text-tx-tertiary">
+              <span className={`w-1.5 h-1.5 rounded-full ${MILESTONE_COLOR_MAP[p.color].dot} opacity-50`} />
+              {p.testNumber}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 /* ── Main Wizard ── */
 
-export function ScheduleWizard({ project, onSave, onClose }: ScheduleWizardProps) {
+export function ScheduleWizard({ project, otherProjects, onSave, onClose }: ScheduleWizardProps) {
   const initial = useMemo(() => buildInitialLists(project), [project]);
   const projectColor = initial.projectColor;
   const [registered, setRegistered] = useState<MilestoneItem[]>(initial.registered);
@@ -379,7 +447,7 @@ export function ScheduleWizard({ project, onSave, onClose }: ScheduleWizardProps
         {/* Right: calendar */}
         <div className="flex-1 overflow-y-auto p-3">
           <WizardCalendar milestones={registered} focusId={focusId}
-            projectColor={projectColor} onSelectDate={handleDateSelect} />
+            projectColor={projectColor} otherProjects={otherProjects} onSelectDate={handleDateSelect} />
         </div>
       </div>
 

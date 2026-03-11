@@ -6,6 +6,7 @@ interface TestDetailModalProps {
   open: boolean;
   onClose: () => void;
   project: Project;
+  otherProjects?: Project[];
   onSave?: (updates: Record<string, unknown>) => void;
 }
 
@@ -18,7 +19,7 @@ const INFO_FIELDS: Array<{ key: keyof Project; label: string }> = [
   { key: 'companyContactEmail', label: '담당자 이메일' },
 ];
 
-export function TestDetailModal({ open, onClose, project, onSave }: TestDetailModalProps) {
+export function TestDetailModal({ open, onClose, project, otherProjects, onSave }: TestDetailModalProps) {
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -70,6 +71,7 @@ export function TestDetailModal({ open, onClose, project, onSave }: TestDetailMo
             </div>
             <ScheduleWizard
               project={project}
+              otherProjects={otherProjects}
               onSave={(updates) => onSave?.(updates)}
               onClose={onClose}
             />

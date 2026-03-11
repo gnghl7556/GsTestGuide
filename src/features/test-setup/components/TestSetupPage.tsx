@@ -918,6 +918,7 @@ export function TestSetupPage({
           open={!!testDetailProject}
           onClose={() => setTestDetailProject(null)}
           project={testDetailProject}
+          otherProjects={projects.filter((p) => p.id !== testDetailProject.id)}
           onSave={onUpdateProjectSchedule ? (updates) => {
             onUpdateProjectSchedule(testDetailProject.testNumber, updates);
             setTestDetailProject(null);
