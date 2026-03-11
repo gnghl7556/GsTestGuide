@@ -257,6 +257,23 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
                       : 'bg-white/60 dark:bg-white/[0.025] border border-slate-100/60 dark:border-white/[0.04] text-slate-500 dark:text-white/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)] dark:shadow-none'
               }`}
             >
+              {/* Liquid fill — 시험 진행 기간 표시 */}
+              {periods.length > 0 && !isWeekend && (
+                (() => {
+                  const uniqueColors = [...new Set(periods.map((p) => p.color))];
+                  const fillPct = Math.min(60, 25 + uniqueColors.length * 15);
+                  return uniqueColors.map((c, ci) => (
+                    <div
+                      key={ci}
+                      className={`absolute inset-x-0 bottom-0 ${MILESTONE_COLOR_MAP[c].dot} rounded-b-xl transition-all duration-300`}
+                      style={{
+                        height: `${fillPct}%`,
+                        opacity: 0.12 + ci * 0.04,
+                      }}
+                    />
+                  ));
+                })()
+              )}
               <span className="relative z-10">{cell.day}</span>
               {milestones.length > 0 && (
                 <div className="flex items-center gap-0.5 relative z-10">
@@ -264,14 +281,6 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
                     <MilestoneIcon key={`${m.testNumber}-${m.milestoneKey}-${mi}`}
                       name={MILESTONE_ICON_MAP[m.milestoneKey] ?? 'star'}
                       className={`w-2.5 h-2.5 ${MILESTONE_COLOR_MAP[m.color].text}`} />
-                  ))}
-                </div>
-              )}
-              {/* Period dots */}
-              {periods.length > 0 && (
-                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5">
-                  {periods.map((p, pi) => (
-                    <span key={pi} className={`w-1.5 h-1.5 rounded-full ${MILESTONE_COLOR_MAP[p.color].dot} opacity-40`} />
                   ))}
                 </div>
               )}
