@@ -31,7 +31,7 @@ export function WorkspaceLayout() {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const currentStep = getStepFromPath(location.pathname);
-  const { onReset } = useExecutionToolbar();
+  const { onReset, onFinalize, canFinalize, isFinalized } = useExecutionToolbar();
   const currentProject = projects.find((p) => p.testNumber === testSetup.testNumber);
 
   const projectInfo = {
@@ -85,6 +85,9 @@ export function WorkspaceLayout() {
                 ? () => setResetConfirmOpen(true)
                 : undefined
             }
+            onFinalize={currentStep === 3 ? onFinalize ?? undefined : undefined}
+            canFinalize={currentStep === 3 ? canFinalize : false}
+            isFinalized={currentStep === 3 ? isFinalized : false}
             onLogout={() => {
               setCurrentUserId('');
               resetTestSetup();
@@ -118,34 +121,44 @@ export function WorkspaceLayout() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {visibleProjects.map((project) => (
-                    <button
-                      key={project.id}
-                      type="button"
-                      onClick={() => {
-                        selectTestNumber(project.testNumber);
-                        if (typeof window !== 'undefined') {
-                          localStorage.setItem('gs-test-guide:selected-test', project.testNumber);
-                        }
-                        setTestListOpen(false);
-                      }}
-                      className={`rounded-xl border px-4 py-3 text-left transition ${
-                        testSetup.testNumber === project.testNumber
-                          ? 'border-accent bg-accent-subtle'
-                          : 'border-ln bg-surface-base hover:border-ln-strong'
-                      }`}
-                    >
-                      <div className="text-[11px] text-tx-muted mb-1">시험번호</div>
-                      <div className="font-semibold text-tx-primary">{project.testNumber}</div>
-                      <div className="mt-1 text-xs text-tx-tertiary truncate">
-                        {project.projectName || project.productName || '-'}
-                        {project.companyName ? ` (${project.companyName})` : ''}
-                      </div>
-                      <div className="mt-2 text-[10px] text-tx-muted">
-                        진행율 {project.progress}%
-                      </div>
-                    </button>
-                  ))}
+                  {visibleProjects.map((project) => {
+                    const isCompleted = project.status === '완료';
+                    return (
+                      <button
+                        key={project.id}
+                        type="button"
+                        onClick={() => {
+                          selectTestNumber(project.testNumber);
+                          if (typeof window !== 'undefined') {
+                            localStorage.setItem('gs-test-guide:selected-test', project.testNumber);
+                          }
+                          setTestListOpen(false);
+                        }}
+                        className={`relative rounded-xl border px-4 py-3 text-left transition ${
+                          isCompleted
+                            ? 'opacity-60 border-ln bg-surface-sunken'
+                            : testSetup.testNumber === project.testNumber
+                              ? 'border-accent bg-accent-subtle'
+                              : 'border-ln bg-surface-base hover:border-ln-strong'
+                        }`}
+                      >
+                        {isCompleted && (
+                          <span className="absolute top-2 right-2 inline-flex rounded-full border border-ln bg-surface-sunken px-1.5 py-0.5 text-[9px] font-semibold text-tx-tertiary">
+                            완료
+                          </span>
+                        )}
+                        <div className="text-[11px] text-tx-muted mb-1">시험번호</div>
+                        <div className="font-semibold text-tx-primary">{project.testNumber}</div>
+                        <div className="mt-1 text-xs text-tx-tertiary truncate">
+                          {project.projectName || project.productName || '-'}
+                          {project.companyName ? ` (${project.companyName})` : ''}
+                        </div>
+                        <div className="mt-2 text-[10px] text-tx-muted">
+                          진행율 {project.progress}%
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

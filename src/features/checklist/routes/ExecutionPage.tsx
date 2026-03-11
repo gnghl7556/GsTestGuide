@@ -655,6 +655,12 @@ export function ExecutionPage() {
     setActiveQuestionIdx(targetIdx);
   }, [activeItem, quickModeItem, reviewData, quickReviewById, activeQuestionIdx, setVerdict, hasBranching, skippedIndices]);
 
+  // allCompleted: 모든 항목 검토 완료 여부
+  const allCompleted = useMemo(() => {
+    if (checklist.length === 0) return false;
+    return checklist.every((item) => isItemCompleted(item.id));
+  }, [checklist, isItemCompleted]);
+
   // 전체 점검 데이터 초기화 (로컬 + Firestore)
   const handleResetAll = useCallback(() => {
     setReviewData({});
@@ -666,7 +672,25 @@ export function ExecutionPage() {
     }
   }, [currentTestNumber]);
 
-  useRegisterExecutionToolbar(handleResetAll);
+  // 최종 검토 완료 처리
+  const handleFinalize = useCallback(async () => {
+    if (!db || !currentTestNumber) return;
+    await setDoc(
+      doc(db, 'projects', currentTestNumber),
+      {
+        status: '완료',
+        executionState: { finalizedAt: serverTimestamp() },
+      },
+      { merge: true },
+    );
+  }, [currentTestNumber]);
+
+  useRegisterExecutionToolbar({
+    onReset: handleResetAll,
+    onFinalize: handleFinalize,
+    canFinalize: allCompleted && !isFinalized,
+    isFinalized,
+  });
 
   const { showShortcutHelp, dismissHelp } = useKeyboardShortcuts({
     isAllQuestionsAnswered,

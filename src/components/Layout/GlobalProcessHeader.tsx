@@ -1,4 +1,4 @@
-import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar } from 'lucide-react';
+import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '../../providers/ThemeProvider';
 
@@ -20,6 +20,9 @@ type GlobalProcessHeaderProps = {
   projectInfo?: GlobalProjectInfo;
   rightSlot?: ReactNode;
   onReset?: () => void;
+  onFinalize?: () => void;
+  canFinalize?: boolean;
+  isFinalized?: boolean;
   onLogout?: () => void;
   onOpenTestList?: () => void;
   onOpenSchedule?: () => void;
@@ -37,6 +40,9 @@ export function GlobalProcessHeader({
   projectInfo,
   rightSlot,
   onReset,
+  onFinalize,
+  canFinalize,
+  isFinalized,
   onLogout,
   onOpenTestList,
   onOpenSchedule
@@ -44,6 +50,7 @@ export function GlobalProcessHeader({
   const { theme, toggleTheme } = useTheme();
   const [companyOpen, setCompanyOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [finalizeConfirmOpen, setFinalizeConfirmOpen] = useState(false);
   const companyPanelRef = useRef<HTMLDivElement | null>(null);
   const testNumber = safeValue(projectInfo?.testNumber);
   const projectName = safeValue(projectInfo?.projectName);
@@ -90,6 +97,23 @@ export function GlobalProcessHeader({
           </div>
         )}
         <div className="flex items-center gap-2">
+          {isFinalized && (
+            <span className="inline-flex items-center gap-1.5 h-9 rounded-lg border border-ln bg-surface-sunken px-2.5 text-[11px] font-semibold text-tx-tertiary">
+              <CheckCircle size={14} />
+              <span className="hidden sm:inline">완료됨</span>
+            </span>
+          )}
+          {canFinalize && !isFinalized && onFinalize && (
+            <button
+              type="button"
+              onClick={() => setFinalizeConfirmOpen(true)}
+              className="inline-flex items-center gap-1.5 h-9 rounded-lg border border-emerald-400 dark:border-emerald-500 bg-emerald-500 dark:bg-emerald-600 px-2.5 text-[11px] font-semibold text-white hover:bg-emerald-600 dark:hover:bg-emerald-500 transition-colors"
+              title="검토 완료"
+            >
+              <CheckCircle size={14} />
+              <span className="hidden sm:inline">검토 완료</span>
+            </button>
+          )}
           {onReset && (
             <button
               type="button"
@@ -186,6 +210,37 @@ export function GlobalProcessHeader({
                 className="rounded-lg bg-danger px-3 py-1.5 text-xs font-semibold text-white hover:bg-danger-hover"
               >
                 로그아웃
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {finalizeConfirmOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[var(--overlay-backdrop)] p-4">
+          <div className="w-full max-w-sm rounded-xl border border-ln bg-surface-overlay shadow-xl">
+            <div className="border-b border-ln px-4 py-3 text-sm font-extrabold text-tx-primary">
+              최종 검토 완료
+            </div>
+            <div className="px-4 py-3 text-sm text-tx-secondary">
+              최종 검토를 완료하시겠습니까? 완료 후에는 점검 데이터가 읽기 전용으로 전환됩니다.
+            </div>
+            <div className="flex justify-end gap-2 border-t border-ln px-4 py-3">
+              <button
+                type="button"
+                onClick={() => setFinalizeConfirmOpen(false)}
+                className="rounded-lg border border-ln px-3 py-1.5 text-xs font-semibold text-tx-tertiary hover:text-tx-primary"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFinalizeConfirmOpen(false);
+                  onFinalize?.();
+                }}
+                className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
+              >
+                완료
               </button>
             </div>
           </div>

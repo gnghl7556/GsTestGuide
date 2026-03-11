@@ -456,12 +456,19 @@ export function TestSetupPage({
                       onSelectProject(featuredProject.testNumber);
                       setFlowMode('existing');
                     }}
-                    className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
-                      trimmedTestNumber === featuredProject.testNumber
-                        ? 'border-purple-400/80 bg-purple-50 dark:bg-white/15 text-slate-900 dark:text-white shadow-[0_0_30px_rgba(124,58,237,0.2)] dark:shadow-[0_0_30px_rgba(124,58,237,0.35)]'
-                        : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white/80 hover:border-slate-300 dark:hover:border-white/20'
+                    className={`relative w-full rounded-2xl border px-4 py-4 text-left transition ${
+                      featuredProject.status === '완료'
+                        ? 'opacity-60 border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60'
+                        : trimmedTestNumber === featuredProject.testNumber
+                          ? 'border-purple-400/80 bg-purple-50 dark:bg-white/15 text-slate-900 dark:text-white shadow-[0_0_30px_rgba(124,58,237,0.2)] dark:shadow-[0_0_30px_rgba(124,58,237,0.35)]'
+                          : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white/80 hover:border-slate-300 dark:hover:border-white/20'
                     }`}
                   >
+                    {featuredProject.status === '완료' && (
+                      <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-slate-300 dark:border-white/20 bg-slate-200 dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-white/50">
+                        완료
+                      </span>
+                    )}
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="text-[11px] text-slate-400 dark:text-white/50 mb-1">시험번호</div>
@@ -496,7 +503,11 @@ export function TestSetupPage({
                     </div>
                     <div className="mt-2 h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-500"
+                        className={`h-full transition-all duration-500 ${
+                          featuredProject.status === '완료'
+                            ? 'bg-gray-400 dark:bg-gray-600'
+                            : 'bg-gradient-to-r from-blue-400 to-purple-500'
+                        }`}
                         style={{ width: `${Math.min(100, Math.max(0, featuredProject.progress))}%` }}
                       />
                     </div>
@@ -512,6 +523,7 @@ export function TestSetupPage({
                     <div className="flex items-stretch gap-2">
                       {recentSideProjects.map((project) => {
                         const isActive = trimmedTestNumber === project.testNumber;
+                        const isCompleted = project.status === '완료';
                         return (
                           <button
                             key={project.id}
@@ -520,12 +532,19 @@ export function TestSetupPage({
                               onSelectProject(project.testNumber);
                               setFlowMode('existing');
                             }}
-                            className={`flex-1 rounded-xl border px-3 py-3 text-left text-sm transition ${
-                              isActive
-                                ? 'border-purple-400/70 bg-purple-50 dark:bg-white/15 text-slate-900 dark:text-white shadow-[0_0_20px_rgba(124,58,237,0.15)] dark:shadow-[0_0_20px_rgba(124,58,237,0.25)]'
-                                : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-white/70 hover:border-slate-300 dark:hover:border-white/20'
+                            className={`relative flex-1 rounded-xl border px-3 py-3 text-left text-sm transition ${
+                              isCompleted
+                                ? 'opacity-60 border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60'
+                                : isActive
+                                  ? 'border-purple-400/70 bg-purple-50 dark:bg-white/15 text-slate-900 dark:text-white shadow-[0_0_20px_rgba(124,58,237,0.15)] dark:shadow-[0_0_20px_rgba(124,58,237,0.25)]'
+                                  : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-white/70 hover:border-slate-300 dark:hover:border-white/20'
                             }`}
                           >
+                            {isCompleted && (
+                              <span className="absolute top-2 right-2 inline-flex rounded-full border border-slate-300 dark:border-white/20 bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500 dark:text-white/50">
+                                완료
+                              </span>
+                            )}
                             <div className="flex items-center justify-between mb-1">
                               <div className="text-xs text-slate-400 dark:text-white/50">시험번호</div>
                               <button
