@@ -1,4 +1,4 @@
-import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle } from 'lucide-react';
+import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle, Play, AlertTriangle, Wrench, Flag, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { ConfirmModal } from '../ui/ConfirmModal';
@@ -10,6 +10,9 @@ export type GlobalProjectInfo = {
   scheduleWorkingDays?: string | number;
   scheduleStartDate?: string;
   scheduleEndDate?: string;
+  scheduleDefect1?: string;
+  scheduleDefect2?: string;
+  schedulePatchDate?: string;
   plName?: string;
   companyContactName?: string;
   companyContactPhone?: string;
@@ -36,6 +39,84 @@ const safeValue = (value?: string | number) => {
 };
 
 const iconBtnCls = 'inline-flex items-center justify-center h-9 w-9 rounded-lg border border-ln text-tx-tertiary hover:text-tx-primary hover:border-ln-strong';
+
+const parseScheduleDate = (s?: string) => {
+  if (!s) return null;
+  const d = new Date(`${s}T00:00:00`);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+function ScheduleTimeline({ info }: { info: GlobalProjectInfo }) {
+  const start = parseScheduleDate(info.scheduleStartDate);
+  const end = parseScheduleDate(info.scheduleEndDate);
+  if (!start || !end || end <= start) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const totalMs = end.getTime() - start.getTime();
+  const elapsedMs = today.getTime() - start.getTime();
+  const progress = Math.max(0, Math.min(100, (elapsedMs / totalMs) * 100));
+  const daysLeft = Math.ceil((end.getTime() - today.getTime()) / 86400000);
+
+  const milestones: Array<{ date: Date; Icon: LucideIcon; color: string; pastColor: string; label: string }> = [];
+  milestones.push({ date: start, Icon: Play, color: 'text-tx-muted', pastColor: 'text-emerald-500', label: '시작' });
+  const d1 = parseScheduleDate(info.scheduleDefect1);
+  if (d1) milestones.push({ date: d1, Icon: AlertTriangle, color: 'text-tx-muted', pastColor: 'text-amber-500', label: '1차 결함' });
+  const d2 = parseScheduleDate(info.scheduleDefect2);
+  if (d2) milestones.push({ date: d2, Icon: AlertTriangle, color: 'text-tx-muted', pastColor: 'text-orange-500', label: '2차 결함' });
+  const p = parseScheduleDate(info.schedulePatchDate);
+  if (p) milestones.push({ date: p, Icon: Wrench, color: 'text-tx-muted', pastColor: 'text-sky-500', label: '패치' });
+  milestones.push({ date: end, Icon: Flag, color: 'text-tx-muted', pastColor: 'text-rose-500', label: '종료' });
+
+  const getPos = (d: Date) => Math.max(2, Math.min(98, ((d.getTime() - start.getTime()) / totalMs) * 100));
+  const isPast = (d: Date) => d.getTime() <= today.getTime();
+  const isOverdue = daysLeft < 0;
+
+  return (
+    <div className="border-b border-ln bg-surface-sunken/50 px-6 flex items-center gap-3 h-7">
+      <div className="relative flex-1 h-[3px] bg-ln/40 rounded-full my-auto">
+        <div
+          className={`absolute inset-y-0 left-0 rounded-full transition-all duration-700 ${
+            isOverdue ? 'bg-rose-400 dark:bg-rose-500' : 'bg-gradient-to-r from-blue-400 to-purple-400 dark:from-blue-500 dark:to-purple-500'
+          }`}
+          style={{ width: `${progress}%` }}
+        />
+        {milestones.map((m, i) => {
+          const pos = getPos(m.date);
+          const past = isPast(m.date);
+          return (
+            <div
+              key={i}
+              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1]"
+              style={{ left: `${pos}%` }}
+              title={`${m.label}: ${m.date.getMonth() + 1}/${m.date.getDate()}`}
+            >
+              <div className={`rounded-full p-[2px] transition-colors ${
+                past ? 'bg-surface-base shadow-sm ring-1 ring-black/[0.06] dark:ring-white/10' : 'bg-surface-sunken'
+              }`}>
+                <m.Icon size={10} className={`transition-colors ${past ? m.pastColor : m.color}`} />
+              </div>
+            </div>
+          );
+        })}
+        {progress > 0 && progress < 100 && (
+          <div
+            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2]"
+            style={{ left: `${progress}%` }}
+            title={`오늘 (${daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`})`}
+          >
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-accent bg-surface-base shadow-sm" />
+          </div>
+        )}
+      </div>
+      <span className={`text-[10px] font-bold tabular-nums shrink-0 ${
+        isOverdue ? 'text-rose-500' : daysLeft <= 3 ? 'text-amber-500' : 'text-tx-tertiary'
+      }`}>
+        {daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`}
+      </span>
+    </div>
+  );
+}
 
 export function GlobalProcessHeader({
   currentStep,
@@ -209,6 +290,7 @@ export function GlobalProcessHeader({
           </button>
         </div>
       </div>
+      {projectInfo && <ScheduleTimeline info={projectInfo} />}
       <ConfirmModal
         open={logoutConfirmOpen}
         title="로그아웃 확인"
