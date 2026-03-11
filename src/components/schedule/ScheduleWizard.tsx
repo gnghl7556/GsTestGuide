@@ -231,7 +231,7 @@ function WizardCalendar({
         {Array.from({ length: startDay }, (_, i) => {
           const dayOfWeek = i;
           const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-          return <div key={`b-${i}`} className={`h-9 rounded-md ${isWeekend ? 'bg-surface-sunken/60' : ''}`} />;
+          return <div key={`b-${i}`} className={`h-9 rounded-md border ${isWeekend ? 'bg-surface-sunken/60 border-ln/40' : 'border-transparent'}`} />;
         })}
         {Array.from({ length: daysInMonth }, (_, i) => {
           const day = i + 1;
@@ -250,11 +250,12 @@ function WizardCalendar({
               type="button"
               disabled={isWeekend}
               onClick={() => !isWeekend && onSelectDate(dateStr)}
-              className={`h-9 rounded-md text-[11px] font-medium transition-all flex flex-col items-center justify-center gap-0.5
-                ${isWeekend ? 'bg-surface-sunken/60 text-tx-muted/40 cursor-not-allowed' : ''}
-                ${!isWeekend && isFocusDate ? 'bg-accent text-white ring-2 ring-accent/40' : ''}
-                ${!isWeekend && !isFocusDate && isToday ? 'bg-surface-raised text-accent font-bold ring-1 ring-accent/30' : ''}
-                ${!isWeekend && !isFocusDate && !isToday ? 'text-tx-secondary hover:bg-surface-raised' : ''}
+              className={`h-9 rounded-md text-[11px] font-medium transition-all flex flex-col items-center justify-center gap-0.5 border
+                ${isWeekend ? 'bg-surface-sunken/60 border-ln/40 text-tx-muted/40 cursor-not-allowed' : ''}
+                ${!isWeekend && isFocusDate ? 'bg-accent border-accent text-white ring-2 ring-accent/40' : ''}
+                ${!isWeekend && !isFocusDate && isToday ? 'bg-surface-raised border-accent/30 text-accent font-bold ring-1 ring-accent/30' : ''}
+                ${!isWeekend && !isFocusDate && !isToday && assignedIds ? 'bg-surface-raised border-ln text-tx-primary shadow-sm hover:shadow-md hover:border-ln-strong' : ''}
+                ${!isWeekend && !isFocusDate && !isToday && !assignedIds ? 'bg-surface-base border-ln/50 text-tx-secondary hover:bg-surface-raised hover:border-ln' : ''}
               `}
             >
               <span>{day}</span>
