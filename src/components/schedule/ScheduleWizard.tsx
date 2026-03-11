@@ -345,7 +345,7 @@ export function ScheduleWizard({ project, otherProjects, onSave, onClose }: Sche
 
   useEffect(() => {
     const first = registered.find((i) => !i.date);
-    setFocusId(first?.id ?? registered[0]?.id ?? null);
+    setFocusId(first?.id ?? null);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const allItems = useMemo(() => [...registered, ...pool], [registered, pool]);
@@ -417,7 +417,7 @@ export function ScheduleWizard({ project, otherProjects, onSave, onClose }: Sche
     setRegistered((p) => p.map((i) => (i.id === focusId ? { ...i, date: dateStr } : i)));
     const idx = registered.findIndex((i) => i.id === focusId);
     const next = registered.find((i, j) => j > idx && !i.date) ?? registered.find((i) => !i.date && i.id !== focusId);
-    if (next) setFocusId(next.id);
+    setFocusId(next?.id ?? null);
   }
 
   function handleSave() {
