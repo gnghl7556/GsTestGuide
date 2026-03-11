@@ -87,33 +87,38 @@ const GripIcon = () => (
   </svg>
 );
 
-/* ── Sortable chip (project color + icon) ── */
+/* ── Sortable chip ── */
 function SortableChip({
-  item, color, focused, onClick, onRemove,
+  item, color, focused, completed, onClick, onRemove,
 }: {
-  item: MilestoneItem; color: MilestoneColor; focused?: boolean; onClick?: () => void; onRemove?: () => void;
+  item: MilestoneItem; color: MilestoneColor; focused?: boolean; completed?: boolean; onClick?: () => void; onRemove?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1 };
   const c = MILESTONE_COLOR_MAP[color];
   const iconName = MILESTONE_ICON_MAP[item.id] ?? 'star';
 
+  // focused: accent highlight, completed: dimmed, default: neutral
+  const chipCls = focused
+    ? 'border-accent bg-accent/10 ring-1 ring-accent/40'
+    : completed
+      ? 'border-ln bg-surface-sunken/60 opacity-50'
+      : 'border-ln bg-surface-raised/40';
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       onClick={onClick}
-      className={`flex items-center gap-1 rounded-md border px-1.5 py-1 text-[10px] transition-all ${
-        focused ? `${c.border} ${c.bg} ring-1 ring-accent/40` : `${c.border} ${c.bg}`
-      } ${onClick ? 'cursor-pointer' : ''}`}
+      className={`flex items-center gap-1 rounded-md border px-1.5 py-1 text-[10px] transition-all ${chipCls} ${onClick ? 'cursor-pointer' : ''}`}
     >
       <button type="button" {...attributes} {...listeners}
         className="cursor-grab text-tx-muted hover:text-tx-secondary touch-none shrink-0"
         onClick={(e) => e.stopPropagation()}
       ><GripIcon /></button>
-      <MilestoneIcon name={iconName} className={`w-3 h-3 shrink-0 ${c.text}`} />
-      <span className={`flex-1 font-semibold ${c.text} truncate leading-tight`}>{item.label}</span>
-      {item.date && <span className={`text-[9px] ${c.text} opacity-60 shrink-0`}>{item.date.slice(5)}</span>}
+      <MilestoneIcon name={iconName} className={`w-3 h-3 shrink-0 ${focused ? 'text-accent' : c.text}`} />
+      <span className={`flex-1 font-semibold truncate leading-tight ${focused ? 'text-accent' : 'text-tx-primary'}`}>{item.label}</span>
+      {item.date && <span className="text-[9px] text-tx-muted shrink-0">{item.date.slice(5)}</span>}
       {item.type === 'required' && !onRemove && (
         <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-tx-muted shrink-0">
           <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -135,10 +140,10 @@ function OverlayChip({ item, color }: { item: MilestoneItem; color: MilestoneCol
   const c = MILESTONE_COLOR_MAP[color];
   const iconName = MILESTONE_ICON_MAP[item.id] ?? 'star';
   return (
-    <div className={`flex items-center gap-1 rounded-md border px-1.5 py-1 shadow-lg ${c.border} ${c.bg}`}>
+    <div className="flex items-center gap-1 rounded-md border border-ln bg-surface-raised px-1.5 py-1 shadow-lg">
       <GripIcon />
       <MilestoneIcon name={iconName} className={`w-3 h-3 shrink-0 ${c.text}`} />
-      <span className={`text-[10px] font-semibold ${c.text}`}>{item.label}</span>
+      <span className="text-[10px] font-semibold text-tx-primary">{item.label}</span>
     </div>
   );
 }
@@ -442,7 +447,9 @@ export function ScheduleWizard({ project, otherProjects, onSave, onClose }: Sche
                 <div className="space-y-1">
                   {registered.map((item) => (
                     <SortableChip key={item.id} item={item} color={projectColor}
-                      focused={focusId === item.id} onClick={() => setFocusId(item.id)}
+                      focused={focusId === item.id}
+                      completed={focusId !== item.id && !!item.date}
+                      onClick={() => setFocusId(item.id)}
                       onRemove={item.type !== 'required' ? () => moveToPool(item.id) : undefined} />
                   ))}
                 </div>
