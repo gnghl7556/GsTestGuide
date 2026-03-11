@@ -257,18 +257,19 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
                       : 'bg-white/60 dark:bg-white/[0.025] border border-slate-100/60 dark:border-white/[0.04] text-slate-500 dark:text-white/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)] dark:shadow-none'
               }`}
             >
-              {/* Liquid fill — 시험 진행 기간 표시 */}
+              {/* Liquid fill — 시험 진행 기간 표시 (층 분리) */}
               {periods.length > 0 && !isWeekend && (
                 (() => {
                   const uniqueColors = [...new Set(periods.map((p) => p.color))];
-                  const fillPct = Math.min(60, 25 + uniqueColors.length * 15);
+                  const layerH = Math.min(30, 50 / Math.max(uniqueColors.length, 1));
                   return uniqueColors.map((c, ci) => (
                     <div
                       key={ci}
-                      className={`absolute inset-x-0 bottom-0 ${MILESTONE_COLOR_MAP[c].dot} rounded-b-xl transition-all duration-300`}
+                      className={`absolute inset-x-0 ${MILESTONE_COLOR_MAP[c].dot} transition-all duration-300 ${ci === 0 ? 'rounded-b-xl' : ''}`}
                       style={{
-                        height: `${fillPct}%`,
-                        opacity: 0.12 + ci * 0.04,
+                        bottom: `${ci * layerH}%`,
+                        height: `${layerH}%`,
+                        opacity: 0.18,
                       }}
                     />
                   ));
