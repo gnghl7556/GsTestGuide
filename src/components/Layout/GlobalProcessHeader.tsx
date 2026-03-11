@@ -1,4 +1,4 @@
-import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw } from 'lucide-react';
+import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '../../providers/ThemeProvider';
 
@@ -22,6 +22,7 @@ type GlobalProcessHeaderProps = {
   onReset?: () => void;
   onLogout?: () => void;
   onOpenTestList?: () => void;
+  onOpenSchedule?: () => void;
 };
 
 const safeValue = (value?: string | number) => {
@@ -37,7 +38,8 @@ export function GlobalProcessHeader({
   rightSlot,
   onReset,
   onLogout,
-  onOpenTestList
+  onOpenTestList,
+  onOpenSchedule
 }: GlobalProcessHeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const [companyOpen, setCompanyOpen] = useState(false);
@@ -108,6 +110,16 @@ export function GlobalProcessHeader({
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          {onOpenSchedule && (
+            <button
+              type="button"
+              onClick={onOpenSchedule}
+              className="inline-flex items-center gap-2 h-9 rounded-lg border border-ln px-3 text-xs font-semibold text-tx-secondary hover:text-tx-primary hover:border-ln-strong"
+            >
+              일정
+              <Calendar size={14} />
+            </button>
+          )}
           <div className="relative" ref={companyPanelRef}>
             <button
               type="button"

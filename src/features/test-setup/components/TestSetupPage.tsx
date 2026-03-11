@@ -11,6 +11,7 @@ import type {
   UserUpdateInput
 } from '../../../types';
 import { CalendarInput } from './CalendarInput';
+import { ScheduleCalendar } from './ScheduleCalendar';
 import { TestInfoCard } from './TestInfoCard';
 import {
   AccessDeniedModal,
@@ -21,7 +22,8 @@ import {
   EditUserModal,
   ManageUsersModal,
   ParsingOverlay,
-  ProjectListModal
+  ProjectListModal,
+  TestDetailModal
 } from './modals';
 
 interface TestSetupPageProps {
@@ -189,6 +191,7 @@ export function TestSetupPage({
   const [deleteTargetUser, setDeleteTargetUser] = useState<{ id: string; name: string } | null>(null);
   const [accessDeniedOpen, setAccessDeniedOpen] = useState(false);
   const [accessDeniedInfo, setAccessDeniedInfo] = useState<{ testerName: string; plName: string } | null>(null);
+  const [testDetailProject, setTestDetailProject] = useState<Project | null>(null);
   const location = useLocation();
   const openedFromStateRef = useRef(false);
   const [testNumberValidation, setTestNumberValidation] = useState<{
@@ -468,8 +471,20 @@ export function TestSetupPage({
                           </div>
                         )}
                       </div>
-                      <div className="text-right text-[11px] text-slate-400 dark:text-white/50 whitespace-nowrap">
-                        최근 수정 · {formatDate(featuredProject.updatedAt)}
+                      <div className="flex flex-col items-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTestDetailProject(featuredProject);
+                          }}
+                          className="rounded-md border border-slate-300 dark:border-white/20 bg-slate-200/50 dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-300/50 dark:hover:bg-white/20 transition"
+                        >
+                          상세
+                        </button>
+                        <div className="text-right text-[11px] text-slate-400 dark:text-white/50 whitespace-nowrap">
+                          최근 수정 · {formatDate(featuredProject.updatedAt)}
+                        </div>
                       </div>
                     </div>
                     <div className="mt-3 flex items-center gap-3 text-[11px] text-slate-500 dark:text-white/60">
@@ -509,7 +524,19 @@ export function TestSetupPage({
                                 : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-white/70 hover:border-slate-300 dark:hover:border-white/20'
                             }`}
                           >
-                            <div className="text-xs text-slate-400 dark:text-white/50 mb-1">시험번호</div>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="text-xs text-slate-400 dark:text-white/50">시험번호</div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTestDetailProject(project);
+                                }}
+                                className="rounded-md border border-slate-300 dark:border-white/20 bg-slate-200/50 dark:bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-300/50 dark:hover:bg-white/20 transition"
+                              >
+                                상세
+                              </button>
+                            </div>
                             <div className="font-semibold tracking-wide">{project.testNumber}</div>
                             <div className="mt-1 text-sm text-slate-600 dark:text-white/70 truncate" title={`${project.projectName || project.productName || '-'}${project.companyName ? ` (${project.companyName})` : ''}`}>
                               {project.projectName || project.productName || '-'}
@@ -686,47 +713,61 @@ export function TestSetupPage({
             </div>
             )}
 
-            {/* TestInfoCard — 시험 정보 (9개 필드 인라인 편집) */}
-            <div className="mt-5 relative">
-              {!currentUserId && flowMode === 'existing' && (
-                <div className="absolute inset-0 z-10 rounded-2xl bg-[var(--overlay-backdrop)] backdrop-blur-[2px] flex items-center justify-center text-center px-4">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-800 dark:text-white/90">사용자 선택 필요</div>
-                    <div className="mt-1 text-xs text-slate-500 dark:text-white/60">
-                      시험 정보 확인은 사용자 선택 후 가능합니다.
+            {/* existing 모드: 시험 일정 캘린더 / create 모드: 시험 정보 입력 */}
+            {flowMode === 'existing' ? (
+              <div className="mt-5 relative">
+                {!currentUserId && (
+                  <div className="absolute inset-0 z-10 rounded-2xl bg-[var(--overlay-backdrop)] backdrop-blur-[2px] flex items-center justify-center text-center px-4">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-800 dark:text-white/90">사용자 선택 필요</div>
+                      <div className="mt-1 text-xs text-slate-500 dark:text-white/60">
+                        시험 일정 확인은 사용자 선택 후 가능합니다.
+                      </div>
                     </div>
                   </div>
+                )}
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="text-sm text-slate-600 dark:text-white/70">
+                    <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">
+                      3단계
+                    </span>
+                    시험 일정 확인
+                  </div>
                 </div>
-              )}
-              <div className="mb-2 flex items-center justify-between">
-                <div className="text-sm text-slate-600 dark:text-white/70">
-                  <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">
-                    {flowMode === 'existing' ? '3단계' : '6단계'}
-                  </span>
-                  시험 정보 {flowMode === 'existing' ? '확인' : '입력'}
-                </div>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.info ? 'border-emerald-400/50 dark:border-emerald-300/50 text-emerald-600 dark:text-emerald-200' : 'border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/50'}`}>
-                  {sectionDone.info ? '완료' : '미완료'}
-                </span>
+                <ScheduleCalendar projects={visibleProjects} />
               </div>
-              <TestInfoCard
-                testNumber={selectedProject?.testNumber || trimmedTestNumber || ''}
-                plId={plId}
-                scheduleStartDate={scheduleStartDate}
-                scheduleEndDate={scheduleEndDate}
-                productName={projectName}
-                companyName={companyName}
-                managerName={companyContactName}
-                managerPhone={companyContactPhone}
-                managerEmail={companyContactEmail}
-                plDirectory={plDirectory}
-                agreementStatus={agreementParsed?.parseStatus}
-                onChangePlId={onChangePlId}
-                onChangeStartDate={onChangeScheduleStartDate}
-                onChangeEndDate={onChangeScheduleEndDate}
-                onChangeField={(field, value) => onUpdateManualInfo({ [field]: value })}
-              />
-            </div>
+            ) : (
+              <div className="mt-5 relative">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="text-sm text-slate-600 dark:text-white/70">
+                    <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">
+                      6단계
+                    </span>
+                    시험 정보 입력
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.info ? 'border-emerald-400/50 dark:border-emerald-300/50 text-emerald-600 dark:text-emerald-200' : 'border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/50'}`}>
+                    {sectionDone.info ? '완료' : '미완료'}
+                  </span>
+                </div>
+                <TestInfoCard
+                  testNumber={selectedProject?.testNumber || trimmedTestNumber || ''}
+                  plId={plId}
+                  scheduleStartDate={scheduleStartDate}
+                  scheduleEndDate={scheduleEndDate}
+                  productName={projectName}
+                  companyName={companyName}
+                  managerName={companyContactName}
+                  managerPhone={companyContactPhone}
+                  managerEmail={companyContactEmail}
+                  plDirectory={plDirectory}
+                  agreementStatus={agreementParsed?.parseStatus}
+                  onChangePlId={onChangePlId}
+                  onChangeStartDate={onChangeScheduleStartDate}
+                  onChangeEndDate={onChangeScheduleEndDate}
+                  onChangeField={(field, value) => onUpdateManualInfo({ [field]: value })}
+                />
+              </div>
+            )}
 
             {/* 하단 액션 버튼 */}
             <div className="mt-6 sticky bottom-0 pt-4 pb-1 flex flex-col items-center gap-2">
@@ -869,6 +910,14 @@ export function TestSetupPage({
       />
 
       <ParsingOverlay visible={isParsing} progress={parsingProgress} />
+
+      {testDetailProject && (
+        <TestDetailModal
+          open={!!testDetailProject}
+          onClose={() => setTestDetailProject(null)}
+          project={testDetailProject}
+        />
+      )}
     </div>
   );
 }

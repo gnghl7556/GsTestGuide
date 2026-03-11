@@ -1,9 +1,12 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { GlobalProcessHeader } from './GlobalProcessHeader';
 import { ProcessLayout } from './ProcessLayout';
+import { ScheduleModal } from '../../features/checklist/components/ScheduleModal';
 import { useTestSetupContext } from '../../providers/useTestSetupContext';
 import { useExecutionToolbar } from '../../providers/ExecutionToolbarContext';
 import { useMemo, useState } from 'react';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 const getStepFromPath = (pathname: string) => {
   if (pathname.startsWith('/design')) return 2;
@@ -26,8 +29,10 @@ export function WorkspaceLayout() {
   } = useTestSetupContext();
   const [testListOpen, setTestListOpen] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const currentStep = getStepFromPath(location.pathname);
   const { onReset } = useExecutionToolbar();
+  const currentProject = projects.find((p) => p.testNumber === testSetup.testNumber);
 
   const projectInfo = {
     testNumber: testSetup.testNumber,
@@ -88,6 +93,7 @@ export function WorkspaceLayout() {
             onOpenTestList={() => {
               setTestListOpen(true);
             }}
+            onOpenSchedule={() => setScheduleOpen(true)}
           />
         }
         content={<Outlet />}
@@ -176,6 +182,22 @@ export function WorkspaceLayout() {
             </div>
           </div>
         </div>
+      )}
+      {scheduleOpen && currentProject && (
+        <ScheduleModal
+          open={scheduleOpen}
+          onClose={() => setScheduleOpen(false)}
+          project={currentProject}
+          onSave={async (updates) => {
+            if (!db || !testSetup.testNumber) return;
+            await setDoc(
+              doc(db, 'projects', testSetup.testNumber),
+              { ...updates, updatedAt: serverTimestamp() },
+              { merge: true }
+            );
+            setScheduleOpen(false);
+          }}
+        />
       )}
     </>
   );

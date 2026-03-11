@@ -7,3 +7,4 @@ export { EditUserModal } from './EditUserModal';
 export { ManageUsersModal } from './ManageUsersModal';
 export { ParsingOverlay } from './ParsingOverlay';
 export { ProjectListModal } from './ProjectListModal';
+export { TestDetailModal } from './TestDetailModal';
