@@ -168,7 +168,7 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
   }, [projectSpans]);
 
   const maxLanes = projectSpans.length > 0 ? Math.max(...projectSpans.map((s) => s.lane)) + 1 : 0;
-  const cellHeight = 40 + maxLanes * 5;
+  const cellHeight = 44 + Math.min(maxLanes, 3) * 3;
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -216,7 +216,7 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
           className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 transition">다음</button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-1">
+      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
         {['일', '월', '화', '수', '목', '금', '토'].map((day, i) => (
           <div key={day} className={`text-center text-[10px] font-semibold py-1 ${
             i === 0 || i === 6 ? 'text-slate-300 dark:text-white/30' : 'text-slate-400 dark:text-white/50'
@@ -224,12 +224,12 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-x-0 gap-y-1">
+      <div className="grid grid-cols-7 gap-1.5">
         {cells.map((cell, idx) => {
           if (!cell) {
             const blankDow = idx % 7;
             const isWeekend = blankDow === 0 || blankDow === 6;
-            return <div key={`empty-${idx}`} style={{ height: cellHeight }} className={`rounded-lg ${isWeekend ? 'bg-slate-50 dark:bg-white/[0.03]' : ''}`} />;
+            return <div key={`empty-${idx}`} style={{ height: cellHeight }} className={`rounded-xl ${isWeekend ? 'bg-slate-50/80 dark:bg-white/[0.02]' : ''}`} />;
           }
 
           const isToday = cell.dateStr === todayStr;
@@ -245,16 +245,16 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
               disabled={isWeekend && !hasMilestones}
               onClick={(e) => handleCellClick(cell.dateStr, e)}
               style={{ height: cellHeight }}
-              className={`relative rounded-lg text-xs font-medium transition flex flex-col items-center justify-start pt-1.5 gap-0.5 overflow-hidden ${
+              className={`relative rounded-xl text-xs font-medium transition-all duration-150 flex flex-col items-center justify-start pt-1.5 gap-0.5 overflow-hidden ${
                 isWeekend
                   ? hasMilestones
-                    ? 'bg-slate-50 dark:bg-white/[0.03] text-slate-400 dark:text-white/40 cursor-pointer'
-                    : 'bg-slate-50 dark:bg-white/[0.03] text-slate-300 dark:text-white/20 cursor-not-allowed'
+                    ? 'bg-slate-50/80 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.04] text-slate-400 dark:text-white/40 cursor-pointer hover:shadow-sm'
+                    : 'bg-slate-50/80 dark:bg-white/[0.02] text-slate-300 dark:text-white/15 cursor-not-allowed'
                   : isToday
-                    ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-500/30 dark:to-purple-500/30 text-blue-700 dark:text-blue-200 ring-1 ring-blue-400/50 dark:ring-blue-400/40'
+                    ? 'bg-gradient-to-br from-blue-500/15 to-purple-500/15 dark:from-blue-500/25 dark:to-purple-500/25 border border-blue-300/60 dark:border-blue-400/30 text-blue-700 dark:text-blue-200 shadow-[0_2px_8px_rgba(59,130,246,0.15)] dark:shadow-[0_2px_8px_rgba(59,130,246,0.2)]'
                     : hasMilestones
-                      ? 'text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer'
-                      : 'text-slate-500 dark:text-white/60'
+                      ? 'bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.08] text-slate-700 dark:text-white/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.15)] hover:shadow-[0_3px_12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_3px_12px_rgba(0,0,0,0.3)] hover:scale-[1.03] cursor-pointer'
+                      : 'bg-white/60 dark:bg-white/[0.025] border border-slate-100/60 dark:border-white/[0.04] text-slate-500 dark:text-white/50 shadow-[0_1px_2px_rgba(0,0,0,0.02)] dark:shadow-none'
               }`}
             >
               <span className="relative z-10">{cell.day}</span>
@@ -267,18 +267,14 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
                   ))}
                 </div>
               )}
-              {/* Period bars */}
-              {periods.map((p, pi) => (
-                <div
-                  key={pi}
-                  className={`absolute left-0 right-0 ${MILESTONE_COLOR_MAP[p.color].dot} opacity-20 ${
-                    p.isStart && p.isEnd ? 'rounded-full mx-1' :
-                    p.isStart ? 'rounded-l-full ml-0.5' :
-                    p.isEnd ? 'rounded-r-full mr-0.5' : ''
-                  }`}
-                  style={{ bottom: 2 + p.lane * 5, height: 4 }}
-                />
-              ))}
+              {/* Period dots */}
+              {periods.length > 0 && (
+                <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex items-center gap-0.5">
+                  {periods.map((p, pi) => (
+                    <span key={pi} className={`w-1.5 h-1.5 rounded-full ${MILESTONE_COLOR_MAP[p.color].dot} opacity-40`} />
+                  ))}
+                </div>
+              )}
             </button>
           );
         })}
