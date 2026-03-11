@@ -85,6 +85,30 @@ export function ExecutionPage() {
   const contentOverrides = useContentOverrides();
   const docMaterials = useDocMaterials();
 
+  // 콘텐츠 오버라이드 변경 감지 (초기 로드 후 3초 뒤부터 모니터링)
+  const [contentUpdateNotice, setContentUpdateNotice] = useState(false);
+  const overrideMonitorRef = useRef(false);
+  const prevOverrideFpRef = useRef('');
+  useEffect(() => {
+    const t = setTimeout(() => {
+      overrideMonitorRef.current = true;
+      prevOverrideFpRef.current = JSON.stringify(
+        Object.entries(contentOverrides).map(([k, v]) => [k, v.title, JSON.stringify(v.checkpoints), v.passCriteria])
+      );
+    }, 3000);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!overrideMonitorRef.current) return;
+    const fp = JSON.stringify(
+      Object.entries(contentOverrides).map(([k, v]) => [k, v.title, JSON.stringify(v.checkpoints), v.passCriteria])
+    );
+    if (fp !== prevOverrideFpRef.current) {
+      setContentUpdateNotice(true);
+      prevOverrideFpRef.current = fp;
+    }
+  }, [contentOverrides]);
+
   // Firestore에서 점검 데이터 로드 (localStorage에 데이터가 없을 때 fallback)
   useEffect(() => {
     if (!db || !currentTestNumber) return;
@@ -742,6 +766,8 @@ export function ExecutionPage() {
       showDefectModal={showDefectModal}
       onCloseDefectModal={() => setShowDefectModal(false)}
       currentTestNumber={currentTestNumber}
+      contentUpdateNotice={contentUpdateNotice}
+      onDismissContentNotice={() => setContentUpdateNotice(false)}
     />
   );
 }

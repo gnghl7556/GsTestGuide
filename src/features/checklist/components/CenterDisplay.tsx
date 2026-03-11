@@ -181,6 +181,28 @@ export function CenterDisplay({
   };
   const skippedIndices = computeSkipped(quickAnswers);
 
+  // 분기 시각화: 각 질문이 트리거하는 skip 대상 / 각 skip 질문의 원인 소스
+  const getTriggeredSkips = (index: number): number[] => {
+    if (!branchingRules) return [];
+    const sourceQ = questions[index];
+    if (!sourceQ || quickAnswers[sourceQ.id] !== 'NO') return [];
+    const result: number[] = [];
+    for (const rule of branchingRules) {
+      if (rule.sourceIndex === index) result.push(...rule.skipIndices);
+    }
+    return result;
+  };
+  const getSkipSource = (index: number): number | null => {
+    if (!branchingRules || !skippedIndices.has(index)) return null;
+    for (const rule of branchingRules) {
+      if (rule.skipIndices.includes(index)) {
+        const sourceQ = questions[rule.sourceIndex];
+        if (sourceQ && quickAnswers[sourceQ.id] === rule.triggerAnswer) return rule.sourceIndex;
+      }
+    }
+    return null;
+  };
+
   const isQuestionDisabled = (questionId: string): boolean => {
     const idx = questions.findIndex((q) => q.id === questionId);
     if (idx <= 0) return false;
@@ -445,6 +467,28 @@ export function CenterDisplay({
                           </div>
                         </div>
                       </div>
+                      {/* 분기 규칙 시각화: 건너뜀 대상 표시 */}
+                      {(() => {
+                        const triggered = getTriggeredSkips(index);
+                        if (triggered.length === 0) return null;
+                        return (
+                          <div className="mt-1.5 pl-9 flex items-center gap-1.5 text-[10px] text-tx-muted">
+                            <span className="inline-block w-3 h-px bg-tx-muted/40" />
+                            <span>아니오 → CP {triggered.map(i => i + 1).join(', ')} 건너뜀</span>
+                          </div>
+                        );
+                      })()}
+                      {/* 분기 규칙 시각화: 건너뜀 원인 표시 */}
+                      {(() => {
+                        const source = getSkipSource(index);
+                        if (source === null) return null;
+                        return (
+                          <div className="mt-1 pl-9 flex items-center gap-1.5 text-[10px] text-tx-muted">
+                            <span className="inline-block w-3 h-px bg-tx-muted/40" />
+                            <span>CP {source + 1}에서 건너뜀</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                     );
                   });
@@ -467,12 +511,22 @@ export function CenterDisplay({
                           <span className="text-[11px] text-tx-muted">{c.role}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          {c.phone && (
+                          {c.phone && c.phone !== '-' && (
+                            <a href={`tel:${c.phone.replace(/[^0-9+\-]/g, '')}`} className="flex items-center gap-1 text-xs text-tx-tertiary whitespace-nowrap hover:text-accent-text transition-colors">
+                              <Phone size={10} />{c.phone}
+                            </a>
+                          )}
+                          {c.phone === '-' && (
                             <span className="flex items-center gap-1 text-xs text-tx-tertiary whitespace-nowrap">
                               <Phone size={10} />{c.phone}
                             </span>
                           )}
-                          {c.email && (
+                          {c.email && c.email !== '-' && (
+                            <a href={`mailto:${c.email}`} className="flex items-center gap-1 text-xs text-tx-tertiary hover:text-accent-text transition-colors">
+                              <Mail size={10} />{c.email}
+                            </a>
+                          )}
+                          {c.email === '-' && (
                             <span className="flex items-center gap-1 text-xs text-tx-tertiary">
                               <Mail size={10} />{c.email}
                             </span>

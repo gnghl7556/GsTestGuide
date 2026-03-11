@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Pencil, RotateCcw, ChevronDown, ChevronRight, AlertTriangle, Trash2 } from 'lucide-react';
+import { Pencil, RotateCcw, ChevronDown, ChevronRight, AlertTriangle, Trash2, History } from 'lucide-react';
+import { Timestamp } from 'firebase/firestore';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db } from '../../../lib/firebase';
 import { doc, setDoc, deleteDoc, getDocs, collection, onSnapshot, serverTimestamp } from 'firebase/firestore';
@@ -18,6 +19,19 @@ const CATEGORY_LABELS: Record<RequirementCategory, string> = {
 };
 
 const CATEGORY_ORDER: RequirementCategory[] = ['SETUP', 'EXECUTION', 'COMPLETION'];
+
+const formatOverrideTime = (val: unknown): string => {
+  if (!val) return '';
+  if (val instanceof Timestamp) {
+    const d = val.toDate();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${mm}/${dd} ${hh}:${min}`;
+  }
+  return '';
+};
 
 export function ContentOverrideManagement() {
   const [overrides, setOverrides] = useState<Record<string, ContentOverride>>({});
@@ -403,7 +417,13 @@ export function ContentOverrideManagement() {
                             {getDisplayValue(req.id, 'title')}
                           </span>
                           {modified && (
-                            <span className="shrink-0 text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded">수정됨</span>
+                            <span className="shrink-0 inline-flex items-center gap-1 text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded">
+                              수정됨
+                              {(() => {
+                                const ts = formatOverrideTime(overrides[req.id]?.updatedAt);
+                                return ts ? <span className="font-medium opacity-70" title={`마지막 수정: ${ts}`}><History size={9} className="inline -mt-px" /> {ts}</span> : null;
+                              })()}
+                            </span>
                           )}
                         </div>
                         <div className="flex items-center gap-1 shrink-0 ml-2">

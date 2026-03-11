@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Check, X, BookOpen } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Check, X, BookOpen, Search } from 'lucide-react';
 
 import type { ChecklistItem, ExecutionItemGate, QuickModeItem, QuickReviewAnswer, ReviewData } from '../../../types';
 import { CATEGORIES, CATEGORY_THEMES } from 'virtual:content/categories';
@@ -31,6 +31,7 @@ export function NavSidebar({
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'HOLD' | 'FAIL'>('ALL');
   const [evidenceOnly, setEvidenceOnly] = useState(false);
   const [showRefGuide, setShowRefGuide] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const shortLabelMap: Record<string, string> = {
     '담당 PL 및 시험 배정 안내 메일을 확인했는가?': '시험 배정 안내',
     '시험 합의서, 제품 설명서, 사용자 매뉴얼 및 시험 공유 폴더를 확인했는가?': '시험 자료 확인'
@@ -61,6 +62,19 @@ export function NavSidebar({
       }
     }
   }, [selectedReqId, checklist]);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const matchingCats = CATEGORIES
+        .filter(cat => checklist.some(item =>
+          item.category === cat.id &&
+          (item.id.toLowerCase().includes(q) || item.title.toLowerCase().includes(q))
+        ))
+        .map(cat => cat.id);
+      setExpandedCats(matchingCats);
+    }
+  }, [searchQuery, checklist]);
 
   const toggleCategory = (catId: string) => {
     setExpandedCats(prev =>
@@ -97,6 +111,25 @@ export function NavSidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+        <div className="px-1 pb-1.5 relative">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-tx-muted pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="항목 검색"
+            className="w-full rounded-lg border border-ln bg-surface-base pl-7 pr-7 py-1.5 text-xs text-tx-primary placeholder:text-tx-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-tx-muted hover:text-tx-secondary"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
         <div className="px-1 pb-1 flex items-center gap-1 text-[10px] font-semibold text-tx-tertiary">
           {(['ALL', 'PENDING', 'HOLD', 'FAIL'] as const).map((key) => (
             <button
@@ -129,7 +162,13 @@ export function NavSidebar({
         </div>
         {CATEGORIES.map((cat) => {
           const catItemsAll = checklist.filter(item => item.category === cat.id);
+          const normalizedQuery = searchQuery.trim().toLowerCase();
           const catItems = catItemsAll.filter((item) => {
+            if (normalizedQuery) {
+              const matchId = item.id.toLowerCase().includes(normalizedQuery);
+              const matchTitle = item.title.toLowerCase().includes(normalizedQuery);
+              if (!matchId && !matchTitle) return false;
+            }
             const status = reviewData[item.id]?.status ?? 'None';
             if (statusFilter === 'PENDING' && status !== 'None') return false;
             if (statusFilter === 'HOLD' && status !== 'Hold') return false;
@@ -147,6 +186,11 @@ export function NavSidebar({
           const isExpanded = expandedCats.includes(cat.id);
           const hasActiveItem = catItems.some(item => item.id === selectedReqId);
           const isActiveCategory = activeCategory === cat.id;
+          const catApplicable = catItemsAll.filter(i => i.status !== 'Not_Applicable');
+          const catCompleted = catApplicable.filter(i => {
+            const s = reviewData[i.id]?.status;
+            return s === 'Verified' || s === 'Cannot_Verify';
+          });
           return (
             <div key={cat.id} className="select-none">
               {/* 카테고리 헤더: 숫자 표시 제거됨 */}
@@ -167,7 +211,10 @@ export function NavSidebar({
                 <span className="relative z-10 flex items-center gap-2 w-full">
                   {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   <span className="flex-1 flex items-center justify-between gap-2">
-                    <span className="block">{cat.name}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="block">{cat.name}</span>
+                      <span className="text-[9px] font-semibold opacity-60">{catCompleted.length}/{catApplicable.length}</span>
+                    </span>
                     <span className="inline-flex items-center gap-1.5">
                       {catItems.map((item) => {
                         const status = reviewData[item.id]?.status ?? 'None';
