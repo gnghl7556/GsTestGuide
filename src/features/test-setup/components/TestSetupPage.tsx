@@ -456,7 +456,7 @@ export function TestSetupPage({
                       onSelectProject(featuredProject.testNumber);
                       setFlowMode('existing');
                     }}
-                    className={`relative w-full rounded-2xl border px-4 py-4 text-left transition ${
+                    className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
                       featuredProject.status === '완료'
                         ? 'opacity-60 border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60'
                         : trimmedTestNumber === featuredProject.testNumber
@@ -464,11 +464,6 @@ export function TestSetupPage({
                           : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white/80 hover:border-slate-300 dark:hover:border-white/20'
                     }`}
                   >
-                    {featuredProject.status === '완료' && (
-                      <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full border border-slate-300 dark:border-white/20 bg-slate-200 dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-white/50">
-                        완료
-                      </span>
-                    )}
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="text-[11px] text-slate-400 dark:text-white/50 mb-1">시험번호</div>
@@ -481,16 +476,23 @@ export function TestSetupPage({
                         )}
                       </div>
                       <div className="flex flex-col items-end gap-1.5">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setTestDetailProject(featuredProject);
-                          }}
-                          className="rounded-md border border-slate-300 dark:border-white/20 bg-slate-200/50 dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-300/50 dark:hover:bg-white/20 transition"
-                        >
-                          상세
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          {featuredProject.status === '완료' && (
+                            <span className="inline-flex items-center rounded-full border border-slate-300 dark:border-white/20 bg-slate-200 dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-white/50">
+                              완료
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTestDetailProject(featuredProject);
+                            }}
+                            className="rounded-md border border-slate-300 dark:border-white/20 bg-slate-200/50 dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-300/50 dark:hover:bg-white/20 transition"
+                          >
+                            상세
+                          </button>
+                        </div>
                         <div className="text-right text-[11px] text-slate-400 dark:text-white/50 whitespace-nowrap">
                           최근 수정 · {formatDate(featuredProject.updatedAt)}
                         </div>
@@ -532,7 +534,7 @@ export function TestSetupPage({
                               onSelectProject(project.testNumber);
                               setFlowMode('existing');
                             }}
-                            className={`relative flex-1 rounded-xl border px-3 py-3 text-left text-sm transition ${
+                            className={`flex-1 rounded-xl border px-3 py-3 text-left text-sm transition ${
                               isCompleted
                                 ? 'opacity-60 border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60'
                                 : isActive
@@ -540,23 +542,25 @@ export function TestSetupPage({
                                   : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-white/70 hover:border-slate-300 dark:hover:border-white/20'
                             }`}
                           >
-                            {isCompleted && (
-                              <span className="absolute top-2 right-2 inline-flex rounded-full border border-slate-300 dark:border-white/20 bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500 dark:text-white/50">
-                                완료
-                              </span>
-                            )}
                             <div className="flex items-center justify-between mb-1">
                               <div className="text-xs text-slate-400 dark:text-white/50">시험번호</div>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setTestDetailProject(project);
-                                }}
-                                className="rounded-md border border-slate-300 dark:border-white/20 bg-slate-200/50 dark:bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-300/50 dark:hover:bg-white/20 transition"
-                              >
-                                상세
-                              </button>
+                              <div className="flex items-center gap-1">
+                                {isCompleted && (
+                                  <span className="inline-flex rounded-full border border-slate-300 dark:border-white/20 bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500 dark:text-white/50">
+                                    완료
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setTestDetailProject(project);
+                                  }}
+                                  className="rounded-md border border-slate-300 dark:border-white/20 bg-slate-200/50 dark:bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-300/50 dark:hover:bg-white/20 transition"
+                                >
+                                  상세
+                                </button>
+                              </div>
                             </div>
                             <div className="font-semibold tracking-wide">{project.testNumber}</div>
                             <div className="mt-1 text-sm text-slate-600 dark:text-white/70 truncate" title={`${project.projectName || project.productName || '-'}${project.companyName ? ` (${project.companyName})` : ''}`}>
