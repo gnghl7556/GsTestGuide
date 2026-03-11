@@ -62,14 +62,18 @@ export function useRegisterExecutionToolbar(payload: RegisterPayload) {
   const ref = useRef(payload);
   ref.current = payload;
 
+  const hasFinalize = !!payload.onFinalize;
+  const canFinalize = payload.canFinalize ?? false;
+  const isFinalized = payload.isFinalized ?? false;
+
   useEffect(() => {
     register({
       onReset: () => ref.current.onReset(),
-      onFinalize: ref.current.onFinalize ? () => ref.current.onFinalize!() : undefined,
-      canFinalize: ref.current.canFinalize,
-      isFinalized: ref.current.isFinalized,
+      onFinalize: hasFinalize ? () => ref.current.onFinalize!() : undefined,
+      canFinalize,
+      isFinalized,
     });
-  });
+  }, [register, hasFinalize, canFinalize, isFinalized]);
 
   useEffect(() => {
     return () => unregister();
