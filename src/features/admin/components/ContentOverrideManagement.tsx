@@ -1,15 +1,16 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Pencil, RotateCcw, ChevronDown, ChevronRight, AlertTriangle, Trash2, History } from 'lucide-react';
+import { Pencil, RotateCcw, ChevronDown, ChevronRight, AlertTriangle, Trash2, History, Clock } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db } from '../../../lib/firebase';
-import { doc, setDoc, deleteDoc, getDocs, collection, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, getDocs, collection, onSnapshot, serverTimestamp, addDoc } from 'firebase/firestore';
 import type { ContentOverride } from '../../../lib/content/mergeOverrides';
 import type { RequirementCategory, QuestionImportance } from '../../../types';
 import { inferImportance } from '../../../utils/quickMode';
 import { AdminPageHeader, BusyOverlay } from '../shared';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { ContentEditForm } from './content/ContentEditForm';
+import { ChangeHistoryModal } from './content/ChangeHistoryModal';
 import { splitRef, joinRef, type EditingState } from './content/types';
 
 const CATEGORY_LABELS: Record<RequirementCategory, string> = {
@@ -43,6 +44,7 @@ export function ContentOverrideManagement() {
     new Set(CATEGORY_ORDER),
   );
   const [docMaterialsList, setDocMaterialsList] = useState<Array<{ label: string; linkedSteps: string[] }>>([]);
+  const [historyTarget, setHistoryTarget] = useState<{ reqId: string; title: string } | null>(null);
   const [refDropdownIdx, setRefDropdownIdx] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -294,12 +296,60 @@ export function ContentOverrideManagement() {
       patch.branchingRules = editing.branchingRules;
     }
 
+    // Compute change entries for history
+    const ov = overrides[editing.reqId];
+    const changes: Array<{ field: string; before: string; after: string }> = [];
+    const prevTitle = ov?.title ?? req.title;
+    const newTitle = patch.title ?? req.title;
+    if (prevTitle !== newTitle) changes.push({ field: 'title', before: prevTitle, after: newTitle });
+    const prevDesc = ov?.description ?? req.description;
+    const newDesc = patch.description ?? req.description;
+    if (prevDesc !== newDesc) changes.push({ field: 'description', before: prevDesc, after: newDesc });
+    if (patch.checkpoints) {
+      for (const [iStr, val] of Object.entries(patch.checkpoints)) {
+        const i = Number(iStr);
+        const prev = ov?.checkpoints?.[i] ?? req.checkPoints?.[i] ?? '';
+        if (prev !== val) changes.push({ field: `checkpoint:${i}`, before: prev, after: val });
+      }
+    }
+    if (patch.checkpointImportances) {
+      for (const [iStr, val] of Object.entries(patch.checkpointImportances)) {
+        const i = Number(iStr);
+        const prev = ov?.checkpointImportances?.[i] ?? inferImportance(req.checkPoints?.[i] ?? '');
+        if (prev !== val) changes.push({ field: `importance:${i}`, before: prev, after: val });
+      }
+    }
+    if (patch.passCriteria !== undefined) {
+      const prev = ov?.passCriteria ?? req.passCriteria ?? '';
+      if (prev !== patch.passCriteria) changes.push({ field: 'passCriteria', before: prev, after: patch.passCriteria ?? '' });
+    }
+    if (patch.evidenceExamples) {
+      const prev = (ov?.evidenceExamples ?? req.evidenceExamples ?? []).join('\n');
+      const next = patch.evidenceExamples.join('\n');
+      if (prev !== next) changes.push({ field: 'evidenceExamples', before: prev, after: next });
+    }
+    if (patch.testSuggestions) {
+      const prev = (ov?.testSuggestions ?? req.testSuggestions ?? []).join('\n');
+      const next = patch.testSuggestions.join('\n');
+      if (prev !== next) changes.push({ field: 'testSuggestions', before: prev, after: next });
+    }
+
     setBusy(true);
     try {
-      if (!patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.checkpointDetails && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules) {
+      const isEmpty = !patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.checkpointDetails && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules;
+      if (isEmpty) {
         await deleteDoc(doc(db, 'contentOverrides', editing.reqId));
       } else {
         await setDoc(doc(db, 'contentOverrides', editing.reqId), patch);
+      }
+      // Record history if there were changes
+      if (changes.length > 0) {
+        await addDoc(collection(db, 'contentOverrides', editing.reqId, 'history'), {
+          changedAt: serverTimestamp(),
+          changedBy: 'admin',
+          action: isEmpty ? 'reset' : 'edit',
+          changes,
+        });
       }
     } finally {
       setBusy(false);
@@ -309,9 +359,30 @@ export function ContentOverrideManagement() {
 
   const handleReset = async (reqId: string) => {
     if (!db || busy) return;
+    const ov = overrides[reqId];
+    const req = REQUIREMENTS_DB.find((r) => r.id === reqId);
     setBusy(true);
     try {
       await deleteDoc(doc(db, 'contentOverrides', reqId));
+      // Record reset in history
+      if (ov && req) {
+        const changes: Array<{ field: string; before: string; after: string }> = [];
+        if (ov.title) changes.push({ field: 'title', before: ov.title, after: req.title });
+        if (ov.description) changes.push({ field: 'description', before: ov.description, after: req.description });
+        if (ov.checkpoints) {
+          for (const [iStr, val] of Object.entries(ov.checkpoints)) {
+            changes.push({ field: `checkpoint:${iStr}`, before: val, after: req.checkPoints?.[Number(iStr)] ?? '' });
+          }
+        }
+        if (changes.length > 0) {
+          await addDoc(collection(db, 'contentOverrides', reqId, 'history'), {
+            changedAt: serverTimestamp(),
+            changedBy: 'admin',
+            action: 'reset',
+            changes,
+          });
+        }
+      }
       if (editing?.reqId === reqId) setEditing(null);
     } finally {
       setBusy(false);
@@ -435,6 +506,13 @@ export function ContentOverrideManagement() {
                           >
                             <Pencil size={14} />
                           </button>
+                          <button
+                            onClick={() => setHistoryTarget({ reqId: req.id, title: getDisplayValue(req.id, 'title') })}
+                            className="rounded p-1.5 text-tx-muted hover:text-tx-secondary hover:bg-surface-sunken"
+                            title="변경 이력"
+                          >
+                            <Clock size={14} />
+                          </button>
                           {modified && (
                             <button
                               onClick={() => setResetTarget(req.id)}
@@ -497,6 +575,15 @@ export function ContentOverrideManagement() {
           </div>
         }
       />
+
+      {/* Change history modal */}
+      {historyTarget && (
+        <ChangeHistoryModal
+          reqId={historyTarget.reqId}
+          reqTitle={historyTarget.title}
+          onClose={() => setHistoryTarget(null)}
+        />
+      )}
 
       {/* Busy overlay for save operations */}
       <BusyOverlay visible={busy && !resetTarget && !resetAllConfirm} />
