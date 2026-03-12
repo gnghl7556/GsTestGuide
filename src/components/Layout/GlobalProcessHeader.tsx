@@ -46,8 +46,6 @@ const parseScheduleDate = (s?: string) => {
   return isNaN(d.getTime()) ? null : d;
 };
 
-type MilestoneData = { date: Date; color: string; pastColor: string; label: string };
-
 function useScheduleData(info?: GlobalProjectInfo) {
   const start = parseScheduleDate(info?.scheduleStartDate);
   const end = parseScheduleDate(info?.scheduleEndDate);
@@ -60,22 +58,22 @@ function useScheduleData(info?: GlobalProjectInfo) {
   const progress = Math.max(0, Math.min(100, (elapsedMs / totalMs) * 100));
   const daysLeft = Math.ceil((end.getTime() - today.getTime()) / 86400000);
 
-  const milestones: MilestoneData[] = [
-    { date: start, color: 'bg-emerald-400', pastColor: 'bg-emerald-500', label: '시작' },
+  const milestones: Array<{ date: Date; label: string }> = [
+    { date: start, label: '시작' },
   ];
   const d1 = parseScheduleDate(info?.scheduleDefect1);
-  if (d1) milestones.push({ date: d1, color: 'bg-amber-300', pastColor: 'bg-amber-500', label: '1차 결함' });
+  if (d1) milestones.push({ date: d1, label: '1차 결함' });
   const d2 = parseScheduleDate(info?.scheduleDefect2);
-  if (d2) milestones.push({ date: d2, color: 'bg-orange-300', pastColor: 'bg-orange-500', label: '2차 결함' });
+  if (d2) milestones.push({ date: d2, label: '2차 결함' });
   const p = parseScheduleDate(info?.schedulePatchDate);
-  if (p) milestones.push({ date: p, color: 'bg-sky-300', pastColor: 'bg-sky-500', label: '패치' });
-  milestones.push({ date: end, color: 'bg-rose-300', pastColor: 'bg-rose-500', label: '종료' });
+  if (p) milestones.push({ date: p, label: '패치' });
+  milestones.push({ date: end, label: '종료' });
 
   const getPos = (d: Date) => Math.max(1, Math.min(99, ((d.getTime() - start.getTime()) / totalMs) * 100));
   const isPast = (d: Date) => d.getTime() <= today.getTime();
   const isOverdue = daysLeft < 0;
 
-  return { start, end, today, progress, daysLeft, milestones, getPos, isPast, isOverdue };
+  return { progress, daysLeft, milestones, getPos, isPast, isOverdue };
 }
 
 function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
@@ -85,19 +83,14 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
   const { progress, daysLeft, milestones, getPos, isPast, isOverdue } = data;
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-1 overflow-visible">
-      {/* Track background */}
-      <div className="absolute inset-0 bg-ln/50" />
-      {/* Progress fill */}
+    <div className="absolute bottom-0 left-0 right-0 h-[3px] overflow-visible">
+      <div className="absolute inset-0 bg-ln" />
       <div
         className={`absolute inset-y-0 left-0 transition-all duration-700 ${
-          isOverdue
-            ? 'bg-rose-400 dark:bg-rose-500'
-            : 'bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-600'
+          isOverdue ? 'bg-danger' : 'bg-accent'
         }`}
-        style={{ width: `${progress}%` }}
+        style={{ width: `${progress}%`, opacity: isOverdue ? 0.7 : 0.5 }}
       />
-      {/* Milestone diamonds */}
       {milestones.map((m, i) => {
         const pos = getPos(m.date);
         const past = isPast(m.date);
@@ -109,23 +102,22 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
             title={`${m.label}: ${m.date.getMonth() + 1}/${m.date.getDate()}`}
           >
             <div
-              className={`w-2 h-2 rotate-45 transition-all ${
+              className={`w-[7px] h-[7px] rotate-45 border transition-all ${
                 past
-                  ? `${m.pastColor} ring-2 ring-surface-base shadow-md`
-                  : 'border-[1.5px] border-white/50 dark:border-white/30 bg-surface-base/80'
+                  ? 'bg-accent border-accent shadow-sm'
+                  : 'bg-surface-base border-ln-strong'
               }`}
             />
           </div>
         );
       })}
-      {/* Today dot */}
       {progress > 0 && progress < 100 && (
         <div
           className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2]"
           style={{ left: `${progress}%` }}
           title={`오늘 (${daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`})`}
         >
-          <div className="w-2.5 h-2.5 rounded-full border-2 border-surface-base bg-accent shadow-[0_0_8px_rgba(99,102,241,0.6)] dark:shadow-[0_0_8px_rgba(129,140,248,0.7)]" />
+          <div className="w-[9px] h-[9px] rounded-full border-2 border-surface-base bg-accent" />
         </div>
       )}
     </div>
@@ -140,9 +132,9 @@ function DdayBadge({ info }: { info?: GlobalProjectInfo }) {
   return (
     <span className={`hidden md:inline-flex items-center h-5 rounded px-1.5 text-[10px] font-bold tabular-nums ${
       isOverdue
-        ? 'bg-rose-500/10 text-rose-500 dark:bg-rose-500/20'
+        ? 'bg-danger-subtle text-danger'
         : daysLeft <= 3
-          ? 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
+          ? 'bg-accent-subtle text-accent-text'
           : 'bg-surface-sunken text-tx-tertiary'
     }`}>
       {label}
