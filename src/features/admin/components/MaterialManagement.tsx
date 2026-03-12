@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'react';
-import { Plus, Pencil, Trash2, Check, X, Upload, Image, FileDown, Loader2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Check, X, Upload, Image, FileDown, Loader2, ChevronDown, ChevronUp, AlertTriangle, Link2 } from 'lucide-react';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db, storage } from '../../../lib/firebase';
 import { doc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
@@ -29,7 +29,7 @@ type FormData = DocMaterial;
 
 const emptyForm: FormData = { label: '', kind: 'file', description: '', linkedSteps: [] };
 
-const TABLE_COLUMNS = [
+const BASE_COLUMNS = [
   { label: '자료명', className: 'min-w-[280px]' },
   { label: '종류', className: 'w-20' },
   { label: '연결 항목', className: 'w-48' },
@@ -47,6 +47,61 @@ export function MaterialManagement() {
     busy, setBusy,
     startAdd, cancelEdit,
   } = useAdminCrud<FormData>(emptyForm);
+
+  // Bulk selection state
+  const [selectedLabels, setSelectedLabels] = useState<Set<string>>(new Set());
+  const [bulkLinkOpen, setBulkLinkOpen] = useState(false);
+  const [bulkLinkSteps, setBulkLinkSteps] = useState<string[]>([]);
+
+  const toggleSelect = (label: string) => {
+    setSelectedLabels((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    setSelectedLabels((prev) => prev.size === docs.length ? new Set() : new Set(docs.map((d) => d.label)));
+  };
+
+  const handleBulkLink = async () => {
+    if (!db || selectedLabels.size === 0 || bulkLinkSteps.length === 0) return;
+    setBusy(true);
+    try {
+      await Promise.all(
+        [...selectedLabels].map((label) => {
+          const existing = docs.find((d) => d.label === label);
+          const merged = Array.from(new Set([...(existing?.linkedSteps ?? []), ...bulkLinkSteps]));
+          return setDoc(doc(db!, 'docMaterials', docId(label)), { label, linkedSteps: merged, updatedAt: serverTimestamp() }, { merge: true });
+        })
+      );
+    } finally {
+      setBusy(false);
+      setBulkLinkOpen(false);
+      setBulkLinkSteps([]);
+      setSelectedLabels(new Set());
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!db || selectedLabels.size === 0) return;
+    if (!window.confirm(`선택한 ${selectedLabels.size}건의 자료를 삭제하시겠습니까?`)) return;
+    setBusy(true);
+    try {
+      await Promise.all(
+        [...selectedLabels].map((label) => {
+          if (markdownLabelSet.has(label)) {
+            return setDoc(doc(db!, 'docMaterials', docId(label)), { label, hidden: true, updatedAt: serverTimestamp() }, { merge: true });
+          }
+          return deleteDoc(doc(db!, 'docMaterials', docId(label)));
+        })
+      );
+    } finally {
+      setBusy(false);
+      setSelectedLabels(new Set());
+    }
+  };
 
   // File management state
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
@@ -350,7 +405,7 @@ export function MaterialManagement() {
 
     return (
       <tr className="border-b border-ln">
-        <td colSpan={6} className="px-6 py-4 bg-surface-sunken">
+        <td colSpan={7} className="px-6 py-4 bg-surface-sunken">
           {!mat?.loaded ? (
             <div className="flex items-center gap-2 text-xs text-tx-muted py-2">
               <Loader2 size={14} className="animate-spin" />
@@ -434,18 +489,56 @@ export function MaterialManagement() {
         }
       />
 
+      {/* Bulk action bar */}
+      {selectedLabels.size > 0 && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-ln bg-surface-base px-3 py-2">
+          <span className="text-xs font-semibold text-tx-secondary">{selectedLabels.size}건 선택</span>
+          <span className="h-4 w-px bg-ln" />
+          <button
+            type="button"
+            onClick={() => { setBulkLinkSteps([]); setBulkLinkOpen(true); }}
+            disabled={busy}
+            className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold text-accent-text bg-accent-subtle hover:opacity-80 transition-opacity disabled:opacity-40"
+          >
+            <Link2 size={11} /> 일괄 연결
+          </button>
+          <button
+            type="button"
+            onClick={handleBulkDelete}
+            disabled={busy}
+            className="rounded px-2 py-0.5 text-[10px] font-bold text-danger-text bg-danger-subtle hover:opacity-80 disabled:opacity-40"
+          >
+            일괄 삭제
+          </button>
+          <button type="button" onClick={() => setSelectedLabels(new Set())} className="ml-auto text-[10px] text-tx-muted hover:text-tx-secondary">
+            선택 해제
+          </button>
+        </div>
+      )}
+
       {/* Hidden file inputs */}
       <input ref={previewInputRef} type="file" accept="image/*" className="hidden" onChange={onFileSelected} />
       <input ref={sampleInputRef} type="file" className="hidden" onChange={onFileSelected} />
 
       <AdminTable
-        columns={TABLE_COLUMNS}
+        columns={[{ label: '', className: 'w-10' }, ...BASE_COLUMNS]}
         isEmpty={docs.length === 0 && !showAddForm}
         emptyMessage="등록된 자료가 없습니다."
+        headerSlot={
+          <th className="px-2 py-3 w-10">
+            <input
+              type="checkbox"
+              checked={docs.length > 0 && selectedLabels.size === docs.length}
+              onChange={toggleSelectAll}
+              className="rounded border-ln accent-accent"
+            />
+          </th>
+        }
       >
         {/* Add form */}
         {showAddForm && (
           <tr className="border-b border-ln bg-accent-subtle">
+            <td className="px-2 py-2" />
             <td className="px-4 py-2">
               <input
                 className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
@@ -497,6 +590,7 @@ export function MaterialManagement() {
             return (
               <Fragment key={d.label}>
                 <tr className="border-b border-ln bg-accent-subtle">
+                  <td className="px-2 py-2" />
                   <td className="px-4 py-2">
                     <input
                       className="w-full rounded border border-ln px-2 py-1 text-sm font-semibold bg-surface-base text-tx-primary"
@@ -546,6 +640,14 @@ export function MaterialManagement() {
           return (
             <Fragment key={d.label}>
               <tr className={`border-b border-ln transition-colors ${isExpanded ? 'bg-surface-raised' : 'hover:bg-interactive-hover'}`}>
+                <td className="px-2 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedLabels.has(d.label)}
+                    onChange={() => toggleSelect(d.label)}
+                    className="rounded border-ln accent-accent"
+                  />
+                </td>
                 <td className="px-4 py-3">
                   <button type="button" onClick={() => toggleExpand(d.label)} className="flex items-center gap-2 text-left w-full">
                     {isExpanded
@@ -605,6 +707,51 @@ export function MaterialManagement() {
       />
 
       <BusyOverlay visible={busy && !deleteTarget} />
+
+      {/* Bulk link modal */}
+      {bulkLinkOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-ln bg-surface-overlay shadow-2xl">
+            <div className="flex items-center justify-between border-b border-ln px-5 py-4">
+              <div>
+                <h3 className="text-sm font-extrabold text-tx-primary">일괄 연결</h3>
+                <p className="text-[11px] text-tx-tertiary mt-0.5">{selectedLabels.size}건의 자료에 점검항목을 추가합니다</p>
+              </div>
+              <button type="button" onClick={() => setBulkLinkOpen(false)} className="rounded-md border border-ln px-2 py-1 text-xs text-tx-tertiary hover:text-tx-secondary">
+                <X size={14} />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div className="text-[11px] font-semibold text-tx-muted">연결할 점검항목 선택</div>
+              <StepChips
+                mode="toggle"
+                selected={bulkLinkSteps}
+                onToggle={(stepId) =>
+                  setBulkLinkSteps((prev) =>
+                    prev.includes(stepId) ? prev.filter((s) => s !== stepId) : [...prev, stepId]
+                  )
+                }
+              />
+              {bulkLinkSteps.length === 0 && (
+                <p className="text-[10px] text-tx-muted">최소 1개 이상의 항목을 선택하세요</p>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-ln px-5 py-3">
+              <button type="button" onClick={() => setBulkLinkOpen(false)} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover">
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleBulkLink()}
+                disabled={busy || bulkLinkSteps.length === 0}
+                className="rounded-lg px-3 py-1.5 text-xs font-bold text-white bg-accent-solid hover:bg-accent-hover disabled:opacity-40"
+              >
+                {busy ? '처리 중...' : `${bulkLinkSteps.length}개 항목 연결`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
