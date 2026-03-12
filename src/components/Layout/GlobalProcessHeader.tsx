@@ -242,7 +242,7 @@ export function GlobalProcessHeader({
         {onNavigateStep && (
           <nav className="hidden md:flex items-center gap-0.5 rounded-lg bg-surface-sunken p-0.5 shrink-0">
             {([
-              { step: 2, label: '설계' },
+              { step: 2, label: '작성 가이드' },
               { step: 3, label: '점검' },
               { step: 4, label: '리포트' },
             ] as const).map(({ step, label }) => (

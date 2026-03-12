@@ -1,9 +1,9 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutGrid, PenTool, ClipboardCheck, FileText } from 'lucide-react';
+import { LayoutGrid, BookOpen, ClipboardCheck, FileText } from 'lucide-react';
 
 const navItems = [
   { label: '개요', path: '/dashboard', icon: LayoutGrid },
-  { label: '설계', path: '/design', icon: PenTool },
+  { label: '작성 가이드', path: '/design', icon: BookOpen },
   { label: '수행', path: '/execution', icon: ClipboardCheck },
   { label: '결과', path: '/report', icon: FileText }
 ];
