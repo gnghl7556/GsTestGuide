@@ -94,13 +94,16 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
       {milestones.map((m, i) => {
         const pos = getPos(m.date);
         const past = isPast(m.date);
+        const dateStr = `${m.date.getMonth() + 1}/${m.date.getDate()}`;
         return (
           <div
             key={i}
-            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1]"
+            className="group/ms absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1]"
             style={{ left: `${pos}%` }}
-            title={`${m.label}: ${m.date.getMonth() + 1}/${m.date.getDate()}`}
           >
+            {/* Hit area */}
+            <div className="absolute -inset-2 cursor-default" />
+            {/* Diamond */}
             <div
               className={`w-[7px] h-[7px] rotate-45 border transition-all ${
                 past
@@ -108,16 +111,31 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
                   : 'bg-surface-base border-ln-strong'
               }`}
             />
+            {/* Tooltip */}
+            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/ms:opacity-100 transition-opacity">
+              <div className="whitespace-nowrap rounded-md bg-surface-overlay border border-ln shadow-lg px-2 py-1 text-[10px] font-semibold text-tx-secondary">
+                <span className="text-tx-primary">{m.label}</span>
+                <span className="text-tx-muted ml-1">{dateStr}</span>
+              </div>
+              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] w-0 h-0 border-x-[4px] border-x-transparent border-t-[4px] border-t-ln" />
+            </div>
           </div>
         );
       })}
       {progress > 0 && progress < 100 && (
         <div
-          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2]"
+          className="group/today absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2]"
           style={{ left: `${progress}%` }}
-          title={`오늘 (${daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`})`}
         >
+          <div className="absolute -inset-2 cursor-default" />
           <div className="w-[9px] h-[9px] rounded-full border-2 border-surface-base bg-accent" />
+          {/* Today tooltip */}
+          <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/today:opacity-100 transition-opacity">
+            <div className="whitespace-nowrap rounded-md bg-surface-overlay border border-ln shadow-lg px-2 py-1 text-[10px] font-semibold text-accent-text">
+              오늘 {daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`}
+            </div>
+            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] w-0 h-0 border-x-[4px] border-x-transparent border-t-[4px] border-t-ln" />
+          </div>
         </div>
       )}
     </div>
