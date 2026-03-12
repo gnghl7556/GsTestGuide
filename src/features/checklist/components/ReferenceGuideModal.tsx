@@ -25,7 +25,7 @@ function ReferenceCard({ guide }: { guide: ReferenceGuide }) {
         </ul>
       )}
       {guide.tip && (
-        <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800 leading-relaxed whitespace-pre-line">
+        <div className="rounded-md bg-status-hold-bg border border-status-hold-border px-3 py-2 text-xs text-status-hold-text leading-relaxed whitespace-pre-line">
           {guide.tip}
         </div>
       )}

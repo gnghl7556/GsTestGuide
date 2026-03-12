@@ -60,7 +60,7 @@ export function PlDirectoryPage({ data, onAdd, onDelete, dbReady }: PlDirectoryP
       </div>
 
       {!dbReady && (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        <div className="mb-4 rounded-lg border border-status-hold-border bg-status-hold-bg px-3 py-2 text-xs text-status-hold-text">
           Firestore 연결이 확인되지 않았습니다. `.env` 설정을 확인해주세요.
         </div>
       )}

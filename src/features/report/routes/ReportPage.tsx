@@ -29,7 +29,7 @@ export function ReportPage() {
 
   if (!currentTestNumber) {
     return (
-      <div className="rounded-xl border border-surface-200 bg-surface-base p-6 text-sm text-surface-500">
+      <div className="rounded-xl border border-ln bg-surface-base p-6 text-sm text-tx-tertiary">
         시험을 먼저 선택해주세요.
       </div>
     );
@@ -37,20 +37,20 @@ export function ReportPage() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-surface-200 bg-surface-base p-6">
+      <div className="rounded-xl border border-ln bg-surface-base p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-primary-800">결함 보고 관리</h2>
-            <p className="text-sm text-surface-500 mt-1">리포트 차수 및 파생 결함 기준으로 필터링합니다.</p>
+            <h2 className="text-lg font-bold text-tx-primary">결함 보고 관리</h2>
+            <p className="text-sm text-tx-tertiary mt-1">리포트 차수 및 파생 결함 기준으로 필터링합니다.</p>
           </div>
-          <div className="text-xs text-surface-500">
+          <div className="text-xs text-tx-tertiary">
             총 {counts.total}건 (파생 {counts.derived}건)
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-surface-200 bg-surface-base p-4 flex flex-wrap items-center gap-3 text-xs">
-        <div className="font-semibold text-surface-600">차수</div>
+      <div className="rounded-xl border border-ln bg-surface-base p-4 flex flex-wrap items-center gap-3 text-xs">
+        <div className="font-semibold text-tx-secondary">차수</div>
         {(['ALL', 1, 2, 3, 4] as const).map((value) => (
           <Button
             key={String(value)}
@@ -61,7 +61,7 @@ export function ReportPage() {
             {value === 'ALL' ? '전체' : `${value}차`}
           </Button>
         ))}
-        <div className="ml-4 font-semibold text-surface-600">파생</div>
+        <div className="ml-4 font-semibold text-tx-secondary">파생</div>
         {(['ALL', 'BASE', 'DERIVED'] as const).map((value) => (
           <Button
             key={value}

@@ -10,7 +10,7 @@ const navItems = [
 
 export function MainLayout() {
   return (
-    <div className="min-h-screen bg-surface-50 text-primary-900 grid grid-cols-1 md:grid-cols-[260px_1fr]">
+    <div className="min-h-screen bg-surface-base text-tx-primary grid grid-cols-1 md:grid-cols-[260px_1fr]">
       <aside className="hidden md:flex bg-primary-900 text-white flex-col">
         <div className="px-6 py-6 border-b border-white/10">
           <div className="text-sm uppercase tracking-widest text-white/60">GS 인증</div>
@@ -38,10 +38,10 @@ export function MainLayout() {
       </aside>
 
       <div className="flex flex-col min-h-screen">
-        <header className="h-16 border-b border-surface-200 bg-white/80 backdrop-blur flex items-center px-6">
-          <h1 className="text-lg font-bold text-primary-800">GS 인증 시험 가이드</h1>
+        <header className="h-16 border-b border-ln bg-surface-base/80 backdrop-blur flex items-center px-6">
+          <h1 className="text-lg font-bold text-tx-primary">GS 인증 시험 가이드</h1>
         </header>
-        <main className="flex-1 p-6 bg-surface-50">
+        <main className="flex-1 p-6 bg-surface-base">
           <Outlet />
         </main>
       </div>

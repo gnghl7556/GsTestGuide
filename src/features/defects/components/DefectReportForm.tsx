@@ -55,12 +55,12 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
   };
 
   return (
-    <div className="h-full bg-surface-base rounded-xl border border-surface-200 shadow-sm flex flex-col overflow-hidden">
-      <div className="px-6 py-4 border-b border-surface-200 bg-surface-50">
+    <div className="h-full bg-surface-base rounded-xl border border-ln shadow-sm flex flex-col overflow-hidden">
+      <div className="px-6 py-4 border-b border-ln bg-surface-sunken">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-primary-800">결함 보고</h2>
-            <p className="text-xs text-surface-500 mt-1">
+            <h2 className="text-lg font-bold text-tx-primary">결함 보고</h2>
+            <p className="text-xs text-tx-tertiary mt-1">
               순서대로 입력하면 자동으로 저장 항목이 구성됩니다.
             </p>
           </div>
@@ -74,20 +74,20 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
           </div>
         </div>
         {isFinalized && (
-          <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+          <div className="mt-3 rounded-md border border-status-hold-border bg-status-hold-bg px-3 py-2 text-xs font-semibold text-status-hold-text">
             4차 확정 이후에는 결함 등록/수정이 잠금됩니다.
           </div>
         )}
-        <div className="mt-4 text-[11px] text-surface-500">
+        <div className="mt-4 text-[11px] text-tx-tertiary">
           필수 항목: 요약, 품질 특성
         </div>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
         <fieldset disabled={formLocked} className="contents">
-        <div className="flex-none border-b border-surface-200 bg-surface-base p-6 space-y-5 text-sm text-surface-700">
+        <div className="flex-none border-b border-ln bg-surface-base p-6 space-y-5 text-sm text-tx-secondary">
           {errorMsg && (
-            <div className="rounded-lg border border-error-200 bg-error-50/40 px-4 py-2 text-xs text-error-600">
+            <div className="rounded-lg border border-danger bg-danger-subtle px-4 py-2 text-xs text-danger-text">
               {errorMsg}
             </div>
           )}
@@ -95,7 +95,7 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
           {/* 시험환경 + 차수 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="space-y-2 lg:col-span-2">
-              <label className="block text-xs font-semibold text-surface-600">시험 환경</label>
+              <label className="block text-xs font-semibold text-tx-secondary">시험 환경</label>
               <div className="flex flex-wrap gap-2">
                 {envOptions.map((option) => (
                   <button
@@ -104,8 +104,8 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
                     onClick={() => update('testEnvironment', option.value)}
                     className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                       state.testEnvironment === option.value
-                        ? 'border-primary-500 bg-primary-50 text-primary-700'
-                        : 'border-surface-200 text-surface-600 hover:border-surface-300'
+                        ? 'border-accent bg-accent-subtle text-accent-text'
+                        : 'border-ln text-tx-secondary hover:border-ln-strong'
                     }`}
                   >
                     {option.label}
@@ -114,7 +114,7 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
               </div>
             </div>
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-surface-600">결함 리포트 차수</label>
+              <label className="block text-xs font-semibold text-tx-secondary">결함 리포트 차수</label>
               <div className="flex flex-wrap gap-2">
                 {versionOptions.map((option) => (
                   <button
@@ -123,8 +123,8 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
                     onClick={() => update('reportVersion', option.value)}
                     className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                       state.reportVersion === option.value
-                        ? 'border-primary-500 bg-primary-50 text-primary-700'
-                        : 'border-surface-200 text-surface-600 hover:border-surface-300'
+                        ? 'border-accent bg-accent-subtle text-accent-text'
+                        : 'border-ln text-tx-secondary hover:border-ln-strong'
                     }`}
                   >
                     {option.label}
@@ -145,9 +145,9 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
         </div>
 
         {/* 품질 특성별 사례 참조 */}
-        <div className="flex-1 bg-surface-50/50 flex flex-col min-h-0">
-          <div className="px-6 py-3 bg-surface-base border-b border-surface-200 flex items-center gap-4 shadow-sm">
-            <div className="flex items-center gap-2 text-surface-500 font-bold text-xs">
+        <div className="flex-1 bg-surface-sunken flex flex-col min-h-0">
+          <div className="px-6 py-3 bg-surface-base border-b border-ln flex items-center gap-4 shadow-sm">
+            <div className="flex items-center gap-2 text-tx-tertiary font-bold text-xs">
               <Search size={14} />
               <span>품질 특성별 사례</span>
             </div>
@@ -158,8 +158,8 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
                   onClick={() => setActiveTab(key)}
                   className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
                     activeTab === key
-                      ? 'bg-primary-800 text-white border-primary-800'
-                      : 'bg-surface-base text-surface-600 border-surface-200 hover:border-surface-300 hover:bg-surface-50'
+                      ? 'bg-accent text-white border-accent'
+                      : 'bg-surface-base text-tx-secondary border-ln hover:border-ln-strong hover:bg-surface-sunken'
                   }`}
                 >
                   {key}
@@ -173,35 +173,35 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
               {(DEFECT_REFERENCES[activeTab] || []).map((item: DefectReferenceItem, idx: number) => (
                 <div
                   key={`${activeTab}-${idx}`}
-                  className="group bg-surface-base rounded-xl border border-surface-200 p-4 hover:border-primary-300 hover:shadow-md transition-all flex flex-col"
+                  className="group bg-surface-base rounded-xl border border-ln p-4 hover:border-accent hover:shadow-md transition-all flex flex-col"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex gap-2">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                        item.severity === 'H' ? 'bg-error-50 text-error-700 border-error-200' :
-                        item.severity === 'M' ? 'bg-warning-50 text-warning-700 border-warning-200' :
-                        'bg-success-50 text-success-700 border-success-200'
+                        item.severity === 'H' ? 'bg-status-fail-bg text-status-fail-text border-status-fail-border' :
+                        item.severity === 'M' ? 'bg-status-hold-bg text-status-hold-text border-status-hold-border' :
+                        'bg-status-pass-bg text-status-pass-text border-status-pass-border'
                       }`}>
                         {item.severity}
                       </span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold border bg-surface-50 text-surface-600 border-surface-100">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold border bg-surface-sunken text-tx-secondary border-ln-subtle">
                         {item.frequency === 'A' ? 'Always' : 'Intermittent'}
                       </span>
                     </div>
                     <button
                       onClick={() => applyReference(item)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 px-2 py-1 rounded bg-primary-50 text-primary-700 text-[10px] font-bold hover:bg-primary-700 hover:text-white"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 px-2 py-1 rounded bg-accent-subtle text-accent-text text-[10px] font-bold hover:bg-accent hover:text-white"
                       type="button"
                     >
                       <Copy size={10} /> 적용
                     </button>
                   </div>
 
-                  <h4 className="text-sm font-bold text-surface-800 mb-2 line-clamp-1 group-hover:text-primary-700">
+                  <h4 className="text-sm font-bold text-tx-primary mb-2 line-clamp-1 group-hover:text-accent-text">
                     {item.summary}
                   </h4>
-                  <div className="flex-1 bg-surface-50 rounded-lg p-3 border border-surface-100">
-                    <p className="text-xs text-surface-600 leading-relaxed line-clamp-4">
+                  <div className="flex-1 bg-surface-sunken rounded-lg p-3 border border-ln-subtle">
+                    <p className="text-xs text-tx-secondary leading-relaxed line-clamp-4">
                       {item.description}
                     </p>
                   </div>
@@ -209,7 +209,7 @@ export function DefectReportForm({ projectId, testCaseId, isFinalized = false }:
               ))}
             </div>
             {(!DEFECT_REFERENCES[activeTab] || DEFECT_REFERENCES[activeTab].length === 0) && (
-              <div className="h-full flex flex-col items-center justify-center text-surface-400">
+              <div className="h-full flex flex-col items-center justify-center text-tx-muted">
                 <Search size={32} className="mb-3 opacity-20" />
                 <p className="text-sm">등록된 사례가 없습니다.</p>
               </div>
