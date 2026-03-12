@@ -537,8 +537,8 @@ export function CenterDisplay({
               </div>
             )}
             {/* 탭 UI — 상세 콘텐츠 */}
-            <div className="mt-8">
-              <div role="tablist" className="flex items-center gap-1 border-b border-ln-subtle">
+            <div className="mt-6 -mx-6 border-t border-ln bg-surface-sunken/60 px-6 pt-0 pb-2 rounded-b-xl">
+              <div role="tablist" className="flex items-center gap-1">
                 {([
                   { id: 'guide' as const, label: '가이드', show: true },
                   { id: 'evidence' as const, label: '증빙 안내', show: hasEvidence },
@@ -560,7 +560,7 @@ export function CenterDisplay({
                   </button>
                 ))}
               </div>
-              <div role="tabpanel" className="pt-5 space-y-4">
+              <div role="tabpanel" className="pt-4 space-y-4">
                 {effectiveTab === 'guide' && (
                   <>
                     {activeItem.description && (
