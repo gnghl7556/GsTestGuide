@@ -6,13 +6,16 @@ import { GuideView } from '../components/GuideView';
 import { ProcessLayout } from '../../../components/Layout/ProcessLayout';
 import { GlobalProcessHeader } from '../../../components/Layout/GlobalProcessHeader';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
+import { guideContent } from '../data/guideContent';
+
+type ActiveView = 'feature' | 'testcase' | { guide: string };
 
 export function DesignPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { testSetup } = useTestSetupContext();
-  const initialTab = (location.state as { tab?: 'feature' | 'testcase' | 'guide' } | null)?.tab;
-  const [activeTab, setActiveTab] = useState<'feature' | 'testcase' | 'guide'>(initialTab || 'feature');
+  const initialTab = (location.state as { tab?: 'feature' | 'testcase' } | null)?.tab;
+  const [activeView, setActiveView] = useState<ActiveView>(initialTab || 'feature');
 
   const projectInfo = {
     testNumber: testSetup.testNumber,
@@ -37,21 +40,19 @@ export function DesignPage() {
     navigate(path);
   }, [navigate]);
 
+  const activeGuideId = typeof activeView === 'object' ? activeView.guide : null;
+
   return (
       <ProcessLayout
         header={<GlobalProcessHeader currentStep={2} projectInfo={projectInfo} onNavigateStep={handleNavigateStep} />}
         sidebar={(
-          <div className="p-4 space-y-3 text-sm text-tx-secondary">
-            <div className="text-xs font-semibold text-tx-tertiary">기능 트리</div>
-            <div className="rounded-lg border border-ln bg-surface-raised p-3 text-xs text-tx-tertiary">
-              기능 트리와 상세 정보는 중앙 영역에서 관리합니다.
-            </div>
-            <div className="pt-2 text-xs font-semibold text-tx-tertiary">설계 탭</div>
+          <div className="p-4 space-y-1 text-sm text-tx-secondary">
+            <div className="text-[10px] font-bold text-tx-muted uppercase tracking-wider px-2 mb-2">설계</div>
             <button
               type="button"
-              onClick={() => setActiveTab('feature')}
-              className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold ${
-                activeTab === 'feature'
+              onClick={() => setActiveView('feature')}
+              className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold transition-colors ${
+                activeView === 'feature'
                   ? 'bg-accent-subtle text-accent-text'
                   : 'text-tx-secondary hover:bg-interactive-hover'
               }`}
@@ -60,41 +61,40 @@ export function DesignPage() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('testcase')}
-              className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold ${
-                activeTab === 'testcase'
+              onClick={() => setActiveView('testcase')}
+              className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold transition-colors ${
+                activeView === 'testcase'
                   ? 'bg-accent-subtle text-accent-text'
                   : 'text-tx-secondary hover:bg-interactive-hover'
               }`}
             >
               테스트 케이스
             </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('guide')}
-              className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold ${
-                activeTab === 'guide'
-                  ? 'bg-accent-subtle text-accent-text'
-                  : 'text-tx-secondary hover:bg-interactive-hover'
-              }`}
-            >
-              가이드
-            </button>
+
+            <div className="border-t border-ln my-3" />
+            <div className="text-[10px] font-bold text-tx-muted uppercase tracking-wider px-2 mb-2">가이드</div>
+            {guideContent.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                onClick={() => setActiveView({ guide: section.id })}
+                className={`w-full rounded-lg px-3 py-2 text-left text-xs transition-colors flex items-center gap-2 ${
+                  activeGuideId === section.id
+                    ? 'bg-accent-subtle text-accent-text font-semibold'
+                    : 'text-tx-secondary hover:bg-interactive-hover'
+                }`}
+              >
+                <span className="text-sm leading-none">{section.icon}</span>
+                <span className="truncate">{section.title}</span>
+              </button>
+            ))}
           </div>
         )}
         content={(
           <div className="h-full">
-            {activeTab === 'feature' && <FeatureManager />}
-            {activeTab === 'testcase' && <TestCaseManager />}
-            {activeTab === 'guide' && <GuideView />}
-          </div>
-        )}
-        panel={(
-          <div className="p-4 space-y-4 text-sm text-tx-secondary">
-            <div className="text-xs font-semibold text-tx-tertiary">AI 어시스턴트</div>
-            <div className="rounded-lg border border-ln bg-surface-base p-3 text-xs text-tx-tertiary">
-              기능/TC 작성 시 필요한 가이드와 요약을 제공할 예정입니다.
-            </div>
+            {activeView === 'feature' && <FeatureManager />}
+            {activeView === 'testcase' && <TestCaseManager />}
+            {activeGuideId && <GuideView initialSectionId={activeGuideId} />}
           </div>
         )}
       />
