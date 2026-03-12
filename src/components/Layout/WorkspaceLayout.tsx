@@ -31,6 +31,8 @@ export function WorkspaceLayout() {
   const [testListOpen, setTestListOpen] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [pendingNavPath, setPendingNavPath] = useState<string | null>(null);
+  const [stepWarning, setStepWarning] = useState('');
   const currentStep = getStepFromPath(location.pathname);
   const { onReset, onFinalize, canFinalize, isFinalized, finalizeSummary } = useExecutionToolbar();
   const currentProject = projects.find((p) => p.testNumber === testSetup.testNumber);
@@ -105,7 +107,14 @@ export function WorkspaceLayout() {
             onNavigateStep={(step) => {
               const paths: Record<number, string> = { 2: '/design', 3: '/execution', 4: '/report' };
               const path = paths[step];
-              if (path) navigate(path);
+              if (!path) return;
+              // Forward to report while execution not finalized
+              if (step === 4 && currentStep === 3 && !isFinalized) {
+                setPendingNavPath(path);
+                setStepWarning('점검이 아직 완료되지 않았습니다. 리포트 페이지로 이동하시겠습니까?');
+                return;
+              }
+              navigate(path);
             }}
           />
         }
@@ -201,6 +210,15 @@ export function WorkspaceLayout() {
           }}
         />
       )}
+      <ConfirmModal
+        open={!!pendingNavPath}
+        title="단계 전환 확인"
+        description={stepWarning}
+        confirmLabel="이동"
+        confirmVariant="warning"
+        onConfirm={() => { const p = pendingNavPath; setPendingNavPath(null); setStepWarning(''); if (p) navigate(p); }}
+        onCancel={() => { setPendingNavPath(null); setStepWarning(''); }}
+      />
     </>
   );
 }
