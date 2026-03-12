@@ -9,9 +9,10 @@ export const MILESTONES = [
 
 export const OPTIONAL_MILESTONES = [
   { id: 'opt-defect2', label: '2차 결함 리포트', icon: 'bug' },
+  { id: 'opt-security', label: '보안·성능 테스트', icon: 'shield' },
   { id: 'opt-regression1', label: '1차 회귀 리포트', icon: 'refresh' },
-  { id: 'opt-regression2', label: '2차 회귀 리포트', icon: 'refresh' },
   { id: 'opt-patch2', label: '2차 패치일', icon: 'wrench' },
+  { id: 'opt-regression2', label: '2차 회귀 리포트', icon: 'refresh' },
 ];
 
 /** milestone id/key → icon name */
@@ -21,9 +22,10 @@ export const MILESTONE_ICON_MAP: Record<string, string> = {
   schedulePatchDate: 'wrench',
   scheduleEndDate: 'flag',
   'opt-defect2': 'bug',
+  'opt-security': 'shield',
   'opt-regression1': 'refresh',
-  'opt-regression2': 'refresh',
   'opt-patch2': 'wrench',
+  'opt-regression2': 'refresh',
 };
 
 export type MilestoneKey = (typeof MILESTONES)[number]['key'];
