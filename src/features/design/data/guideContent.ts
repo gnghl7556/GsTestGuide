@@ -166,42 +166,57 @@ export const guideContent: GuideSection[] = [
       {
         heading: '개요',
         content:
-          'GS 인증 시험 대상 제품은 단순 로컬 설치형부터 클라우드 기반까지 다양합니다. 제품 유형에 따라 서버 접속 방법과 관리 도구가 달라지므로, 시험 환경 구성 시 적절한 접속 방법을 숙지해야 합니다.',
+          'GS 인증 시험 대상 제품은 단순 로컬 설치형부터 클라우드(AWS/Azure) 기반, 컨테이너(Docker/Kubernetes) 환경까지 다양합니다. 제품 유형에 따라 서버 접속 방법과 관리 도구가 달라지므로, 시험 환경 구성 시 적절한 접속 방법을 숙지해야 합니다.\n\n사전 준비:\n• 시험 합의서에서 제품 유형(웹/CS/모바일)과 서버 환경(온프레미스/클라우드) 확인\n• 업체에 접속에 필요한 정보(IP, 포트, 계정, 키 파일 등)를 시험 시작 전 요청\n• TTA 시험실 IP 대역을 업체에 전달하여 방화벽/보안 그룹 허용 요청\n• 접속 도구(Putty, DB 클라이언트 등)를 사전에 설치\n\n환경별 접속 흐름:\n로컬 설치형 → 직접 설치 후 실행\n웹 제품 → 브라우저 접속 (아래 "웹 제품" 참고)\n서버 포함 → SSH 접속 (아래 "Linux 서버" 참고)\n클라우드 → 키 기반 접속 (아래 "클라우드 환경" 참고)\nDocker/K8s → 컨테이너 접속 (아래 "Docker/Kubernetes" 참고)',
       },
       {
         heading: '웹 제품 (브라우저 접속)',
         content:
-          '접속 방법: 브라우저에서 제품 URL 직접 접속\n\n확인 사항:\n• 접속 URL 및 포트 번호 확인 (예: http://서버IP:8080)\n• 방화벽에서 해당 포트가 개방되어 있는지 확인\n• 합의서에 명시된 브라우저 종류·버전으로 접속 테스트\n• HTTPS인 경우 인증서 관련 경고 발생 여부 확인',
+          '접속 방법: 브라우저에서 제품 URL로 직접 접속\n\n접속 전 확인:\n• 접속 URL과 포트 번호를 업체로부터 수령 (예: http://192.168.1.100:8080)\n• 합의서에 명시된 브라우저 종류·버전 확인 (예: Chrome 최신, IE 11 등)\n• 서버 PC에서 웹 서비스(Apache, Nginx, Tomcat 등)가 구동 중인지 확인\n\n접속 절차:\n1. 브라우저 주소창에 URL 입력\n2. 로그인 페이지 정상 표시 확인\n3. 테스트 계정으로 로그인 테스트\n4. 주요 페이지 이동 및 기능 정상 작동 확인\n\n접속 불가 시 체크리스트:\n• ping [서버IP] → 네트워크 연결 확인\n• 서버 PC에서 netstat -tlnp | grep [포트] → 서비스 구동 확인\n• 방화벽 포트 개방 여부 확인 (Windows: 방화벽 설정, Linux: iptables/firewalld)\n• HTTPS인 경우 인증서 경고 → "고급" → "계속 진행"으로 우회 (시험 환경 한정)\n\n멀티 브라우저 테스트:\n합의서에 여러 브라우저가 명시된 경우, 각 브라우저별로 접속·기능 테스트를 수행합니다. 브라우저별 호환성 결함은 별도로 기록하세요.',
       },
       {
         heading: 'CS(Client-Server) 제품',
         content:
-          '접속 방법: 전용 클라이언트 프로그램 설치 후 서버 연결\n\n설정 절차:\n1. 업체 제공 클라이언트 설치 파일로 설치\n2. 서버 연결 정보 입력 (IP, 포트, DB 접속 정보 등)\n3. 로그인 계정으로 접속 테스트\n4. 클라이언트-서버 간 통신 정상 여부 확인\n\n주의: 클라이언트 버전과 서버 버전이 일치하는지 확인하세요.',
+          '접속 방법: 전용 클라이언트 프로그램을 시험 PC에 설치한 후 서버에 연결\n\n설정 절차:\n1. 업체 제공 클라이언트 설치 파일(.exe, .msi 등)을 시험 PC에 설치\n2. 설치 완료 후 서버 연결 설정 화면에서 접속 정보 입력\n   - 서버 IP 또는 호스트명\n   - 포트 번호 (업체 지정)\n   - DB 접속 정보 (필요 시)\n3. 테스트 계정으로 로그인\n4. 클라이언트-서버 간 통신 정상 여부 확인\n\n접속 불가 시 체크리스트:\n• 클라이언트 버전과 서버 버전이 일치하는지 확인 (버전 불일치 시 통신 오류 빈발)\n• 방화벽에서 클라이언트가 사용하는 포트가 개방되어 있는지 확인\n• .NET Framework, Java Runtime 등 필수 런타임이 설치되어 있는지 확인\n• 관리자 권한으로 클라이언트를 실행해야 하는 경우가 있음 (우클릭 → 관리자 권한 실행)\n\n주의사항:\n• 설치 경로를 기본값으로 유지하면 문제 발생 시 업체 지원이 수월합니다\n• 클라이언트 설정 파일(config, ini 등)의 위치를 파악해두면 접속 정보 변경 시 유용합니다',
       },
       {
         heading: 'Linux 서버 (SSH 접속)',
         content:
-          '도구: Putty, MobaXterm, Windows Terminal (SSH)\n\nPutty 접속 절차:\n1. Host Name에 서버 IP 입력\n2. Port: 22 (또는 업체 지정 포트)\n3. Connection Type: SSH 선택\n4. Open → 계정/비밀번호 입력\n\n유용한 명령어:\n• systemctl status [서비스명] — 서비스 상태 확인\n• tail -f /var/log/[로그파일] — 실시간 로그 확인\n• df -h — 디스크 사용량 확인\n• free -m — 메모리 사용량 확인',
+          '도구: Putty (가장 보편적), MobaXterm (파일 전송 통합), Windows Terminal\n\n[Putty 접속 절차]\n1. Session 탭: Host Name에 서버 IP 입력, Port에 22 (또는 업체 지정 포트) 입력\n2. Connection Type: SSH 선택\n3. (선택) Connection → Data → Auto-login username에 계정 입력\n4. (선택) Session 탭에서 Saved Sessions에 이름 입력 후 Save (재접속 시 편리)\n5. Open 클릭 → 처음 접속 시 호스트 키 확인 팝업 → Accept\n6. 계정/비밀번호 입력 (비밀번호 입력 시 화면에 표시되지 않음 — 정상)\n\n[키 기반 인증 시 (.pem → .ppk 변환)]\n1. PuttyGen 실행 → Load → .pem 파일 선택\n2. Save private key → .ppk 파일 저장\n3. Putty → Connection → SSH → Auth → Private key file에 .ppk 파일 지정\n\n[MobaXterm 장점]\n• SSH 접속과 SFTP(파일 전송)가 한 화면에 통합\n• 좌측 패널에서 파일 드래그&드롭으로 업로드/다운로드 가능\n• 탭 기반으로 여러 서버 동시 접속 관리\n\n[자주 사용하는 명령어]\n서비스 관리:\n• systemctl status [서비스명] — 서비스 상태 확인\n• systemctl restart [서비스명] — 서비스 재시작\n• journalctl -u [서비스명] -f — 서비스 실시간 로그\n\n로그 확인:\n• tail -f /var/log/[로그파일] — 실시간 로그 출력\n• tail -100 /var/log/[로그파일] — 최근 100줄 확인\n• grep "error" /var/log/[로그파일] — 에러 로그 검색\n\n시스템 상태:\n• df -h — 디스크 사용량 확인\n• free -m — 메모리 사용량 확인\n• top — CPU/메모리 실시간 모니터링 (q로 종료)\n• ps aux | grep [프로세스명] — 특정 프로세스 확인\n• netstat -tlnp — 열린 포트 확인',
       },
       {
         heading: 'DB 접속',
         content:
-          '도구: DBeaver, HeidiSQL, MySQL Workbench, pgAdmin 등\n\n접속 정보 (업체 제공):\n• Host: DB 서버 IP\n• Port: DB 종류별 기본 포트 (MySQL 3306, PostgreSQL 5432, Oracle 1521, MSSQL 1433)\n• Database: 스키마/DB명\n• 계정/비밀번호\n\n주의사항:\n• 시험용 DB 계정은 읽기 권한 위주로 요청\n• 데이터 변경 시 업체에 사전 협의\n• 접속 후 테이블 구조 및 데이터 건수를 먼저 파악',
+          '도구 추천:\n• DBeaver (무료, 다중 DB 지원) — 가장 범용적\n• HeidiSQL (무료, MySQL/MariaDB/PostgreSQL)\n• MySQL Workbench (MySQL 전용)\n• pgAdmin (PostgreSQL 전용)\n• SQL Server Management Studio (MSSQL 전용)\n• SQL Developer (Oracle 전용)\n\n접속 정보 (업체 제공):\n• Host: DB 서버 IP (클라우드의 경우 엔드포인트 주소)\n• Port: DB 종류별 기본 포트\n  - MySQL/MariaDB: 3306\n  - PostgreSQL: 5432\n  - Oracle: 1521\n  - MSSQL: 1433\n  - MongoDB: 27017\n• Database: 스키마명 또는 DB명\n• 계정/비밀번호\n\n[DBeaver 접속 절차]\n1. 좌측 상단 플러그 아이콘(새 연결) 클릭\n2. DB 종류 선택 (MySQL, PostgreSQL 등)\n3. 접속 정보(Host, Port, Database, 계정, 비밀번호) 입력\n4. Test Connection으로 연결 확인 → 드라이버 자동 다운로드\n5. Finish로 연결 저장\n\n시험 시 유용한 쿼리:\n• SELECT COUNT(*) FROM [테이블명]; — 데이터 건수 확인\n• SHOW TABLES; (MySQL) / \\dt (PostgreSQL) — 테이블 목록\n• DESC [테이블명]; (MySQL) / \\d [테이블명] (PostgreSQL) — 테이블 구조\n\n주의사항:\n• 시험용 DB 계정은 읽기 권한(SELECT) 위주로 요청하세요\n• 데이터 INSERT/UPDATE/DELETE가 필요한 시험은 업체에 사전 협의\n• 접속 후 테이블 구조와 데이터 건수를 먼저 파악해두면 결함 발견 시 원인 분석에 도움됩니다\n• DB 접속 정보는 환경구성 시트에 반드시 기록 (비밀번호 제외)',
       },
       {
-        heading: '클라우드 환경 (AWS/Azure)',
+        heading: '클라우드 환경 (AWS)',
         content:
-          'AWS 환경:\n• EC2 접속: SSH 키 페어(.pem)를 업체로부터 수령 → Putty에서 .ppk로 변환 후 접속\n• AWS 콘솔: 업체가 IAM 계정을 발급한 경우 웹 콘솔에서 리소스 확인 가능\n• RDS(DB): 엔드포인트 주소를 DB 클라이언트에 입력하여 접속\n\nAzure 환경:\n• VM 접속: Azure Portal에서 제공하는 접속 정보(IP, SSH 키 또는 비밀번호)로 접속\n• Azure SQL: 서버명.database.windows.net 형태의 엔드포인트로 DB 클라이언트 접속\n• App Service: Azure Portal 또는 URL로 웹 제품 접속\n\n공통 주의사항:\n• 보안 그룹(AWS) / NSG(Azure)에서 TTA IP 대역 허용 필요 → 업체에 사전 요청\n• 클라우드 콘솔 계정은 최소 권한으로 발급 요청',
+          '[EC2 (가상 서버) 접속]\n업체로부터 수령할 정보: 퍼블릭 IP, SSH 키 페어(.pem 파일), 계정명(보통 ec2-user 또는 ubuntu)\n\n접속 절차:\n1. .pem → .ppk 변환 (PuttyGen 사용, "Linux 서버" 섹션 참고)\n2. Putty → Host Name에 퍼블릭 IP 입력\n3. Connection → SSH → Auth → Private key file에 .ppk 지정\n4. Connection → Data → Auto-login username에 계정명 입력\n5. Open으로 접속\n\n또는 Windows Terminal에서:\nssh -i "키파일.pem" ec2-user@퍼블릭IP\n\n[RDS (관리형 DB) 접속]\n업체로부터 수령할 정보: 엔드포인트 주소, 포트, DB명, 계정/비밀번호\n\n• 엔드포인트 형태: mydb.abc123.ap-northeast-2.rds.amazonaws.com\n• DB 클라이언트(DBeaver 등)에 엔드포인트를 Host로 입력하여 접속\n• RDS는 직접 SSH 접속이 불가하므로 반드시 DB 클라이언트 사용\n\n[S3 (파일 스토리지)]\n• 파일 업로드/다운로드 기능이 있는 제품은 S3를 사용하는 경우가 많음\n• AWS 콘솔에서 버킷 내용 확인 가능 (IAM 계정 필요)\n\n[보안 그룹 설정 — 업체에 요청]\n• EC2/RDS 접속을 위해 TTA IP 대역을 보안 그룹 인바운드 규칙에 추가 필요\n• 요청 형태: "IP 210.104.181.xxx에서 포트 22(SSH), 3306(MySQL) 접근 허용 요청"\n• 시험 종료 후 해당 규칙 제거를 업체에 안내',
       },
       {
-        heading: 'Docker / Kubernetes 환경',
+        heading: '클라우드 환경 (Azure)',
         content:
-          'Docker 환경:\n• 컨테이너 목록 확인: docker ps\n• 컨테이너 로그 확인: docker logs -f [컨테이너명]\n• 컨테이너 접속: docker exec -it [컨테이너명] /bin/bash\n• 서비스 재시작: docker restart [컨테이너명]\n\nKubernetes 환경:\n• kubectl 설치 후 업체 제공 kubeconfig 파일 설정\n• Pod 목록 확인: kubectl get pods\n• Pod 로그 확인: kubectl logs -f [Pod명]\n• Pod 접속: kubectl exec -it [Pod명] -- /bin/bash\n• 서비스 상태: kubectl get svc\n\n주의사항:\n• Docker/K8s 환경은 업체가 직접 관리하는 경우가 많으므로, 접속 권한 범위를 사전에 협의\n• 컨테이너 재시작 시 데이터 초기화 여부를 확인하세요',
+          '[VM (가상 머신) 접속]\n업체로부터 수령할 정보: 퍼블릭 IP, 계정명, 비밀번호 또는 SSH 키\n\nLinux VM:\n• Putty 또는 ssh 명령어로 접속 (Linux 서버 접속과 동일)\n• ssh [계정명]@[퍼블릭IP]\n\nWindows VM:\n• 원격 데스크톱 연결(mstsc) 사용\n• 실행(Win+R) → mstsc → 컴퓨터에 퍼블릭 IP 입력 → 연결\n• 계정/비밀번호 입력\n\n[Azure SQL Database 접속]\n업체로부터 수령할 정보: 서버명, DB명, 계정/비밀번호\n\n• 서버명 형태: myserver.database.windows.net\n• SSMS(SQL Server Management Studio) 또는 DBeaver로 접속\n• 서버명에 전체 주소 입력, 인증 방식은 "SQL Server 인증" 선택\n\n[App Service (웹 앱)]\n• 업체가 App Service에 배포한 웹 제품은 URL로 바로 접속\n• URL 형태: https://myapp.azurewebsites.net\n• 커스텀 도메인이 설정된 경우 해당 도메인으로 접속\n\n[NSG (네트워크 보안 그룹) — 업체에 요청]\n• Azure도 AWS 보안 그룹과 유사하게 NSG에서 접속 허용 필요\n• 요청 형태: "IP 210.104.181.xxx에서 포트 22, 1433 접근 허용 요청"\n• Azure Portal → VM → 네트워킹에서 규칙 확인 가능 (계정 있는 경우)',
+      },
+      {
+        heading: 'Docker 환경',
+        content:
+          'Docker란: 애플리케이션을 컨테이너 단위로 격리하여 실행하는 기술. 하나의 서버에서 여러 서비스(웹, DB, 캐시 등)를 각각의 컨테이너로 운영합니다.\n\n[기본 명령어]\n컨테이너 관리:\n• docker ps — 실행 중인 컨테이너 목록\n• docker ps -a — 중지된 컨테이너 포함 전체 목록\n• docker start [컨테이너명] — 컨테이너 시작\n• docker stop [컨테이너명] — 컨테이너 중지\n• docker restart [컨테이너명] — 컨테이너 재시작\n\n로그 확인:\n• docker logs [컨테이너명] — 전체 로그\n• docker logs -f [컨테이너명] — 실시간 로그 (Ctrl+C로 종료)\n• docker logs --tail 100 [컨테이너명] — 최근 100줄\n\n컨테이너 내부 접속:\n• docker exec -it [컨테이너명] /bin/bash — bash 셸 접속\n• docker exec -it [컨테이너명] /bin/sh — bash 없는 경우 sh로 접속\n• exit — 컨테이너에서 나오기 (컨테이너는 계속 실행됨)\n\n[docker-compose 환경]\n여러 컨테이너를 한꺼번에 관리하는 도구:\n• docker-compose ps — 서비스 목록 및 상태\n• docker-compose logs -f [서비스명] — 특정 서비스 로그\n• docker-compose restart [서비스명] — 특정 서비스 재시작\n• docker-compose down && docker-compose up -d — 전체 재시작\n\n주의사항:\n• 컨테이너 재시작 시 내부 데이터가 초기화될 수 있음 (볼륨 마운트 여부 확인)\n• docker-compose.yml 파일 위치를 파악해두면 서비스 구성 이해에 도움\n• 컨테이너 내부에서 수정한 파일은 재시작 시 사라질 수 있으므로 주의',
+      },
+      {
+        heading: 'Kubernetes 환경',
+        content:
+          'Kubernetes(K8s)란: 여러 서버에 걸쳐 컨테이너를 자동으로 배포·관리하는 오케스트레이션 도구. 대규모 서비스에서 주로 사용합니다.\n\n[사전 설정]\n1. kubectl 설치 (업체 또는 공식 문서 참고)\n2. 업체로부터 kubeconfig 파일 수령\n3. 환경변수 설정: set KUBECONFIG=C:\\경로\\kubeconfig.yaml (Windows)\n   또는 파일을 ~/.kube/config에 복사\n4. kubectl get nodes로 클러스터 연결 확인\n\n[기본 명령어]\n리소스 조회:\n• kubectl get pods — Pod(컨테이너) 목록\n• kubectl get pods -n [네임스페이스] — 특정 네임스페이스의 Pod\n• kubectl get svc — 서비스(접속 포인트) 목록\n• kubectl get all — 모든 리소스 조회\n\n로그 확인:\n• kubectl logs [Pod명] — Pod 로그\n• kubectl logs -f [Pod명] — 실시간 로그\n• kubectl logs [Pod명] -c [컨테이너명] — 멀티 컨테이너 Pod에서 특정 컨테이너 로그\n\nPod 접속:\n• kubectl exec -it [Pod명] -- /bin/bash — Pod 내부 접속\n• kubectl exec -it [Pod명] -- /bin/sh — bash 없는 경우\n\n상태 확인:\n• kubectl describe pod [Pod명] — Pod 상세 정보 (이벤트, 에러 등)\n• kubectl get events --sort-by=.lastTimestamp — 최근 이벤트\n\n[자주 겪는 상황]\n• Pod 상태가 CrashLoopBackOff → 로그 확인 후 업체에 전달\n• Pod 상태가 Pending → 리소스 부족, 업체에 스케일 요청\n• 서비스 접속 불가 → kubectl get svc로 외부 IP/포트 확인\n\n주의사항:\n• K8s 환경은 업체가 직접 관리하는 경우가 대부분이므로, 시험원은 조회 권한만 요청\n• kubectl delete 등 삭제 명령은 사용하지 않도록 주의\n• 네임스페이스가 여러 개인 경우 -n 옵션으로 정확한 네임스페이스 지정',
       },
       {
         heading: '원격 패치 (RemoteView)',
         content:
-          '용도: 업체가 원격으로 제품을 패치할 때 사용\n\n설정 절차:\n1. RemoteView 에이전트를 시험 PC에 설치\n2. 접속 정보(ID, 비밀번호)를 업체에 전달\n3. 패치 시간에 맞춰 RemoteView 접속 허용\n4. 패치 완료 후 접속 종료 확인\n\n주의사항:\n• 패치 가능 시간: 오전 9시 ~ 오후 6시\n• 패치 중에는 해당 PC 사용 불가\n• 패치 전후 제품 버전을 반드시 확인·기록',
+          '용도: 업체가 TTA 시험실에 직접 방문하지 않고 원격으로 제품을 패치할 때 사용하는 원격 데스크톱 도구\n\n[사전 설정 절차]\n1. RemoteView 공식 사이트에서 에이전트(Agent) 다운로드\n2. 시험 PC에 에이전트 설치\n3. 설치 시 생성된 접속 ID와 비밀번호를 기록\n4. 접속 정보(ID, 비밀번호)를 업체에 이메일로 전달\n\n[패치 당일 절차]\n1. 패치 예정 시간 전에 시험 PC의 RemoteView 에이전트가 실행 중인지 확인\n2. 업체 접속 시 화면에 원격 접속 알림 표시됨 → 확인\n3. 패치 진행 중에는 해당 PC에서 다른 작업 금지\n4. 패치 완료 후 업체가 접속 종료\n5. RemoteView 접속 상태가 "연결 끊김"으로 변경되었는지 확인\n\n[패치 후 확인 사항]\n• 제품 버전이 변경되었는지 확인 (About, 정보 메뉴 등)\n• 기존 테스트 데이터가 유지되는지 확인\n• 주요 기능 간단 점검 (로그인, 핵심 기능 1~2개)\n• 패치 전후 버전 정보를 환경구성 시트에 기록\n\n주의사항:\n• 패치 가능 시간: 오전 9시 ~ 오후 6시 (TTA 근무 시간)\n• 시간 외 패치가 필요한 경우 PL과 사전 협의\n• 패치 중 PC 재부팅이 필요할 수 있으므로 중요 작업은 미리 저장\n• RemoteView가 방화벽에 의해 차단되는 경우 IP 담당자에게 문의',
+      },
+      {
+        heading: '접속 문제 해결 가이드',
+        content:
+          '공통 트러블슈팅 순서:\n1. 네트워크 연결 확인: ping [서버IP]\n2. 포트 개방 확인: telnet [서버IP] [포트] (또는 Test-NetConnection)\n3. 서비스 구동 확인: 서버에서 해당 서비스 상태 확인\n4. 방화벽 확인: 클라이언트/서버 양쪽 방화벽 규칙 확인\n5. 계정 확인: 계정/비밀번호 재확인, 권한 범위 확인\n\n자주 발생하는 문제:\n\n[연결 시간 초과 (Connection Timeout)]\n• 원인: IP가 틀리거나, 방화벽에서 차단, 서비스 미구동\n• 해결: ping으로 네트워크 확인 → 포트 확인 → 업체에 방화벽 허용 요청\n\n[연결 거부 (Connection Refused)]\n• 원인: 포트가 열려있지만 서비스가 해당 포트에서 구동되지 않음\n• 해결: 서버에서 서비스 상태 확인 후 재시작\n\n[인증 실패 (Authentication Failed)]\n• 원인: 계정/비밀번호 오류, 키 파일 불일치, 권한 부족\n• 해결: 계정 정보 재확인, 비밀번호 변경 후 재시도, 업체에 권한 확인 요청\n\n[SSL/TLS 인증서 경고]\n• 원인: 자체 서명 인증서 사용 (시험 환경에서 흔함)\n• 해결: 브라우저에서 "고급" → "계속 진행", DB 클라이언트에서 SSL 검증 비활성화\n\n문제 해결이 안 되는 경우: 에러 메시지를 캡처하여 업체에 전달하세요.',
       },
     ],
   },
