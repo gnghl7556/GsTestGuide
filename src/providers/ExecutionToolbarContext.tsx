@@ -1,10 +1,20 @@
 import { createContext, useContext, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
+export type FinalizeSummary = {
+  total: number;
+  applicable: number;
+  pass: number;
+  fail: number;
+  hold: number;
+  none: number;
+};
+
 type ExecutionToolbarState = {
   onReset: (() => void) | null;
   onFinalize: (() => void) | null;
   canFinalize: boolean;
   isFinalized: boolean;
+  finalizeSummary: FinalizeSummary | null;
 };
 
 const defaultState: ExecutionToolbarState = {
@@ -12,6 +22,7 @@ const defaultState: ExecutionToolbarState = {
   onFinalize: null,
   canFinalize: false,
   isFinalized: false,
+  finalizeSummary: null,
 };
 
 type RegisterPayload = {
@@ -19,6 +30,7 @@ type RegisterPayload = {
   onFinalize?: () => void;
   canFinalize?: boolean;
   isFinalized?: boolean;
+  finalizeSummary?: FinalizeSummary | null;
 };
 
 const Ctx = createContext<{
@@ -40,6 +52,7 @@ export function ExecutionToolbarProvider({ children }: { children: ReactNode }) 
         onFinalize: payload.onFinalize ?? null,
         canFinalize: payload.canFinalize ?? false,
         isFinalized: payload.isFinalized ?? false,
+        finalizeSummary: payload.finalizeSummary ?? null,
       }),
     [],
   );
@@ -65,6 +78,7 @@ export function useRegisterExecutionToolbar(payload: RegisterPayload) {
   const hasFinalize = !!payload.onFinalize;
   const canFinalize = payload.canFinalize ?? false;
   const isFinalized = payload.isFinalized ?? false;
+  const summaryJson = JSON.stringify(payload.finalizeSummary ?? null);
 
   useEffect(() => {
     register({
@@ -72,8 +86,9 @@ export function useRegisterExecutionToolbar(payload: RegisterPayload) {
       onFinalize: hasFinalize ? () => ref.current.onFinalize!() : undefined,
       canFinalize,
       isFinalized,
+      finalizeSummary: JSON.parse(summaryJson) as FinalizeSummary | null,
     });
-  }, [register, hasFinalize, canFinalize, isFinalized]);
+  }, [register, hasFinalize, canFinalize, isFinalized, summaryJson]);
 
   useEffect(() => {
     return () => unregister();

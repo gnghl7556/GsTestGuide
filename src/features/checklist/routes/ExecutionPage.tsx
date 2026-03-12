@@ -715,11 +715,27 @@ export function ExecutionPage() {
     }
   }, [currentTestNumber]);
 
+  const finalizeSummary = useMemo(() => {
+    if (checklist.length === 0) return null;
+    const total = checklist.length;
+    const applicable = checklist.filter(i => i.status !== 'Not_Applicable').length;
+    let pass = 0, fail = 0, hold = 0, none = 0;
+    for (const item of checklist) {
+      const s = reviewData[item.id]?.status;
+      if (s === 'Verified') pass++;
+      else if (s === 'Cannot_Verify') fail++;
+      else if (s === 'Hold') hold++;
+      else if (item.status !== 'Not_Applicable') none++;
+    }
+    return { total, applicable, pass, fail, hold, none };
+  }, [checklist, reviewData]);
+
   useRegisterExecutionToolbar({
     onReset: handleResetAll,
     onFinalize: handleFinalize,
     canFinalize: allCompleted && !isFinalized,
     isFinalized,
+    finalizeSummary,
   });
 
   const { showShortcutHelp, dismissHelp } = useKeyboardShortcuts({

@@ -32,7 +32,7 @@ export function WorkspaceLayout() {
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const currentStep = getStepFromPath(location.pathname);
-  const { onReset, onFinalize, canFinalize, isFinalized } = useExecutionToolbar();
+  const { onReset, onFinalize, canFinalize, isFinalized, finalizeSummary } = useExecutionToolbar();
   const currentProject = projects.find((p) => p.testNumber === testSetup.testNumber);
 
   const projectInfo = {
@@ -92,6 +92,7 @@ export function WorkspaceLayout() {
             onFinalize={currentStep === 3 ? onFinalize ?? undefined : undefined}
             canFinalize={currentStep === 3 ? canFinalize : false}
             isFinalized={currentStep === 3 ? isFinalized : false}
+            finalizeSummary={currentStep === 3 ? finalizeSummary : null}
             onLogout={() => {
               setCurrentUserId('');
               resetTestSetup();

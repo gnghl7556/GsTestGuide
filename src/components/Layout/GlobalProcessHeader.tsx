@@ -1,7 +1,8 @@
-import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle, EllipsisVertical } from 'lucide-react';
+import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle, EllipsisVertical, AlertCircle } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { ConfirmModal } from '../ui/ConfirmModal';
+import type { FinalizeSummary } from '../../providers/ExecutionToolbarContext';
 
 export type GlobalProjectInfo = {
   testNumber?: string;
@@ -27,6 +28,7 @@ type GlobalProcessHeaderProps = {
   onFinalize?: () => void;
   canFinalize?: boolean;
   isFinalized?: boolean;
+  finalizeSummary?: FinalizeSummary | null;
   onLogout?: () => void;
   onOpenTestList?: () => void;
   onOpenSchedule?: () => void;
@@ -184,6 +186,7 @@ export function GlobalProcessHeader({
   onFinalize,
   canFinalize,
   isFinalized,
+  finalizeSummary,
   onLogout,
   onOpenTestList,
   onOpenSchedule,
@@ -385,7 +388,40 @@ export function GlobalProcessHeader({
       <ConfirmModal
         open={finalizeConfirmOpen}
         title="최종 검토 완료"
-        description="최종 검토를 완료하시겠습니까? 완료 후에는 점검 데이터가 읽기 전용으로 전환됩니다."
+        description={
+          finalizeSummary ? (
+            <div className="space-y-3">
+              <p className="text-xs text-tx-secondary">완료 후에는 점검 데이터가 읽기 전용으로 전환됩니다.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg bg-surface-sunken px-3 py-2 text-center">
+                  <div className="text-base font-extrabold text-tx-primary">{finalizeSummary.applicable}</div>
+                  <div className="text-[10px] text-tx-tertiary">점검 대상</div>
+                </div>
+                <div className="rounded-lg bg-surface-sunken px-3 py-2 text-center">
+                  <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">{finalizeSummary.pass}</div>
+                  <div className="text-[10px] text-tx-tertiary flex items-center justify-center gap-0.5"><CheckCircle size={9} /> 적합</div>
+                </div>
+                <div className="rounded-lg bg-surface-sunken px-3 py-2 text-center">
+                  <div className="text-base font-extrabold text-rose-600 dark:text-rose-400">{finalizeSummary.fail}</div>
+                  <div className="text-[10px] text-tx-tertiary flex items-center justify-center gap-0.5"><AlertCircle size={9} /> 부적합</div>
+                </div>
+                <div className="rounded-lg bg-surface-sunken px-3 py-2 text-center">
+                  <div className="text-base font-extrabold text-amber-600 dark:text-amber-400">{finalizeSummary.hold}</div>
+                  <div className="text-[10px] text-tx-tertiary">보류</div>
+                </div>
+              </div>
+              {finalizeSummary.none > 0 && (
+                <div className="flex items-center gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-3 py-2">
+                  <AlertCircle size={13} className="text-amber-500 shrink-0" />
+                  <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">미완료 {finalizeSummary.none}건이 남아있습니다</span>
+                </div>
+              )}
+              {finalizeSummary.total !== finalizeSummary.applicable && (
+                <p className="text-[10px] text-tx-muted text-right">해당 없음 {finalizeSummary.total - finalizeSummary.applicable}건 제외</p>
+              )}
+            </div>
+          ) : "최종 검토를 완료하시겠습니까? 완료 후에는 점검 데이터가 읽기 전용으로 전환됩니다."
+        }
         confirmLabel="완료"
         confirmVariant="success"
         onConfirm={() => { setFinalizeConfirmOpen(false); onFinalize?.(); }}
