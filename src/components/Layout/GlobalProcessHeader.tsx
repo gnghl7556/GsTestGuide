@@ -81,63 +81,77 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
   if (!data) return <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-ln" />;
 
   const { progress, daysLeft, milestones, getPos, isPast, isOverdue } = data;
+  const ddayLabel = daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`;
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-[3px] overflow-visible">
+    <div className="group/edge absolute bottom-0 left-0 right-0 h-[3px] overflow-visible">
+      {/* Hover hit area */}
+      <div className="absolute -inset-x-0 -top-3 bottom-0 cursor-default" />
+      {/* Track */}
       <div className="absolute inset-0 bg-ln" />
+      {/* Progress fill */}
       <div
         className={`absolute inset-y-0 left-0 transition-all duration-700 ${
           isOverdue ? 'bg-danger' : 'bg-accent'
         }`}
         style={{ width: `${progress}%`, opacity: isOverdue ? 0.7 : 0.5 }}
       />
+      {/* Milestone notches — flush inside the 3px bar */}
       {milestones.map((m, i) => {
         const pos = getPos(m.date);
         const past = isPast(m.date);
-        const dateStr = `${m.date.getMonth() + 1}/${m.date.getDate()}`;
         return (
           <div
             key={i}
-            className="group/ms absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1]"
+            className="absolute top-0 bottom-0 -translate-x-1/2 z-[1]"
             style={{ left: `${pos}%` }}
           >
-            {/* Hit area */}
-            <div className="absolute -inset-2 cursor-default" />
-            {/* Diamond */}
             <div
-              className={`w-[7px] h-[7px] rotate-45 border transition-all ${
-                past
-                  ? 'bg-accent border-accent shadow-sm'
-                  : 'bg-surface-base border-ln-strong'
+              className={`w-[3px] h-full transition-colors ${
+                past ? 'bg-accent' : 'bg-ln-strong'
               }`}
             />
-            {/* Tooltip */}
-            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/ms:opacity-100 transition-opacity">
-              <div className="whitespace-nowrap rounded-md bg-surface-overlay border border-ln shadow-lg px-2 py-1 text-[10px] font-semibold text-tx-secondary">
-                <span className="text-tx-primary">{m.label}</span>
-                <span className="text-tx-muted ml-1">{dateStr}</span>
-              </div>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] w-0 h-0 border-x-[4px] border-x-transparent border-t-[4px] border-t-ln" />
-            </div>
           </div>
         );
       })}
+      {/* Today marker — small dot flush on bar */}
       {progress > 0 && progress < 100 && (
         <div
-          className="group/today absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2]"
+          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2]"
           style={{ left: `${progress}%` }}
         >
-          <div className="absolute -inset-2 cursor-default" />
-          <div className="w-[9px] h-[9px] rounded-full border-2 border-surface-base bg-accent" />
-          {/* Today tooltip */}
-          <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/today:opacity-100 transition-opacity">
-            <div className="whitespace-nowrap rounded-md bg-surface-overlay border border-ln shadow-lg px-2 py-1 text-[10px] font-semibold text-accent-text">
-              오늘 {daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`}
-            </div>
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[1px] w-0 h-0 border-x-[4px] border-x-transparent border-t-[4px] border-t-ln" />
-          </div>
+          <div className="w-[5px] h-[5px] rounded-full bg-accent ring-1 ring-surface-base" />
         </div>
       )}
+      {/* All tooltips — appear together on bar hover */}
+      <div className="pointer-events-none opacity-0 group-hover/edge:opacity-100 transition-opacity duration-150">
+        {milestones.map((m, i) => {
+          const pos = getPos(m.date);
+          const dateStr = `${m.date.getMonth() + 1}/${m.date.getDate()}`;
+          return (
+            <div
+              key={i}
+              className="absolute bottom-full -translate-x-1/2 mb-1.5 z-[5]"
+              style={{ left: `${pos}%` }}
+            >
+              <div className="whitespace-nowrap rounded bg-surface-overlay border border-ln shadow-md px-1.5 py-0.5 text-[9px] text-tx-secondary">
+                <span className="font-semibold text-tx-primary">{m.label}</span>
+                <span className="text-tx-muted ml-0.5">{dateStr}</span>
+              </div>
+            </div>
+          );
+        })}
+        {progress > 0 && progress < 100 && (
+          <div
+            className="absolute bottom-full -translate-x-1/2 mb-1.5 z-[6]"
+            style={{ left: `${progress}%` }}
+          >
+            <div className="whitespace-nowrap rounded bg-accent px-1.5 py-0.5 text-[9px] font-semibold text-white shadow-md">
+              오늘 {ddayLabel}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
