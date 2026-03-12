@@ -85,15 +85,15 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
   const { progress, daysLeft, milestones, getPos, isPast, isOverdue } = data;
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-[3px]">
+    <div className="absolute bottom-0 left-0 right-0 h-1 overflow-visible">
       {/* Track background */}
-      <div className="absolute inset-0 bg-ln/30" />
+      <div className="absolute inset-0 bg-ln/50" />
       {/* Progress fill */}
       <div
         className={`absolute inset-y-0 left-0 transition-all duration-700 ${
           isOverdue
-            ? 'bg-rose-400/80 dark:bg-rose-500/80'
-            : 'bg-gradient-to-r from-blue-400/70 via-purple-400/70 to-purple-500/70 dark:from-blue-500/70 dark:via-purple-500/70 dark:to-purple-600/70'
+            ? 'bg-rose-400 dark:bg-rose-500'
+            : 'bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-600'
         }`}
         style={{ width: `${progress}%` }}
       />
@@ -109,10 +109,10 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
             title={`${m.label}: ${m.date.getMonth() + 1}/${m.date.getDate()}`}
           >
             <div
-              className={`w-[7px] h-[7px] rotate-45 transition-all ${
+              className={`w-2 h-2 rotate-45 transition-all ${
                 past
-                  ? `${m.pastColor} shadow-sm shadow-black/20`
-                  : 'border border-white/40 dark:border-white/20 bg-transparent'
+                  ? `${m.pastColor} ring-2 ring-surface-base shadow-md`
+                  : 'border-[1.5px] border-white/50 dark:border-white/30 bg-surface-base/80'
               }`}
             />
           </div>
@@ -125,7 +125,7 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
           style={{ left: `${progress}%` }}
           title={`오늘 (${daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`})`}
         >
-          <div className="w-[9px] h-[9px] rounded-full border-2 border-white bg-accent shadow-[0_0_6px_rgba(99,102,241,0.5)] dark:shadow-[0_0_6px_rgba(129,140,248,0.6)]" />
+          <div className="w-2.5 h-2.5 rounded-full border-2 border-surface-base bg-accent shadow-[0_0_8px_rgba(99,102,241,0.6)] dark:shadow-[0_0_8px_rgba(129,140,248,0.7)]" />
         </div>
       )}
     </div>
