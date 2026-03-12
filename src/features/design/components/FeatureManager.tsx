@@ -101,14 +101,14 @@ export function FeatureManager() {
       />
 
       <PageFilterBar>
-        <div className="text-xs text-primary-500">
+        <div className="text-xs text-tx-tertiary">
           {aiStatus === 'uploading' && '업로드 중...'}
           {aiStatus === 'generating' && 'AI 초안 생성 중...'}
           {aiStatus === 'done' && (aiMessage || 'AI 초안이 적용되었습니다.')}
           {aiStatus === 'error' && (aiMessage || 'AI 초안 생성 실패')}
         </div>
         {!projectId && (
-          <span className="ml-auto text-xs text-warning-700 bg-warning-50 border border-warning-200 px-2 py-1 rounded">
+          <span className="ml-auto text-xs text-status-hold-text bg-status-hold-bg border border-status-hold-border px-2 py-1 rounded">
             시험번호가 없습니다. 프로젝트를 먼저 선택해주세요.
           </span>
         )}
@@ -116,30 +116,30 @@ export function FeatureManager() {
 
       <PageContent className="p-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
-          <section className="rounded-xl border border-surface-200 bg-surface-base p-4 flex flex-col">
+          <section className="rounded-xl border border-ln bg-surface-base p-4 flex flex-col">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-primary-900">트리 뷰 편집기</div>
-              <div className="text-xs text-primary-400">{features.length}개 항목</div>
+              <div className="text-sm font-semibold text-tx-primary">트리 뷰 편집기</div>
+              <div className="text-xs text-tx-muted">{features.length}개 항목</div>
             </div>
             {loading ? (
-              <div className="py-12 text-center text-sm text-primary-400">불러오는 중...</div>
+              <div className="py-12 text-center text-sm text-tx-muted">불러오는 중...</div>
             ) : (
               <div className="mt-3 space-y-3 flex-1 overflow-y-auto pr-2">
                 {Object.entries(grouped).map(([c1, level2]) => (
-                  <div key={c1} className="rounded-lg border border-surface-200 bg-surface-50 p-3">
-                    <div className="text-sm font-semibold text-primary-800">{c1}</div>
+                  <div key={c1} className="rounded-lg border border-ln bg-surface-sunken p-3">
+                    <div className="text-sm font-semibold text-tx-primary">{c1}</div>
                     {Object.entries(level2).map(([c2, level3]) => (
                       <div key={`${c1}-${c2}`} className="mt-2 ml-3">
-                        <div className="text-xs font-semibold text-primary-700">{c2}</div>
+                        <div className="text-xs font-semibold text-tx-secondary">{c2}</div>
                         {Object.entries(level3).map(([c3, level4]) => (
                           <div key={`${c1}-${c2}-${c3}`} className="mt-2 ml-3">
-                            <div className="text-xs text-primary-600">{c3}</div>
+                            <div className="text-xs text-tx-secondary">{c3}</div>
                             {Object.entries(level4).map(([c4, items]) => (
                               <div key={`${c1}-${c2}-${c3}-${c4}`} className="mt-2 ml-3">
-                                {c4 && <div className="text-[11px] text-primary-500">{c4}</div>}
+                                {c4 && <div className="text-[11px] text-tx-tertiary">{c4}</div>}
                                 <div className="space-y-2 mt-1">
                                   {items.map((item) => (
-                                    <div key={item.id} className="rounded-lg border border-surface-200 bg-surface-base p-3">
+                                    <div key={item.id} className="rounded-lg border border-ln bg-surface-base p-3">
                                       {editId === item.id && editDraft ? (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                           <Input
@@ -204,7 +204,7 @@ export function FeatureManager() {
                                         </div>
                                       ) : (
                                         <div className="flex items-start justify-between gap-3">
-                                          <div className="text-xs text-primary-700">
+                                          <div className="text-xs text-tx-secondary">
                                             {item.description || '설명 없음'}
                                           </div>
                                           <div className="flex gap-2">
@@ -242,7 +242,7 @@ export function FeatureManager() {
                   </div>
                 ))}
                 {features.length === 0 && (
-                  <div className="py-8 text-center text-xs text-primary-400">
+                  <div className="py-8 text-center text-xs text-tx-muted">
                     등록된 기능 리스트가 없습니다.
                   </div>
                 )}
@@ -250,9 +250,9 @@ export function FeatureManager() {
             )}
           </section>
 
-          <aside className="rounded-xl border border-surface-200 bg-surface-base p-4 space-y-4">
+          <aside className="rounded-xl border border-ln bg-surface-base p-4 space-y-4">
             <div>
-              <div className="text-sm font-semibold text-primary-900 mb-3">새 기능 추가</div>
+              <div className="text-sm font-semibold text-tx-primary mb-3">새 기능 추가</div>
               <div className="space-y-2">
                 <Input
                   placeholder="대분류"
@@ -300,8 +300,8 @@ export function FeatureManager() {
             </div>
 
             <div>
-              <div className="text-sm font-semibold text-primary-900 mb-2">저장</div>
-              <p className="text-xs text-primary-500 mb-3">
+              <div className="text-sm font-semibold text-tx-primary mb-2">저장</div>
+              <p className="text-xs text-tx-tertiary mb-3">
                 변경사항을 프로젝트의 features 서브 컬렉션에 저장합니다.
               </p>
               <Button icon={Save} onClick={saveFeatures} disabled={saving || !projectId}>

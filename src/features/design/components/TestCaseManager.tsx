@@ -100,7 +100,7 @@ export function TestCaseManager() {
 
       <PageFilterBar>
         <select
-          className="rounded-md border border-surface-200 bg-surface-base px-2 py-1 text-xs text-primary-700"
+          className="rounded-md border border-ln bg-input-bg px-2 py-1 text-xs text-tx-secondary"
           value={selectedFeature}
           onChange={(e) => setSelectedFeature(e.target.value)}
         >
@@ -112,7 +112,7 @@ export function TestCaseManager() {
           ))}
         </select>
         <select
-          className="rounded-md border border-surface-200 bg-surface-base px-2 py-1 text-xs text-primary-700"
+          className="rounded-md border border-ln bg-input-bg px-2 py-1 text-xs text-tx-secondary"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
         >
@@ -133,7 +133,7 @@ export function TestCaseManager() {
           초안 재생성
         </Button>
         {!projectId && (
-          <span className="ml-auto text-xs text-warning-700 bg-warning-50 border border-warning-200 px-2 py-1 rounded">
+          <span className="ml-auto text-xs text-status-hold-text bg-status-hold-bg border border-status-hold-border px-2 py-1 rounded">
             시험번호가 없습니다. 프로젝트를 먼저 선택해주세요.
           </span>
         )}
@@ -141,17 +141,17 @@ export function TestCaseManager() {
 
       <PageContent className="p-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2.2fr_1fr]">
-          <section className="rounded-xl border border-surface-200 bg-surface-base p-4 flex flex-col">
+          <section className="rounded-xl border border-ln bg-surface-base p-4 flex flex-col">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-primary-900">TC 목록</div>
-              <div className="text-xs text-primary-400">{filteredCases.length}개</div>
+              <div className="text-sm font-semibold text-tx-primary">TC 목록</div>
+              <div className="text-xs text-tx-muted">{filteredCases.length}개</div>
             </div>
             {loading ? (
-              <div className="py-12 text-center text-sm text-primary-400">불러오는 중...</div>
+              <div className="py-12 text-center text-sm text-tx-muted">불러오는 중...</div>
             ) : (
               <div className="mt-3 overflow-auto">
                 <table className="min-w-full text-xs">
-                  <thead className="bg-surface-sunken text-primary-700">
+                  <thead className="bg-surface-sunken text-tx-secondary">
                     <tr>
                       <th className="px-3 py-2 text-left font-semibold">TC ID</th>
                       <th className="px-3 py-2 text-left font-semibold">기능</th>
@@ -164,19 +164,19 @@ export function TestCaseManager() {
                     {filteredCases.map((tc, idx) => (
                       <tr
                         key={tc.id}
-                        className={`border-b border-surface-200 hover:bg-interactive-hover transition-colors ${
+                        className={`border-b border-ln hover:bg-interactive-hover transition-colors ${
                           selectedId === tc.id ? 'bg-surface-raised' : ''
                         }`}
                         onClick={() => setSelectedId(tc.id)}
                       >
-                        <td className="px-3 py-2 font-semibold text-primary-700">
+                        <td className="px-3 py-2 font-semibold text-tx-secondary">
                           {tc.testCaseId || `TC-${idx + 1}`}
                         </td>
-                        <td className="px-3 py-2 text-primary-700">
+                        <td className="px-3 py-2 text-tx-secondary">
                           {featureOptions.find((opt) => opt.id === tc.featureId)?.label || '미지정'}
                         </td>
-                        <td className="px-3 py-2 text-primary-600 truncate max-w-[220px]">{tc.scenario}</td>
-                        <td className="px-3 py-2 text-primary-700">{tc.status}</td>
+                        <td className="px-3 py-2 text-tx-tertiary truncate max-w-[220px]">{tc.scenario}</td>
+                        <td className="px-3 py-2 text-tx-secondary">{tc.status}</td>
                         <td className="px-3 py-2 text-right">
                           <button
                             type="button"
@@ -185,7 +185,7 @@ export function TestCaseManager() {
                               deleteTestCase(tc.id);
                               if (selectedId === tc.id) setSelectedId(null);
                             }}
-                            className="text-[11px] text-error-600"
+                            className="text-[11px] text-danger-text"
                           >
                             삭제
                           </button>
@@ -194,7 +194,7 @@ export function TestCaseManager() {
                     ))}
                     {filteredCases.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="px-3 py-6 text-center text-primary-400">
+                        <td colSpan={5} className="px-3 py-6 text-center text-tx-muted">
                           등록된 TC가 없습니다.
                         </td>
                       </tr>
@@ -205,13 +205,13 @@ export function TestCaseManager() {
             )}
 
             {selectedCase && (
-              <div className="mt-4 rounded-lg border border-surface-200 bg-surface-base p-4">
+              <div className="mt-4 rounded-lg border border-ln bg-surface-base p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm font-semibold text-primary-900">TC 편집</div>
+                  <div className="text-sm font-semibold text-tx-primary">TC 편집</div>
                   <button
                     type="button"
                     onClick={() => setSelectedId(null)}
-                    className="inline-flex items-center gap-1 text-xs text-primary-500"
+                    className="inline-flex items-center gap-1 text-xs text-tx-tertiary"
                   >
                     <X size={12} />
                     닫기
@@ -219,7 +219,7 @@ export function TestCaseManager() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <select
-                    className="rounded-md border border-surface-200 px-2 py-1 text-xs text-primary-700"
+                    className="rounded-md border border-ln bg-input-bg px-2 py-1 text-xs text-tx-secondary"
                     value={selectedCase.featureId}
                     onChange={(e) =>
                       updateTestCase({
@@ -236,7 +236,7 @@ export function TestCaseManager() {
                     ))}
                   </select>
                   <select
-                    className="rounded-md border border-surface-200 px-2 py-1 text-xs text-primary-700"
+                    className="rounded-md border border-ln bg-input-bg px-2 py-1 text-xs text-tx-secondary"
                     value={selectedCase.status}
                     onChange={(e) =>
                       updateTestCase({
@@ -274,7 +274,7 @@ export function TestCaseManager() {
                     placeholder="사전 조건"
                   />
                   <textarea
-                    className="md:col-span-2 w-full rounded-lg border border-surface-200 px-3 py-2 text-xs text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="md:col-span-2 w-full rounded-lg border border-ln bg-input-bg px-3 py-2 text-xs text-tx-secondary focus:outline-none focus:ring-2 focus:ring-accent"
                     value={selectedCase.steps.join('\n')}
                     onChange={(e) =>
                       updateTestCase({
@@ -286,7 +286,7 @@ export function TestCaseManager() {
                     placeholder="실행 단계 (줄바꿈 구분)"
                   />
                   <textarea
-                    className="md:col-span-2 w-full rounded-lg border border-surface-200 px-3 py-2 text-xs text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="md:col-span-2 w-full rounded-lg border border-ln bg-input-bg px-3 py-2 text-xs text-tx-secondary focus:outline-none focus:ring-2 focus:ring-accent"
                     value={selectedCase.expectedResult}
                     onChange={(e) =>
                       updateTestCase({
@@ -302,10 +302,10 @@ export function TestCaseManager() {
             )}
           </section>
 
-          <aside className="rounded-xl border border-surface-200 bg-surface-base p-4 space-y-3">
-            <div className="text-sm font-semibold text-primary-900">새 TC 추가</div>
+          <aside className="rounded-xl border border-ln bg-surface-base p-4 space-y-3">
+            <div className="text-sm font-semibold text-tx-primary">새 TC 추가</div>
             <select
-              className="w-full rounded-md border border-surface-200 px-2 py-1 text-xs text-primary-700"
+              className="w-full rounded-md border border-ln bg-input-bg px-2 py-1 text-xs text-tx-secondary"
               value={newCase.featureId}
               onChange={(e) => setNewCase((prev) => ({ ...prev, featureId: e.target.value }))}
             >
@@ -327,21 +327,21 @@ export function TestCaseManager() {
               onChange={(e) => setNewCase((prev) => ({ ...prev, preCondition: e.target.value }))}
             />
             <textarea
-              className="w-full rounded-lg border border-surface-200 px-3 py-2 text-xs text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full rounded-lg border border-ln bg-input-bg px-3 py-2 text-xs text-tx-secondary focus:outline-none focus:ring-2 focus:ring-accent"
               rows={3}
               placeholder="실행 단계 (줄바꿈 구분)"
               value={newCase.steps.join('\n')}
               onChange={(e) => setNewCase((prev) => ({ ...prev, steps: e.target.value.split('\n') }))}
             />
             <textarea
-              className="w-full rounded-lg border border-surface-200 px-3 py-2 text-xs text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full rounded-lg border border-ln bg-input-bg px-3 py-2 text-xs text-tx-secondary focus:outline-none focus:ring-2 focus:ring-accent"
               rows={2}
               placeholder="기대 결과"
               value={newCase.expectedResult}
               onChange={(e) => setNewCase((prev) => ({ ...prev, expectedResult: e.target.value }))}
             />
             <select
-              className="w-full rounded-md border border-surface-200 px-2 py-1 text-xs text-primary-700"
+              className="w-full rounded-md border border-ln bg-input-bg px-2 py-1 text-xs text-tx-secondary"
               value={newCase.status}
               onChange={(e) => setNewCase((prev) => ({ ...prev, status: e.target.value as TestCaseItem['status'] }))}
             >
