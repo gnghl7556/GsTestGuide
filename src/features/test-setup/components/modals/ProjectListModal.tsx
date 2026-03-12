@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { Copy } from 'lucide-react';
 import type { Project } from '../../../../types';
 import type { ProjectStatus } from '../../../../types/models';
 
@@ -21,6 +22,7 @@ interface ProjectListModalProps {
   projects: ProjectWithProgress[];
   activeTestNumber: string;
   onSelectProject: (testNumber: string) => void;
+  onDuplicateProject?: (sourceTestNumber: string, newTestNumber: string) => Promise<boolean>;
 }
 
 export function ProjectListModal({
@@ -28,10 +30,19 @@ export function ProjectListModal({
   onClose,
   projects,
   activeTestNumber,
-  onSelectProject
+  onSelectProject,
+  onDuplicateProject
 }: ProjectListModalProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('전체');
   const [searchQuery, setSearchQuery] = useState('');
+  const [duplicateSource, setDuplicateSource] = useState<string | null>(null);
+  const [newTestNumber, setNewTestNumber] = useState('');
+  const [duplicating, setDuplicating] = useState(false);
+  const dupInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (duplicateSource) dupInputRef.current?.focus();
+  }, [duplicateSource]);
 
   const filteredProjects = useMemo(() => {
     let result = projects;
@@ -51,6 +62,27 @@ export function ProjectListModal({
 
     return result;
   }, [projects, statusFilter, searchQuery]);
+
+  const handleDuplicate = async () => {
+    const trimmed = newTestNumber.trim();
+    if (!trimmed || !duplicateSource || !onDuplicateProject) return;
+    if (projects.some(p => p.testNumber === trimmed)) {
+      window.alert('이미 존재하는 시험번호입니다.');
+      return;
+    }
+    setDuplicating(true);
+    try {
+      const ok = await onDuplicateProject(duplicateSource, trimmed);
+      if (ok) {
+        setDuplicateSource(null);
+        setNewTestNumber('');
+        onSelectProject(trimmed);
+        onClose();
+      }
+    } finally {
+      setDuplicating(false);
+    }
+  };
 
   if (!open) return null;
 
@@ -131,54 +163,126 @@ export function ProjectListModal({
                 const isActive = activeTestNumber === project.testNumber;
                 const status = (project.status || '대기') as ProjectStatus;
                 return (
-                  <button
+                  <div
                     key={project.id}
-                    type="button"
-                    onClick={() => {
-                      onSelectProject(project.testNumber);
-                      onClose();
-                    }}
-                    className={`rounded-xl border px-3 py-3 text-left text-sm transition ${
+                    className={`relative rounded-xl border px-3 py-3 text-left text-sm transition ${
                       isActive
                         ? 'border-purple-400/60 bg-accent text-white'
                         : 'border-ln bg-surface-base text-tx-secondary hover:border-ln-strong'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-tx-muted">시험번호</span>
-                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
-                        isActive ? 'bg-white/20 text-white' : STATUS_COLORS[status] || ''
-                      }`}>
-                        {status}
-                      </span>
-                    </div>
-                    <div className="font-semibold tracking-wide">{project.testNumber}</div>
-                    {(project.projectName || project.companyName) && (
-                      <div className="mt-1 text-xs text-tx-tertiary truncate">
-                        {project.projectName || '-'}
-                        {project.companyName ? ` · ${project.companyName}` : ''}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectProject(project.testNumber);
+                        onClose();
+                      }}
+                      className="w-full text-left"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-tx-muted">시험번호</span>
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none ${
+                          isActive ? 'bg-white/20 text-white' : STATUS_COLORS[status] || ''
+                        }`}>
+                          {status}
+                        </span>
                       </div>
+                      <div className="font-semibold tracking-wide">{project.testNumber}</div>
+                      {(project.projectName || project.companyName) && (
+                        <div className="mt-1 text-xs text-tx-tertiary truncate">
+                          {project.projectName || '-'}
+                          {project.companyName ? ` · ${project.companyName}` : ''}
+                        </div>
+                      )}
+                      {/* Progress bar */}
+                      <div className="mt-2">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className={`text-[10px] ${isActive ? 'text-white/70' : 'text-tx-muted'}`}>진행률</span>
+                          <span className={`text-[10px] font-semibold ${isActive ? 'text-white/90' : 'text-tx-tertiary'}`}>{project.progress}%</span>
+                        </div>
+                        <div className={`h-1 rounded-full overflow-hidden ${isActive ? 'bg-white/20' : 'bg-surface-sunken'}`}>
+                          <div
+                            className={`h-full rounded-full transition-all ${isActive ? 'bg-white/70' : 'bg-accent'}`}
+                            style={{ width: `${project.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    </button>
+                    {/* Duplicate button */}
+                    {onDuplicateProject && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDuplicateSource(project.testNumber);
+                          setNewTestNumber('');
+                        }}
+                        title="프로젝트 복제"
+                        className={`absolute top-2.5 right-2.5 rounded-md p-1 transition-colors ${
+                          isActive
+                            ? 'text-white/60 hover:text-white hover:bg-white/15'
+                            : 'text-tx-muted hover:text-accent-text hover:bg-accent-subtle'
+                        }`}
+                      >
+                        <Copy size={13} />
+                      </button>
                     )}
-                    {/* Progress bar */}
-                    <div className="mt-2">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className={`text-[10px] ${isActive ? 'text-white/70' : 'text-tx-muted'}`}>진행률</span>
-                        <span className={`text-[10px] font-semibold ${isActive ? 'text-white/90' : 'text-tx-tertiary'}`}>{project.progress}%</span>
-                      </div>
-                      <div className={`h-1 rounded-full overflow-hidden ${isActive ? 'bg-white/20' : 'bg-surface-sunken'}`}>
-                        <div
-                          className={`h-full rounded-full transition-all ${isActive ? 'bg-white/70' : 'bg-accent'}`}
-                          style={{ width: `${project.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
           )}
         </div>
       </div>
+
+      {/* Duplicate dialog */}
+      {duplicateSource && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-ln bg-surface-overlay shadow-2xl">
+            <div className="border-b border-ln px-5 py-4">
+              <h3 className="text-sm font-extrabold text-tx-primary">프로젝트 복제</h3>
+              <p className="text-[11px] text-tx-tertiary mt-0.5">
+                <strong>{duplicateSource}</strong>의 설정을 새 프로젝트에 복사합니다
+              </p>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-tx-muted block mb-1">새 시험번호</label>
+                <input
+                  ref={dupInputRef}
+                  type="text"
+                  value={newTestNumber}
+                  onChange={(e) => setNewTestNumber(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') void handleDuplicate(); }}
+                  placeholder="예: GS-25-0001"
+                  className="w-full rounded-lg border border-ln bg-surface-base px-3 py-2 text-sm text-tx-primary placeholder:text-tx-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
+                />
+              </div>
+              <div className="rounded-lg bg-surface-sunken px-3 py-2 text-[10px] text-tx-tertiary space-y-0.5">
+                <div>복사 항목: 프로젝트명, 업체 정보, 일정 설정</div>
+                <div>복사 제외: 진행 상태, 판정 결과, 결함 데이터</div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-ln px-5 py-3">
+              <button
+                type="button"
+                onClick={() => { setDuplicateSource(null); setNewTestNumber(''); }}
+                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDuplicate()}
+                disabled={duplicating || !newTestNumber.trim()}
+                className="rounded-lg px-3 py-1.5 text-xs font-bold text-white bg-accent-solid hover:bg-accent-hover disabled:opacity-40"
+              >
+                {duplicating ? '복제 중...' : '복제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

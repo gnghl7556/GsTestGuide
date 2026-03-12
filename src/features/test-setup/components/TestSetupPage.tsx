@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Building2, List, UploadCloud, User, Trash2 } from 'lucide-react';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../../lib/firebase';
 import type {
   AgreementParsed,
   DocEntry,
@@ -247,6 +249,44 @@ export function TestSetupPage({
     });
     setTestNumberValidation({ touched: false, isValid: false, message: '' });
   };
+
+  const handleDuplicateProject = useCallback(async (sourceTestNumber: string, newTestNumber: string): Promise<boolean> => {
+    if (!db) return false;
+    try {
+      const sourceSnap = await getDoc(doc(db, 'projects', sourceTestNumber));
+      const sourceData = sourceSnap.exists() ? sourceSnap.data() : {};
+      const {
+        projectName, companyName, companyContactName, companyContactPhone, companyContactEmail,
+        scheduleWorkingDays, scheduleStartDate: srcStart, scheduleEndDate: srcEnd,
+        scheduleDefect1, scheduleDefect2, schedulePatchDate,
+        customMilestones, milestoneOrder,
+      } = sourceData;
+      await setDoc(doc(db, 'projects', newTestNumber), {
+        projectId: newTestNumber,
+        testNumber: newTestNumber,
+        status: '대기',
+        ...(projectName ? { projectName } : {}),
+        ...(companyName ? { companyName } : {}),
+        ...(companyContactName ? { companyContactName } : {}),
+        ...(companyContactPhone ? { companyContactPhone } : {}),
+        ...(companyContactEmail ? { companyContactEmail } : {}),
+        ...(scheduleWorkingDays ? { scheduleWorkingDays } : {}),
+        ...(srcStart ? { scheduleStartDate: srcStart } : {}),
+        ...(srcEnd ? { scheduleEndDate: srcEnd } : {}),
+        ...(scheduleDefect1 ? { scheduleDefect1 } : {}),
+        ...(scheduleDefect2 ? { scheduleDefect2 } : {}),
+        ...(schedulePatchDate ? { schedulePatchDate } : {}),
+        ...(customMilestones ? { customMilestones } : {}),
+        ...(milestoneOrder ? { milestoneOrder } : {}),
+        createdBy: currentUserId || null,
+        updatedAt: serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      console.error('Project duplication failed:', e);
+      return false;
+    }
+  }, [currentUserId]);
 
   useEffect(() => {
     const saved = localStorage.getItem(selectedTestStorageKey);
@@ -905,6 +945,7 @@ export function TestSetupPage({
           onSelectProject(tn);
           setFlowMode('existing');
         }}
+        onDuplicateProject={handleDuplicateProject}
       />
 
       <CreateUserModal
