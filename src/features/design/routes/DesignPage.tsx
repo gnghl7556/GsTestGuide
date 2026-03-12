@@ -1,14 +1,11 @@
 import { useCallback, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { FeatureManager } from '../components/FeatureManager';
 import { TestCaseManager } from '../components/TestCaseManager';
 import { GuideView } from '../components/GuideView';
 import { ProcessLayout } from '../../../components/Layout/ProcessLayout';
 import { GlobalProcessHeader } from '../../../components/Layout/GlobalProcessHeader';
-import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
-import { db } from '../../../lib/firebase';
 
 export function DesignPage() {
   const location = useLocation();
@@ -16,8 +13,6 @@ export function DesignPage() {
   const { testSetup } = useTestSetupContext();
   const initialTab = (location.state as { tab?: 'feature' | 'testcase' | 'guide' } | null)?.tab;
   const [activeTab, setActiveTab] = useState<'feature' | 'testcase' | 'guide'>(initialTab || 'feature');
-  const [pendingNavPath, setPendingNavPath] = useState<string | null>(null);
-  const [stepWarning, setStepWarning] = useState('');
 
   const projectInfo = {
     testNumber: testSetup.testNumber,
@@ -35,28 +30,16 @@ export function DesignPage() {
     companyContactEmail: testSetup.companyContactEmail
   };
 
-  const handleNavigateStep = useCallback(async (step: number) => {
+  const handleNavigateStep = useCallback((step: number) => {
     const paths: Record<number, string> = { 2: '/design', 3: '/execution', 4: '/report' };
     const path = paths[step];
     if (!path) return;
-
-    // Forward navigation to execution or report — check if design has data
-    if (step >= 3 && db && testSetup.testNumber) {
-      const featuresSnap = await getDocs(query(collection(db, 'projects', testSetup.testNumber, 'features'), limit(1)));
-      if (featuresSnap.empty) {
-        setPendingNavPath(path);
-        setStepWarning('설계 단계에 기능 명세가 작성되지 않았습니다. 건너뛰시겠습니까?');
-        return;
-      }
-    }
-
     navigate(path);
-  }, [navigate, testSetup.testNumber]);
+  }, [navigate]);
 
   return (
-    <>
       <ProcessLayout
-        header={<GlobalProcessHeader currentStep={2} projectInfo={projectInfo} onNavigateStep={(step) => void handleNavigateStep(step)} />}
+        header={<GlobalProcessHeader currentStep={2} projectInfo={projectInfo} onNavigateStep={handleNavigateStep} />}
         sidebar={(
           <div className="p-4 space-y-3 text-sm text-tx-secondary">
             <div className="text-xs font-semibold text-tx-tertiary">기능 트리</div>
@@ -115,15 +98,5 @@ export function DesignPage() {
           </div>
         )}
       />
-      <ConfirmModal
-        open={!!pendingNavPath}
-        title="단계 전환 확인"
-        description={stepWarning}
-        confirmLabel="건너뛰기"
-        confirmVariant="warning"
-        onConfirm={() => { const p = pendingNavPath; setPendingNavPath(null); setStepWarning(''); if (p) navigate(p); }}
-        onCancel={() => { setPendingNavPath(null); setStepWarning(''); }}
-      />
-    </>
   );
 }
