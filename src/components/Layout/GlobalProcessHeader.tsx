@@ -92,11 +92,11 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
       {/* Progress fill */}
       <div
         className={`absolute inset-y-0 left-0 transition-all duration-700 ${
-          isOverdue ? 'bg-danger' : 'bg-accent'
+          isOverdue ? 'bg-danger/40' : 'bg-ln-strong'
         }`}
-        style={{ width: `${progress}%`, opacity: isOverdue ? 0.7 : 0.5 }}
+        style={{ width: `${progress}%` }}
       />
-      {/* Milestone notches — flush inside the 3px bar */}
+      {/* Milestone notches */}
       {milestones.map((m, i) => {
         const pos = getPos(m.date);
         const past = isPast(m.date);
@@ -108,19 +108,19 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
           >
             <div
               className={`w-[3px] h-full transition-colors ${
-                past ? 'bg-accent' : 'bg-ln-strong'
+                past ? 'bg-tx-muted' : 'bg-ln-strong'
               }`}
             />
           </div>
         );
       })}
-      {/* Today marker — small dot flush on bar */}
+      {/* Today marker */}
       {progress > 0 && progress < 100 && (
         <div
           className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2]"
           style={{ left: `${progress}%` }}
         >
-          <div className="w-[5px] h-[5px] rounded-full bg-accent ring-1 ring-surface-base" />
+          <div className="w-[5px] h-[5px] rounded-full bg-tx-tertiary ring-1 ring-surface-base" />
         </div>
       )}
       {/* All tooltips — appear together on bar hover */}
@@ -146,8 +146,8 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
             className="absolute bottom-full -translate-x-1/2 mb-1.5 z-[6]"
             style={{ left: `${progress}%` }}
           >
-            <div className="whitespace-nowrap rounded bg-accent px-1.5 py-0.5 text-[9px] font-semibold text-white shadow-md">
-              오늘 {ddayLabel}
+            <div className="whitespace-nowrap rounded bg-surface-overlay border border-ln shadow-md px-1.5 py-0.5 text-[9px] font-semibold text-tx-primary">
+              오늘 <span className="text-tx-tertiary">{ddayLabel}</span>
             </div>
           </div>
         )}
@@ -165,9 +165,7 @@ function DdayBadge({ info }: { info?: GlobalProjectInfo }) {
     <span className={`hidden md:inline-flex items-center h-5 rounded px-1.5 text-[10px] font-bold tabular-nums ${
       isOverdue
         ? 'bg-danger-subtle text-danger'
-        : daysLeft <= 3
-          ? 'bg-accent-subtle text-accent-text'
-          : 'bg-surface-sunken text-tx-tertiary'
+        : 'bg-surface-sunken text-tx-tertiary'
     }`}>
       {label}
     </span>
