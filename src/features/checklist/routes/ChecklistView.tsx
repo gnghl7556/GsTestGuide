@@ -3,6 +3,7 @@ import { ClipboardList, RefreshCw, X, CheckCircle2, AlertCircle, Clock, FileText
 import { useNavigate } from 'react-router-dom';
 import { NavSidebar } from '../components/NavSidebar';
 import { CenterDisplay } from '../components/CenterDisplay';
+import { ProgressDashboard } from '../components/ProgressDashboard';
 import { RightActionPanel } from '../components/RightActionPanel';
 import { HelperToolsPopup } from '../components/HelperToolsPopup';
 import { ShortcutHelpOverlay } from '../components/ShortcutHelpOverlay';
@@ -188,19 +189,27 @@ export function ChecklistView({
       <DefectRefBoardModal open={showDefectBoard} onClose={() => setShowDefectBoard(false)} />
 
       <div className="h-full overflow-hidden">
-        <CenterDisplay
-          activeItem={activeItem}
-          displayIndex={activeIndex}
-          quickModeItem={quickModeItem}
-          quickAnswers={quickAnswers}
-          onQuickAnswer={onQuickAnswer}
-          inputValues={quickInputValues}
-          onInputChange={onInputChange}
-          itemGate={activeItem ? itemGates[activeItem.id] : undefined}
-          isFinalized={isFinalized}
-          activeQuestionIdx={activeQuestionIdx}
-          onActiveQuestionChange={onActiveQuestionChange}
-        />
+        {activeItem ? (
+          <CenterDisplay
+            activeItem={activeItem}
+            displayIndex={activeIndex}
+            quickModeItem={quickModeItem}
+            quickAnswers={quickAnswers}
+            onQuickAnswer={onQuickAnswer}
+            inputValues={quickInputValues}
+            onInputChange={onInputChange}
+            itemGate={itemGates[activeItem.id]}
+            isFinalized={isFinalized}
+            activeQuestionIdx={activeQuestionIdx}
+            onActiveQuestionChange={onActiveQuestionChange}
+          />
+        ) : (
+          <ProgressDashboard
+            checklist={checklist}
+            reviewData={reviewData}
+            setSelectedReqId={setSelectedReqId}
+          />
+        )}
       </div>
 
       <div className="h-full overflow-hidden lg:col-span-2 2xl:col-span-1">
