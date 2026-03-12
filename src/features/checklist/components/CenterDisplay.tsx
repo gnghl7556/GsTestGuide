@@ -49,6 +49,8 @@ export function CenterDisplay({
   const [selectedDoc, setSelectedDoc] = useState<RequiredDoc | null>(null);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const [showDefectBoard, setShowDefectBoard] = useState(false);
+  const [activeTab, setActiveTab] = useState<'guide' | 'evidence' | 'criteria'>('guide');
+  useEffect(() => { setActiveTab('guide'); }, [activeItem?.id]);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [docDescriptions, setDocDescriptions] = useState<Record<string, string>>({});
   const { currentTestNumber: _currentTestNumber } = useTestSetupContext();
@@ -89,6 +91,44 @@ export function CenterDisplay({
       .catch(() => {});
     return () => { canceled = true; };
   }, [selectedDoc]);
+  useEffect(() => {
+    if (!activeItem) return;
+    const items = activeItem.requiredDocs ?? [];
+    if (!storage || items.length === 0) return;
+    const previewStorage = storage;
+    let canceled = false;
+    void Promise.all(
+      items.map(async (doc) => {
+        if (doc.storagePath) {
+          try {
+            const url = await getDownloadURL(ref(previewStorage, doc.storagePath));
+            return { label: doc.label, url };
+          } catch {
+            return null;
+          }
+        }
+        try {
+          const folderRef = ref(previewStorage, `checklist-previews/${doc.label}`);
+          const result = await listAll(folderRef);
+          if (result.items.length === 0) return null;
+          const url = await getDownloadURL(result.items[0]);
+          return { label: doc.label, url };
+        } catch {
+          return null;
+        }
+      })
+    ).then((results) => {
+      if (canceled) return;
+      setPreviewUrls((prev) => {
+        const next = { ...prev };
+        results.forEach((item) => {
+          if (item) next[item.label] = item.url;
+        });
+        return next;
+      });
+    });
+    return () => { canceled = true; };
+  }, [activeItem?.id]);
   if (!activeItem) return <div className="h-full bg-surface-base rounded-xl border border-ln" />;
 
   const theme = CATEGORY_THEMES[activeItem.category] ?? CATEGORY_THEMES['SETUP'];
@@ -119,48 +159,13 @@ export function CenterDisplay({
     return '';
   };
 
-  useEffect(() => {
-    if (!storage || refItems.length === 0) return;
-    const previewStorage = storage;
-    let canceled = false;
-    void Promise.all(
-      refItems.map(async (doc) => {
-        // 1) storagePath가 있으면 직접 로드
-        if (doc.storagePath) {
-          try {
-            const url = await getDownloadURL(ref(previewStorage, doc.storagePath));
-            return { label: doc.label, url };
-          } catch {
-            return null;
-          }
-        }
-        // 2) storagePath 없으면 관리자 업로드 폴더(checklist-previews/{label}/) 조회
-        try {
-          const folderRef = ref(previewStorage, `checklist-previews/${doc.label}`);
-          const result = await listAll(folderRef);
-          if (result.items.length === 0) return null;
-          const url = await getDownloadURL(result.items[0]);
-          return { label: doc.label, url };
-        } catch {
-          return null;
-        }
-      })
-    ).then((results) => {
-      if (canceled) return;
-      setPreviewUrls((prev) => {
-        const next = { ...prev };
-        results.forEach((item) => {
-          if (item) next[item.label] = item.url;
-        });
-        return next;
-      });
-    });
-    return () => {
-      canceled = true;
-    };
-  }, [refItems]);
   const requirementId = quickModeItem?.requirementId ?? activeItem.id;
   const questions = quickModeItem?.quickQuestions ?? [];
+  const hasEvidence = Boolean(activeItem.evidenceExamples && activeItem.evidenceExamples.length > 0);
+  const hasCriteria = Boolean(activeItem.passCriteria);
+  const effectiveTab = activeTab === 'evidence' && !hasEvidence ? 'guide'
+    : activeTab === 'criteria' && !hasCriteria ? 'guide'
+    : activeTab;
   const branchingRules = quickModeItem?.branchingRules;
   const hasBranching = Boolean(branchingRules && branchingRules.length > 0);
 
@@ -303,7 +308,7 @@ export function CenterDisplay({
         </div>
       </div>
 
-      <div className="px-6 py-6 flex-1 overflow-y-auto">
+      <div className="px-6 py-5 flex-1 overflow-y-auto">
 
         {isNA ? (
           <div className="p-4 bg-surface-sunken rounded-lg border border-dashed border-ln-strong flex items-start gap-3 text-tx-tertiary mb-5">
@@ -315,12 +320,7 @@ export function CenterDisplay({
           </div>
         ) : (
           <div className="max-w-none">
-            {activeItem.description && (
-              <p className="text-base text-tx-secondary leading-relaxed">
-                {activeItem.description}
-              </p>
-            )}
-            <div className="mt-5 space-y-4">
+            <div className="space-y-4">
               {activeItem.inputFields && activeItem.inputFields.length > 0 ? (
                 <div className="space-y-4">
                   {refItems.length > 0 && (
@@ -331,16 +331,6 @@ export function CenterDisplay({
                           {doc.label}
                         </button>
                       ))}
-                    </div>
-                  )}
-                  {activeItem.evidenceExamples && activeItem.evidenceExamples.length > 0 && (
-                    <div className="rounded-md border border-ln bg-surface-sunken px-3.5 py-3">
-                      <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">증빙 안내</div>
-                      <div className="text-sm text-tx-tertiary space-y-1">
-                        {activeItem.evidenceExamples.map((example, i) => (
-                          <div key={i}>• {example}</div>
-                        ))}
-                      </div>
                     </div>
                   )}
                 </div>
@@ -546,54 +536,106 @@ export function CenterDisplay({
                 </div>
               </div>
             )}
-            <details className={`mt-8 rounded-lg border border-ln-subtle bg-surface-base group ${questions.length > 0 ? 'hidden' : ''}`}>
-              <summary className="cursor-pointer px-4 py-3 text-base font-bold text-tx-tertiary hover:text-tx-secondary transition-colors flex items-center gap-1.5">
-                <span className="inline-block transition-transform group-open:rotate-90 text-tx-muted">▸</span>
-                상세 정보
-              </summary>
-              <div className="px-4 pb-4 space-y-4 border-t border-ln-subtle pt-3.5">
-                <div>
-                  <h4 className="text-xs font-bold text-tx-muted mb-1.5 uppercase tracking-wide">요구사항 설명</h4>
-                  <p className="text-sm text-tx-tertiary leading-relaxed">{activeItem.description}</p>
-                </div>
-                {activeItem.checkPoints && activeItem.checkPoints.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-tx-muted mb-1.5 uppercase tracking-wide">점검 포인트</h4>
-                    <ul className="list-disc pl-4 text-sm text-tx-tertiary space-y-1">
-                      {activeItem.checkPoints.map((point, index) => (
-                        <li key={`${activeItem.id}-${index}`}>{point}</li>
-                      ))}
-                    </ul>
-                  </div>
+            {/* 탭 UI — 상세 콘텐츠 */}
+            <div className="mt-8">
+              <div role="tablist" className="flex items-center gap-1 border-b border-ln-subtle">
+                {([
+                  { id: 'guide' as const, label: '가이드', show: true },
+                  { id: 'evidence' as const, label: '증빙 안내', show: hasEvidence },
+                  { id: 'criteria' as const, label: '판정 기준', show: hasCriteria },
+                ] as const).filter(t => t.show).map(tab => (
+                  <button
+                    key={tab.id}
+                    role="tab"
+                    aria-selected={effectiveTab === tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-4 py-2.5 text-xs font-bold tracking-wide transition-colors relative ${
+                      effectiveTab === tab.id
+                        ? "text-tx-primary after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-accent after:rounded-full"
+                        : 'text-tx-muted hover:text-tx-secondary'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              <div role="tabpanel" className="pt-5 space-y-4">
+                {effectiveTab === 'guide' && (
+                  <>
+                    {activeItem.description && (
+                      <div>
+                        <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">설명</div>
+                        <p className="text-sm text-tx-tertiary leading-loose">{activeItem.description}</p>
+                      </div>
+                    )}
+                    {!activeItem.description && !activeItem.testSuggestions?.length && !activeItem.checkPoints?.length && (
+                      <p className="text-sm text-tx-muted py-4">이 항목에 대한 추가 가이드가 없습니다.</p>
+                    )}
+                    {activeItem.testSuggestions && activeItem.testSuggestions.length > 0 && (
+                      <div>
+                        <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">테스트 제안</div>
+                        <div className="space-y-1.5">
+                          {activeItem.testSuggestions.map((suggestion, i) => (
+                            <div key={`test-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
+                              <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
+                              <span className="text-sm text-tx-tertiary leading-relaxed">{suggestion}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {activeItem.checkPoints && activeItem.checkPoints.length > 0 && (
+                      <div>
+                        <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">점검 포인트</div>
+                        <div className="space-y-1.5">
+                          {activeItem.checkPoints.map((point, i) => (
+                            <div key={`cp-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
+                              <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
+                              <span className="text-sm text-tx-tertiary leading-relaxed">{point}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
-                {activeItem.evidenceExamples && activeItem.evidenceExamples.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-tx-muted mb-1.5 uppercase tracking-wide">증빙 예시</h4>
-                    <ul className="list-disc pl-4 text-sm text-tx-tertiary space-y-1">
-                      {activeItem.evidenceExamples.map((example, index) => (
-                        <li key={`${activeItem.id}-evidence-${index}`}>{example}</li>
-                      ))}
-                    </ul>
-                  </div>
+                {effectiveTab === 'evidence' && hasEvidence && (
+                  <>
+                    <div>
+                      <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">증빙 예시</div>
+                      <div className="space-y-1.5">
+                        {activeItem.evidenceExamples!.map((example, i) => (
+                          <div key={`ev-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
+                            <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
+                            <span className="text-sm text-tx-tertiary leading-relaxed">{example}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {refItems.length > 0 && (
+                      <div>
+                        <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">참조 문서</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {refItems.map((doc, i) => (
+                            <button key={`tab-ref-${i}`} type="button" onClick={() => handleDocClick(doc)} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-surface-sunken border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors">
+                              {doc.kind === 'external' ? <ExternalLink size={11} /> : <FileDown size={11} />}
+                              {doc.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
-                {activeItem.testSuggestions && activeItem.testSuggestions.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-bold text-tx-muted mb-1.5 uppercase tracking-wide">테스트 제안</h4>
-                    <ul className="list-disc pl-4 text-sm text-tx-tertiary space-y-1">
-                      {activeItem.testSuggestions.map((suggestion, index) => (
-                        <li key={`${activeItem.id}-test-${index}`}>{suggestion}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {activeItem.passCriteria && (
-                  <div className="rounded-md border border-status-pass-border bg-status-pass-bg px-3.5 py-2.5 text-status-pass-text">
-                    <h4 className="text-xs font-bold mb-1.5 uppercase tracking-wide">판정 기준</h4>
+                {effectiveTab === 'criteria' && hasCriteria && (
+                  <div className="rounded-lg border border-status-pass-border bg-status-pass-bg px-4 py-3.5 text-status-pass-text">
+                    <div className="text-xs font-bold mb-2 uppercase tracking-wide">합격 기준</div>
                     <p className="text-sm leading-relaxed">{activeItem.passCriteria}</p>
                   </div>
                 )}
               </div>
-            </details>
+            </div>
           </div>
         )}
       </div>
