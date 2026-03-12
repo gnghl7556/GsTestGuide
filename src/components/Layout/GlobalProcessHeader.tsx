@@ -132,7 +132,7 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
           return (
             <div
               key={i}
-              className={`absolute bottom-full mb-1.5 z-[5] ${align}`}
+              className={`absolute top-full mt-1.5 z-[5] ${align}`}
               style={pos < 10 ? { left: `${pos}%` } : pos > 90 ? { right: `${100 - pos}%` } : { left: `${pos}%` }}
             >
               <div className="whitespace-nowrap rounded bg-surface-overlay border border-ln shadow-md px-1.5 py-0.5 text-[9px] text-tx-secondary">
@@ -146,7 +146,7 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
           const align = progress < 10 ? 'left-0' : progress > 90 ? 'right-0' : 'left-1/2 -translate-x-1/2';
           return (
             <div
-              className={`absolute bottom-full mb-1.5 z-[6] ${align}`}
+              className={`absolute top-full mt-1.5 z-[6] ${align}`}
               style={progress < 10 ? { left: `${progress}%` } : progress > 90 ? { right: `${100 - progress}%` } : { left: `${progress}%` }}
             >
               <div className="whitespace-nowrap rounded bg-surface-overlay border border-ln shadow-md px-1.5 py-0.5 text-[9px] font-semibold text-tx-primary">
