@@ -1,4 +1,4 @@
-import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle, Play, AlertTriangle, Wrench, Flag, type LucideIcon } from 'lucide-react';
+import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { ConfirmModal } from '../ui/ConfirmModal';
@@ -46,9 +46,11 @@ const parseScheduleDate = (s?: string) => {
   return isNaN(d.getTime()) ? null : d;
 };
 
-function ScheduleTimeline({ info }: { info: GlobalProjectInfo }) {
-  const start = parseScheduleDate(info.scheduleStartDate);
-  const end = parseScheduleDate(info.scheduleEndDate);
+type MilestoneData = { date: Date; color: string; pastColor: string; label: string };
+
+function useScheduleData(info?: GlobalProjectInfo) {
+  const start = parseScheduleDate(info?.scheduleStartDate);
+  const end = parseScheduleDate(info?.scheduleEndDate);
   if (!start || !end || end <= start) return null;
 
   const today = new Date();
@@ -58,63 +60,93 @@ function ScheduleTimeline({ info }: { info: GlobalProjectInfo }) {
   const progress = Math.max(0, Math.min(100, (elapsedMs / totalMs) * 100));
   const daysLeft = Math.ceil((end.getTime() - today.getTime()) / 86400000);
 
-  const milestones: Array<{ date: Date; Icon: LucideIcon; color: string; pastColor: string; label: string }> = [];
-  milestones.push({ date: start, Icon: Play, color: 'text-tx-muted', pastColor: 'text-emerald-500', label: '시작' });
-  const d1 = parseScheduleDate(info.scheduleDefect1);
-  if (d1) milestones.push({ date: d1, Icon: AlertTriangle, color: 'text-tx-muted', pastColor: 'text-amber-500', label: '1차 결함' });
-  const d2 = parseScheduleDate(info.scheduleDefect2);
-  if (d2) milestones.push({ date: d2, Icon: AlertTriangle, color: 'text-tx-muted', pastColor: 'text-orange-500', label: '2차 결함' });
-  const p = parseScheduleDate(info.schedulePatchDate);
-  if (p) milestones.push({ date: p, Icon: Wrench, color: 'text-tx-muted', pastColor: 'text-sky-500', label: '패치' });
-  milestones.push({ date: end, Icon: Flag, color: 'text-tx-muted', pastColor: 'text-rose-500', label: '종료' });
+  const milestones: MilestoneData[] = [
+    { date: start, color: 'bg-emerald-400', pastColor: 'bg-emerald-500', label: '시작' },
+  ];
+  const d1 = parseScheduleDate(info?.scheduleDefect1);
+  if (d1) milestones.push({ date: d1, color: 'bg-amber-300', pastColor: 'bg-amber-500', label: '1차 결함' });
+  const d2 = parseScheduleDate(info?.scheduleDefect2);
+  if (d2) milestones.push({ date: d2, color: 'bg-orange-300', pastColor: 'bg-orange-500', label: '2차 결함' });
+  const p = parseScheduleDate(info?.schedulePatchDate);
+  if (p) milestones.push({ date: p, color: 'bg-sky-300', pastColor: 'bg-sky-500', label: '패치' });
+  milestones.push({ date: end, color: 'bg-rose-300', pastColor: 'bg-rose-500', label: '종료' });
 
-  const getPos = (d: Date) => Math.max(2, Math.min(98, ((d.getTime() - start.getTime()) / totalMs) * 100));
+  const getPos = (d: Date) => Math.max(1, Math.min(99, ((d.getTime() - start.getTime()) / totalMs) * 100));
   const isPast = (d: Date) => d.getTime() <= today.getTime();
   const isOverdue = daysLeft < 0;
 
+  return { start, end, today, progress, daysLeft, milestones, getPos, isPast, isOverdue };
+}
+
+function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
+  const data = useScheduleData(info);
+  if (!data) return <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-ln" />;
+
+  const { progress, daysLeft, milestones, getPos, isPast, isOverdue } = data;
+
   return (
-    <div className="border-b border-ln bg-surface-sunken/50 px-6 flex items-center gap-3 h-7">
-      <div className="relative flex-1 h-[3px] bg-ln/40 rounded-full my-auto">
-        <div
-          className={`absolute inset-y-0 left-0 rounded-full transition-all duration-700 ${
-            isOverdue ? 'bg-rose-400 dark:bg-rose-500' : 'bg-gradient-to-r from-blue-400 to-purple-400 dark:from-blue-500 dark:to-purple-500'
-          }`}
-          style={{ width: `${progress}%` }}
-        />
-        {milestones.map((m, i) => {
-          const pos = getPos(m.date);
-          const past = isPast(m.date);
-          return (
-            <div
-              key={i}
-              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1]"
-              style={{ left: `${pos}%` }}
-              title={`${m.label}: ${m.date.getMonth() + 1}/${m.date.getDate()}`}
-            >
-              <div className={`rounded-full p-[2px] transition-colors ${
-                past ? 'bg-surface-base shadow-sm ring-1 ring-black/[0.06] dark:ring-white/10' : 'bg-surface-sunken'
-              }`}>
-                <m.Icon size={10} className={`transition-colors ${past ? m.pastColor : m.color}`} />
-              </div>
-            </div>
-          );
-        })}
-        {progress > 0 && progress < 100 && (
+    <div className="absolute bottom-0 left-0 right-0 h-[3px]">
+      {/* Track background */}
+      <div className="absolute inset-0 bg-ln/30" />
+      {/* Progress fill */}
+      <div
+        className={`absolute inset-y-0 left-0 transition-all duration-700 ${
+          isOverdue
+            ? 'bg-rose-400/80 dark:bg-rose-500/80'
+            : 'bg-gradient-to-r from-blue-400/70 via-purple-400/70 to-purple-500/70 dark:from-blue-500/70 dark:via-purple-500/70 dark:to-purple-600/70'
+        }`}
+        style={{ width: `${progress}%` }}
+      />
+      {/* Milestone diamonds */}
+      {milestones.map((m, i) => {
+        const pos = getPos(m.date);
+        const past = isPast(m.date);
+        return (
           <div
-            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2]"
-            style={{ left: `${progress}%` }}
-            title={`오늘 (${daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`})`}
+            key={i}
+            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1]"
+            style={{ left: `${pos}%` }}
+            title={`${m.label}: ${m.date.getMonth() + 1}/${m.date.getDate()}`}
           >
-            <div className="w-2.5 h-2.5 rounded-full border-2 border-accent bg-surface-base shadow-sm" />
+            <div
+              className={`w-[7px] h-[7px] rotate-45 transition-all ${
+                past
+                  ? `${m.pastColor} shadow-sm shadow-black/20`
+                  : 'border border-white/40 dark:border-white/20 bg-transparent'
+              }`}
+            />
           </div>
-        )}
-      </div>
-      <span className={`text-[10px] font-bold tabular-nums shrink-0 ${
-        isOverdue ? 'text-rose-500' : daysLeft <= 3 ? 'text-amber-500' : 'text-tx-tertiary'
-      }`}>
-        {daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`}
-      </span>
+        );
+      })}
+      {/* Today dot */}
+      {progress > 0 && progress < 100 && (
+        <div
+          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-[2]"
+          style={{ left: `${progress}%` }}
+          title={`오늘 (${daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`})`}
+        >
+          <div className="w-[9px] h-[9px] rounded-full border-2 border-white bg-accent shadow-[0_0_6px_rgba(99,102,241,0.5)] dark:shadow-[0_0_6px_rgba(129,140,248,0.6)]" />
+        </div>
+      )}
     </div>
+  );
+}
+
+function DdayBadge({ info }: { info?: GlobalProjectInfo }) {
+  const data = useScheduleData(info);
+  if (!data) return null;
+  const { daysLeft, isOverdue } = data;
+  const label = daysLeft > 0 ? `D-${daysLeft}` : daysLeft === 0 ? 'D-Day' : `D+${Math.abs(daysLeft)}`;
+  return (
+    <span className={`hidden md:inline-flex items-center h-5 rounded px-1.5 text-[10px] font-bold tabular-nums ${
+      isOverdue
+        ? 'bg-rose-500/10 text-rose-500 dark:bg-rose-500/20'
+        : daysLeft <= 3
+          ? 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
+          : 'bg-surface-sunken text-tx-tertiary'
+    }`}>
+      {label}
+    </span>
   );
 }
 
@@ -157,7 +189,7 @@ export function GlobalProcessHeader({
 
   return (
     <div className="sticky top-0 z-30 w-full">
-      <div className="flex h-16 items-center border-b border-ln bg-surface-base px-6 text-tx-primary gap-4">
+      <div className="relative flex h-16 items-center bg-surface-base px-6 text-tx-primary gap-4">
         <div className="text-sm font-semibold flex items-center gap-2 min-w-0">
           <button
             type="button"
@@ -196,6 +228,7 @@ export function GlobalProcessHeader({
             ))}
           </nav>
         )}
+        {projectInfo && <DdayBadge info={projectInfo} />}
         <div className="flex-1 min-w-0" />
         {rightSlot && (
           <div className="hidden md:flex items-center gap-5 text-[11px] text-tx-tertiary">
@@ -289,8 +322,9 @@ export function GlobalProcessHeader({
             <LogOut size={16} />
           </button>
         </div>
+        {/* Edge gradient timeline — replaces border-bottom */}
+        {projectInfo ? <ScheduleEdge info={projectInfo} /> : <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-ln" />}
       </div>
-      {projectInfo && <ScheduleTimeline info={projectInfo} />}
       <ConfirmModal
         open={logoutConfirmOpen}
         title="로그아웃 확인"
