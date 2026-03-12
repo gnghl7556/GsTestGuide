@@ -128,11 +128,12 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
         {milestones.map((m, i) => {
           const pos = getPos(m.date);
           const dateStr = `${m.date.getMonth() + 1}/${m.date.getDate()}`;
+          const align = pos < 10 ? 'left-0' : pos > 90 ? 'right-0' : 'left-1/2 -translate-x-1/2';
           return (
             <div
               key={i}
-              className="absolute bottom-full -translate-x-1/2 mb-1.5 z-[5]"
-              style={{ left: `${pos}%` }}
+              className={`absolute bottom-full mb-1.5 z-[5] ${align}`}
+              style={pos < 10 ? { left: `${pos}%` } : pos > 90 ? { right: `${100 - pos}%` } : { left: `${pos}%` }}
             >
               <div className="whitespace-nowrap rounded bg-surface-overlay border border-ln shadow-md px-1.5 py-0.5 text-[9px] text-tx-secondary">
                 <span className="font-semibold text-tx-primary">{m.label}</span>
@@ -141,16 +142,19 @@ function ScheduleEdge({ info }: { info: GlobalProjectInfo }) {
             </div>
           );
         })}
-        {progress > 0 && progress < 100 && (
-          <div
-            className="absolute bottom-full -translate-x-1/2 mb-1.5 z-[6]"
-            style={{ left: `${progress}%` }}
-          >
-            <div className="whitespace-nowrap rounded bg-surface-overlay border border-ln shadow-md px-1.5 py-0.5 text-[9px] font-semibold text-tx-primary">
-              오늘 <span className="text-tx-tertiary">{ddayLabel}</span>
+        {progress > 0 && progress < 100 && (() => {
+          const align = progress < 10 ? 'left-0' : progress > 90 ? 'right-0' : 'left-1/2 -translate-x-1/2';
+          return (
+            <div
+              className={`absolute bottom-full mb-1.5 z-[6] ${align}`}
+              style={progress < 10 ? { left: `${progress}%` } : progress > 90 ? { right: `${100 - progress}%` } : { left: `${progress}%` }}
+            >
+              <div className="whitespace-nowrap rounded bg-surface-overlay border border-ln shadow-md px-1.5 py-0.5 text-[9px] font-semibold text-tx-primary">
+                오늘 <span className="text-tx-tertiary">{ddayLabel}</span>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );
