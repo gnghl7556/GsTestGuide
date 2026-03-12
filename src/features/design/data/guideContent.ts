@@ -157,4 +157,52 @@ export const guideContent: GuideSection[] = [
       },
     ],
   },
+  {
+    id: 'remote-access',
+    title: '제품 유형별 원격 접속',
+    icon: '🔌',
+    description: '제품 환경에 따른 서버 접속·관리 방법 가이드',
+    sections: [
+      {
+        heading: '개요',
+        content:
+          'GS 인증 시험 대상 제품은 단순 로컬 설치형부터 클라우드 기반까지 다양합니다. 제품 유형에 따라 서버 접속 방법과 관리 도구가 달라지므로, 시험 환경 구성 시 적절한 접속 방법을 숙지해야 합니다.',
+      },
+      {
+        heading: '웹 제품 (브라우저 접속)',
+        content:
+          '접속 방법: 브라우저에서 제품 URL 직접 접속\n\n확인 사항:\n• 접속 URL 및 포트 번호 확인 (예: http://서버IP:8080)\n• 방화벽에서 해당 포트가 개방되어 있는지 확인\n• 합의서에 명시된 브라우저 종류·버전으로 접속 테스트\n• HTTPS인 경우 인증서 관련 경고 발생 여부 확인',
+      },
+      {
+        heading: 'CS(Client-Server) 제품',
+        content:
+          '접속 방법: 전용 클라이언트 프로그램 설치 후 서버 연결\n\n설정 절차:\n1. 업체 제공 클라이언트 설치 파일로 설치\n2. 서버 연결 정보 입력 (IP, 포트, DB 접속 정보 등)\n3. 로그인 계정으로 접속 테스트\n4. 클라이언트-서버 간 통신 정상 여부 확인\n\n주의: 클라이언트 버전과 서버 버전이 일치하는지 확인하세요.',
+      },
+      {
+        heading: 'Linux 서버 (SSH 접속)',
+        content:
+          '도구: Putty, MobaXterm, Windows Terminal (SSH)\n\nPutty 접속 절차:\n1. Host Name에 서버 IP 입력\n2. Port: 22 (또는 업체 지정 포트)\n3. Connection Type: SSH 선택\n4. Open → 계정/비밀번호 입력\n\n유용한 명령어:\n• systemctl status [서비스명] — 서비스 상태 확인\n• tail -f /var/log/[로그파일] — 실시간 로그 확인\n• df -h — 디스크 사용량 확인\n• free -m — 메모리 사용량 확인',
+      },
+      {
+        heading: 'DB 접속',
+        content:
+          '도구: DBeaver, HeidiSQL, MySQL Workbench, pgAdmin 등\n\n접속 정보 (업체 제공):\n• Host: DB 서버 IP\n• Port: DB 종류별 기본 포트 (MySQL 3306, PostgreSQL 5432, Oracle 1521, MSSQL 1433)\n• Database: 스키마/DB명\n• 계정/비밀번호\n\n주의사항:\n• 시험용 DB 계정은 읽기 권한 위주로 요청\n• 데이터 변경 시 업체에 사전 협의\n• 접속 후 테이블 구조 및 데이터 건수를 먼저 파악',
+      },
+      {
+        heading: '클라우드 환경 (AWS/Azure)',
+        content:
+          'AWS 환경:\n• EC2 접속: SSH 키 페어(.pem)를 업체로부터 수령 → Putty에서 .ppk로 변환 후 접속\n• AWS 콘솔: 업체가 IAM 계정을 발급한 경우 웹 콘솔에서 리소스 확인 가능\n• RDS(DB): 엔드포인트 주소를 DB 클라이언트에 입력하여 접속\n\nAzure 환경:\n• VM 접속: Azure Portal에서 제공하는 접속 정보(IP, SSH 키 또는 비밀번호)로 접속\n• Azure SQL: 서버명.database.windows.net 형태의 엔드포인트로 DB 클라이언트 접속\n• App Service: Azure Portal 또는 URL로 웹 제품 접속\n\n공통 주의사항:\n• 보안 그룹(AWS) / NSG(Azure)에서 TTA IP 대역 허용 필요 → 업체에 사전 요청\n• 클라우드 콘솔 계정은 최소 권한으로 발급 요청',
+      },
+      {
+        heading: 'Docker / Kubernetes 환경',
+        content:
+          'Docker 환경:\n• 컨테이너 목록 확인: docker ps\n• 컨테이너 로그 확인: docker logs -f [컨테이너명]\n• 컨테이너 접속: docker exec -it [컨테이너명] /bin/bash\n• 서비스 재시작: docker restart [컨테이너명]\n\nKubernetes 환경:\n• kubectl 설치 후 업체 제공 kubeconfig 파일 설정\n• Pod 목록 확인: kubectl get pods\n• Pod 로그 확인: kubectl logs -f [Pod명]\n• Pod 접속: kubectl exec -it [Pod명] -- /bin/bash\n• 서비스 상태: kubectl get svc\n\n주의사항:\n• Docker/K8s 환경은 업체가 직접 관리하는 경우가 많으므로, 접속 권한 범위를 사전에 협의\n• 컨테이너 재시작 시 데이터 초기화 여부를 확인하세요',
+      },
+      {
+        heading: '원격 패치 (RemoteView)',
+        content:
+          '용도: 업체가 원격으로 제품을 패치할 때 사용\n\n설정 절차:\n1. RemoteView 에이전트를 시험 PC에 설치\n2. 접속 정보(ID, 비밀번호)를 업체에 전달\n3. 패치 시간에 맞춰 RemoteView 접속 허용\n4. 패치 완료 후 접속 종료 확인\n\n주의사항:\n• 패치 가능 시간: 오전 9시 ~ 오후 6시\n• 패치 중에는 해당 PC 사용 불가\n• 패치 전후 제품 버전을 반드시 확인·기록',
+      },
+    ],
+  },
 ];

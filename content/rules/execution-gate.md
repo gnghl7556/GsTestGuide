@@ -1,6 +1,6 @@
 ---
 type: execution-gate
-regressionItemId: EXEC-05
+regressionItemId: EXEC-06
 securityItemId: EXEC-06
 performanceItemId: EXEC-06
 ---

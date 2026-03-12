@@ -265,14 +265,14 @@ export const CATEGORY_THEMES = ${JSON.stringify(themes, null, 2)};`;
 function generateRulesModule(rootDir: string): string {
   const filePath = path.join(rootDir, CONTENT_DIR, 'rules', 'execution-gate.md');
   if (!fs.existsSync(filePath)) {
-    return `export const EXECUTION_GATE_CONFIG = { regressionItemId: 'EXEC-05', securityItemId: 'EXEC-06', performanceItemId: 'EXEC-06' };`;
+    return `export const EXECUTION_GATE_CONFIG = { regressionItemId: 'EXEC-06', securityItemId: 'EXEC-06', performanceItemId: 'EXEC-06' };`;
   }
 
   const fileContent = fs.readFileSync(filePath, 'utf-8').replace(/\r/g, '');
   const { data } = matter(fileContent);
 
   const config = {
-    regressionItemId: data.regressionItemId ?? 'EXEC-05',
+    regressionItemId: data.regressionItemId ?? 'EXEC-06',
     securityItemId: data.securityItemId ?? 'EXEC-06',
     performanceItemId: data.performanceItemId ?? 'EXEC-06',
   };

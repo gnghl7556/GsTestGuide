@@ -66,27 +66,41 @@ export const computeExecutionGate = ({
     return { itemGates, executionState };
   }
 
-  if (!regressionDone) {
-    itemGates[SECURITY_ITEM_ID] = {
-      state: 'disabled',
-      reason: '기능 회귀 테스트 결과가 확정되면 보안 테스트를 진행할 수 있습니다.'
-    };
-    itemGates[PERFORMANCE_ITEM_ID] = {
-      state: 'disabled',
-      reason: '기능 회귀 테스트 결과가 확정되면 성능 테스트를 진행할 수 있습니다.'
-    };
-    return { itemGates, executionState };
-  }
+  // Only gate security/performance if they are separate items from regression
+  const gateSecurityPerformance =
+    SECURITY_ITEM_ID !== REGRESSION_ITEM_ID || PERFORMANCE_ITEM_ID !== REGRESSION_ITEM_ID;
 
-  if (derivedFoundInFeatureRegression) {
-    itemGates[SECURITY_ITEM_ID] = {
-      state: 'disabled',
-      reason: '기능 회귀에서 파생 결함이 발견되어 보안 테스트는 생략됩니다.'
-    };
-    itemGates[PERFORMANCE_ITEM_ID] = {
-      state: 'disabled',
-      reason: '기능 회귀에서 파생 결함이 발견되어 성능 테스트는 생략됩니다.'
-    };
+  if (gateSecurityPerformance) {
+    if (!regressionDone) {
+      if (SECURITY_ITEM_ID !== REGRESSION_ITEM_ID) {
+        itemGates[SECURITY_ITEM_ID] = {
+          state: 'disabled',
+          reason: '기능 회귀 테스트 결과가 확정되면 보안 테스트를 진행할 수 있습니다.'
+        };
+      }
+      if (PERFORMANCE_ITEM_ID !== REGRESSION_ITEM_ID) {
+        itemGates[PERFORMANCE_ITEM_ID] = {
+          state: 'disabled',
+          reason: '기능 회귀 테스트 결과가 확정되면 성능 테스트를 진행할 수 있습니다.'
+        };
+      }
+      return { itemGates, executionState };
+    }
+
+    if (derivedFoundInFeatureRegression) {
+      if (SECURITY_ITEM_ID !== REGRESSION_ITEM_ID) {
+        itemGates[SECURITY_ITEM_ID] = {
+          state: 'disabled',
+          reason: '기능 회귀에서 파생 결함이 발견되어 보안 테스트는 생략됩니다.'
+        };
+      }
+      if (PERFORMANCE_ITEM_ID !== REGRESSION_ITEM_ID) {
+        itemGates[PERFORMANCE_ITEM_ID] = {
+          state: 'disabled',
+          reason: '기능 회귀에서 파생 결함이 발견되어 성능 테스트는 생략됩니다.'
+        };
+      }
+    }
   }
 
   return { itemGates, executionState };

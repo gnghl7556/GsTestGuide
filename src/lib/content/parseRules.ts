@@ -10,7 +10,7 @@ export function parseExecutionGateRules(fileContent: string): ExecutionGateConfi
   const { data } = matter(fileContent);
 
   return {
-    regressionItemId: (data.regressionItemId as string) ?? 'EXEC-05',
+    regressionItemId: (data.regressionItemId as string) ?? 'EXEC-06',
     securityItemId: (data.securityItemId as string) ?? 'EXEC-06',
     performanceItemId: (data.performanceItemId as string) ?? 'EXEC-06',
   };
