@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FeatureManager } from '../components/FeatureManager';
 import { TestCaseManager } from '../components/TestCaseManager';
+import { GuideView } from '../components/GuideView';
 import { ProcessLayout } from '../../../components/Layout/ProcessLayout';
 import { GlobalProcessHeader } from '../../../components/Layout/GlobalProcessHeader';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
@@ -10,8 +11,8 @@ export function DesignPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { testSetup } = useTestSetupContext();
-  const initialTab = (location.state as { tab?: 'feature' | 'testcase' } | null)?.tab;
-  const [activeTab, setActiveTab] = useState<'feature' | 'testcase'>(initialTab || 'feature');
+  const initialTab = (location.state as { tab?: 'feature' | 'testcase' | 'guide' } | null)?.tab;
+  const [activeTab, setActiveTab] = useState<'feature' | 'testcase' | 'guide'>(initialTab || 'feature');
 
   const projectInfo = {
     testNumber: testSetup.testNumber,
@@ -65,11 +66,24 @@ export function DesignPage() {
           >
             테스트 케이스
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('guide')}
+            className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold ${
+              activeTab === 'guide'
+                ? 'bg-accent-subtle text-accent-text'
+                : 'text-tx-secondary hover:bg-interactive-hover'
+            }`}
+          >
+            가이드
+          </button>
         </div>
       )}
       content={(
         <div className="h-full">
-          {activeTab === 'feature' ? <FeatureManager /> : <TestCaseManager />}
+          {activeTab === 'feature' && <FeatureManager />}
+          {activeTab === 'testcase' && <TestCaseManager />}
+          {activeTab === 'guide' && <GuideView />}
         </div>
       )}
       panel={(
