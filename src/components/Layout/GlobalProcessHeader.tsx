@@ -1,4 +1,4 @@
-import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle } from 'lucide-react';
+import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle, EllipsisVertical } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { ConfirmModal } from '../ui/ConfirmModal';
@@ -191,9 +191,11 @@ export function GlobalProcessHeader({
 }: GlobalProcessHeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const [companyOpen, setCompanyOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [finalizeConfirmOpen, setFinalizeConfirmOpen] = useState(false);
   const companyPanelRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const testNumber = safeValue(projectInfo?.testNumber);
   const projectName = safeValue(projectInfo?.projectName);
   const companyName = safeValue(projectInfo?.companyName);
@@ -202,16 +204,18 @@ export function GlobalProcessHeader({
   const companyContactEmail = safeValue(projectInfo?.companyContactEmail);
 
   useEffect(() => {
-    if (!companyOpen) return;
+    if (!companyOpen && !menuOpen) return;
     const handleOutside = (event: MouseEvent) => {
-      if (!companyPanelRef.current) return;
-      if (!companyPanelRef.current.contains(event.target as Node)) {
+      if (companyOpen && companyPanelRef.current && !companyPanelRef.current.contains(event.target as Node)) {
         setCompanyOpen(false);
+      }
+      if (menuOpen && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
-  }, [companyOpen]);
+  }, [companyOpen, menuOpen]);
 
   return (
     <div className="sticky top-0 z-30 w-full">
@@ -279,26 +283,6 @@ export function GlobalProcessHeader({
               <span className="hidden sm:inline">검토 완료</span>
             </button>
           )}
-          {onReset && (
-            <button
-              type="button"
-              onClick={onReset}
-              className="inline-flex items-center gap-1.5 h-9 rounded-lg border border-ln px-2.5 text-[11px] font-semibold text-tx-tertiary hover:text-danger hover:border-danger transition-colors"
-              title="점검 초기화"
-            >
-              <RotateCcw size={14} />
-              <span className="hidden sm:inline">초기화</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className={iconBtnCls}
-            aria-label={theme === 'dark' ? '라이트 모드' : '다크 모드'}
-            title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
           {onOpenSchedule && (
             <button
               type="button"
@@ -338,15 +322,53 @@ export function GlobalProcessHeader({
               </div>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => setLogoutConfirmOpen(true)}
-            className="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-ln text-tx-tertiary hover:text-danger hover:border-danger"
-            aria-label="로그아웃"
-            title="로그아웃"
-          >
-            <LogOut size={16} />
-          </button>
+          {/* More menu */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((prev) => !prev)}
+              className={iconBtnCls}
+              aria-label="메뉴"
+              title="메뉴"
+            >
+              <EllipsisVertical size={16} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-10 z-20 w-40 rounded-lg border border-ln bg-surface-overlay py-1 shadow-xl">
+                {onReset && (
+                  <button
+                    type="button"
+                    onClick={() => { setMenuOpen(false); onReset(); }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-tx-secondary hover:bg-interactive-hover transition-colors"
+                  >
+                    <RotateCcw size={14} className="text-tx-muted" />
+                    점검 초기화
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setMenuOpen(false); toggleTheme(); }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-tx-secondary hover:bg-interactive-hover transition-colors"
+                >
+                  {theme === 'dark' ? <Sun size={14} className="text-tx-muted" /> : <Moon size={14} className="text-tx-muted" />}
+                  {theme === 'dark' ? '라이트 모드' : '다크 모드'}
+                </button>
+                {onLogout && (
+                  <>
+                    <div className="my-1 border-t border-ln" />
+                    <button
+                      type="button"
+                      onClick={() => { setMenuOpen(false); setLogoutConfirmOpen(true); }}
+                      className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-danger hover:bg-interactive-hover transition-colors"
+                    >
+                      <LogOut size={14} />
+                      로그아웃
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         {/* Edge gradient timeline — replaces border-bottom */}
         {projectInfo ? <ScheduleEdge info={projectInfo} /> : <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-ln" />}
