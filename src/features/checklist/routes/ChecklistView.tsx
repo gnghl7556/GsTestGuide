@@ -5,6 +5,7 @@ import { NavSidebar } from '../components/NavSidebar';
 import { CenterDisplay } from '../components/CenterDisplay';
 import { ProgressDashboard } from '../components/ProgressDashboard';
 import { RightActionPanel } from '../components/RightActionPanel';
+import { NextItemsPanel } from '../components/NextItemsPanel';
 import { HelperToolsPopup } from '../components/HelperToolsPopup';
 import { ShortcutHelpOverlay } from '../components/ShortcutHelpOverlay';
 import { DefectRefBoardModal } from '../../defects/components/DefectRefBoardModal';
@@ -213,14 +214,22 @@ export function ChecklistView({
       </div>
 
       <div className="h-full overflow-hidden lg:col-span-2 2xl:col-span-1">
-        <RightActionPanel
-          activeItem={activeItem}
-          reviewData={reviewData}
-          updateReviewData={updateReviewData}
-          evidenceChips={quickModeItem?.evidenceChips || []}
-          recommendation={recommendation}
-          canReview={canReview}
-        />
+        {activeItem ? (
+          <RightActionPanel
+            activeItem={activeItem}
+            reviewData={reviewData}
+            updateReviewData={updateReviewData}
+            evidenceChips={quickModeItem?.evidenceChips || []}
+            recommendation={recommendation}
+            canReview={canReview}
+          />
+        ) : (
+          <NextItemsPanel
+            checklist={checklist}
+            reviewData={reviewData}
+            setSelectedReqId={setSelectedReqId}
+          />
+        )}
       </div>
       {showShortcutHelp && <ShortcutHelpOverlay onDismiss={onDismissShortcutHelp} />}
       {showDefectModal && currentTestNumber && (

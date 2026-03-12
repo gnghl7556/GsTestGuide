@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { CheckCircle2, AlertCircle, Clock, Circle, Check, X } from 'lucide-react';
 import { CATEGORIES, CATEGORY_THEMES } from 'virtual:content/categories';
 import type { ChecklistItem, ReviewData } from '../../../types';
@@ -56,6 +56,21 @@ export function ProgressDashboard({ checklist, reviewData, setSelectedReqId }: P
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (stats.rate / 100) * circumference;
 
+  // 입장 애니메이션
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const handlePhaseClick = (phase: typeof phaseStats[number]) => {
+    const firstPending = phase.items.find(i => {
+      const s = reviewData[i.id]?.status;
+      return !s || s === 'None';
+    });
+    setSelectedReqId(firstPending?.id ?? phase.items[0]?.id);
+  };
+
   return (
     <div className="h-full bg-surface-base rounded-xl border border-ln shadow-sm flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -76,7 +91,7 @@ export function ProgressDashboard({ checklist, reviewData, setSelectedReqId }: P
                 strokeWidth="8"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
+                strokeDashoffset={mounted ? strokeDashoffset : circumference}
                 className="transition-all duration-700 ease-out"
               />
             </svg>
@@ -95,10 +110,14 @@ export function ProgressDashboard({ checklist, reviewData, setSelectedReqId }: P
 
         {/* 중단: phase별 진행 바 */}
         <div className="space-y-4">
-          {phaseStats.map(phase => {
+          {phaseStats.map((phase, phaseIdx) => {
             const theme = CATEGORY_THEMES[phase.id];
             return (
-              <div key={phase.id} className={`rounded-xl border border-ln p-4 ${theme.lightBg}`}>
+              <div
+                key={phase.id}
+                className={`rounded-xl border border-ln p-4 ${theme.lightBg} cursor-pointer hover:shadow-md transition-shadow`}
+                onClick={() => handlePhaseClick(phase)}
+              >
                 <div className="flex items-center justify-between mb-2.5">
                   <span className={`text-sm font-bold ${theme.text}`}>
                     {PHASE_LABELS[phase.id] || phase.name}
@@ -111,7 +130,10 @@ export function ProgressDashboard({ checklist, reviewData, setSelectedReqId }: P
                 <div className="h-2 rounded-full bg-surface-sunken overflow-hidden mb-3">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ease-out ${theme.bg}`}
-                    style={{ width: `${phase.rate}%` }}
+                    style={{
+                      width: mounted ? `${phase.rate}%` : '0%',
+                      transitionDelay: `${phaseIdx * 150}ms`,
+                    }}
                   />
                 </div>
                 {/* 항목별 미니 도트 */}
@@ -151,7 +173,12 @@ export function ProgressDashboard({ checklist, reviewData, setSelectedReqId }: P
         </div>
 
         {/* 하단: 상태별 분포 */}
-        <div className="grid grid-cols-4 gap-3">
+        <div
+          className={`grid grid-cols-4 gap-3 transition-all duration-500 ease-out ${
+            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+          }`}
+          style={{ transitionDelay: '450ms' }}
+        >
           <div className="rounded-xl bg-surface-raised border border-ln px-3 py-3 text-center">
             <div className="flex items-center justify-center mb-1.5">
               <CheckCircle2 size={14} className="text-emerald-600" />
