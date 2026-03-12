@@ -468,9 +468,9 @@ export function ScheduleWizard({ project, otherProjects, onSave, onClose }: Sche
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 flex min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
         {/* Left: item selection */}
-        <div className="w-[42%] shrink-0 border-r border-ln overflow-y-auto p-3 space-y-2">
+        <div className="w-full md:w-[42%] shrink-0 border-b md:border-b-0 md:border-r border-ln overflow-y-auto p-3 space-y-2">
           <DndContext sensors={sensors} collisionDetection={closestCorners}
             onDragStart={handleDragStart} onDragOver={handleDragOver}
             onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>

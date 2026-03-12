@@ -15,7 +15,7 @@ export function ProcessLayout({ header, sidebar, content, panel }: ProcessLayout
       {header && <div className="flex-none z-10">{header}</div>}
       <div className="flex-1 flex overflow-hidden">
         {hasSidebar && (
-          <aside className="w-[clamp(240px,20vw,320px)] flex-none border-r border-ln bg-surface-base overflow-y-auto">
+          <aside className="hidden md:block w-[clamp(240px,20vw,320px)] flex-none border-r border-ln bg-surface-base overflow-y-auto">
             {sidebar}
           </aside>
         )}
@@ -23,7 +23,7 @@ export function ProcessLayout({ header, sidebar, content, panel }: ProcessLayout
           <div className="mx-auto w-full max-w-none">{content}</div>
         </main>
         {hasPanel && (
-          <aside className="w-[clamp(280px,24vw,380px)] flex-none border-l border-ln bg-surface-base overflow-y-auto">
+          <aside className="hidden lg:block w-[clamp(280px,24vw,380px)] flex-none border-l border-ln bg-surface-base overflow-y-auto">
             {panel}
           </aside>
         )}

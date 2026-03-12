@@ -219,7 +219,7 @@ export function GlobalProcessHeader({
 
   return (
     <div className="sticky top-0 z-30 w-full">
-      <div className="relative flex h-16 items-center bg-surface-base px-6 text-tx-primary gap-4">
+      <div className="relative flex h-14 sm:h-16 items-center bg-surface-base px-3 sm:px-6 text-tx-primary gap-2 sm:gap-4">
         <div className="text-sm font-semibold flex items-center gap-2 min-w-0">
           <button
             type="button"
@@ -231,10 +231,10 @@ export function GlobalProcessHeader({
             <List size={16} />
           </button>
           <span className="font-extrabold text-tx-primary">{testNumber}</span>
-          <span className="text-tx-muted">|</span>
-          <span className="text-tx-secondary truncate">{projectName}</span>
-          <span className="text-tx-muted">|</span>
-          <span className="text-tx-tertiary truncate">{companyName}</span>
+          <span className="hidden sm:inline text-tx-muted">|</span>
+          <span className="hidden sm:inline text-tx-secondary truncate">{projectName}</span>
+          <span className="hidden md:inline text-tx-muted">|</span>
+          <span className="hidden md:inline text-tx-tertiary truncate">{companyName}</span>
         </div>
         {onNavigateStep && (
           <nav className="hidden md:flex items-center gap-0.5 rounded-lg bg-surface-sunken p-0.5 shrink-0">

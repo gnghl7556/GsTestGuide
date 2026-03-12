@@ -87,12 +87,12 @@ export function Header({
   return (
     <header className="mb-3 bg-surface-base px-3 py-2 rounded-xl border border-ln shadow-sm flex flex-col gap-2">
       {/* 1열: 타이틀 및 통계 */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap justify-between items-center gap-2">
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${theme.bg}`}><ShieldCheck className={`w-5 h-5 ${theme.text}`} /></div>
           <div><h1 className="text-lg font-bold text-tx-primary leading-tight">GS 시험 가이드</h1></div>
         </div>
-        <div className="flex items-center gap-2 text-xs font-medium">
+        <div className="flex items-center gap-2 text-xs font-medium flex-wrap">
           <span className="bg-status-pass-bg text-status-pass-text px-2 py-1 rounded border border-status-pass-border flex items-center gap-1"><CheckCircle2 size={12} /> {stats.verified}</span>
           <span className="bg-status-fail-bg text-status-fail-text px-2 py-1 rounded border border-status-fail-border flex items-center gap-1"><AlertCircle size={12} /> {stats.cannot}</span>
           <span className="bg-status-hold-bg text-status-hold-text px-2 py-1 rounded border border-status-hold-border flex items-center gap-1"><Clock size={12} /> {stats.hold}</span>

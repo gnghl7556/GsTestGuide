@@ -96,7 +96,7 @@ export function CheckpointEditor({
                     </span>
                   )}
                   {isDropdownOpen && (
-                    <div className="absolute z-30 left-0 top-full mt-1 w-72 max-h-64 overflow-y-auto rounded-lg border border-ln bg-surface-overlay shadow-lg">
+                    <div className="absolute z-30 left-0 top-full mt-1 w-72 max-w-[calc(100vw-2rem)] max-h-64 overflow-y-auto rounded-lg border border-ln bg-surface-overlay shadow-lg">
                       {groupedMaterials.map((group) => (
                         <div key={group.name}>
                           <div className="sticky top-0 px-3 py-1.5 text-[9px] font-bold text-tx-muted uppercase tracking-wider bg-surface-raised border-b border-ln">

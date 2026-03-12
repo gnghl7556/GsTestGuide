@@ -45,7 +45,7 @@ export function CalendarInput({ label, value, onChange }: CalendarInputProps) {
         {formatValue}
       </button>
       {open && (
-        <div className="absolute z-30 mt-2 w-64 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0b1230]/90 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.45)] p-3">
+        <div className="absolute z-30 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0b1230]/90 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.45)] p-3">
           <div className="flex items-center justify-between text-xs text-slate-600 dark:text-white/70 mb-2">
             <button
               type="button"
