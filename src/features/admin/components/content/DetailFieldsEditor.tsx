@@ -1,3 +1,4 @@
+import { Plus, X } from 'lucide-react';
 import type { EditingState } from './types';
 
 type DetailFieldsEditorProps = {
@@ -6,52 +7,101 @@ type DetailFieldsEditorProps = {
   originalReq: { evidenceExamples?: string[]; testSuggestions?: string[]; passCriteria?: string };
 };
 
+function ListFieldEditor({
+  label,
+  placeholder,
+  items,
+  originalItems,
+  onChange,
+}: {
+  label: string;
+  placeholder: string;
+  items: string[];
+  originalItems: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const changed = JSON.stringify(items.filter(s => s.trim())) !== JSON.stringify(originalItems);
+
+  const updateItem = (index: number, value: string) => {
+    const next = [...items];
+    next[index] = value;
+    onChange(next);
+  };
+
+  const removeItem = (index: number) => {
+    onChange(items.filter((_, i) => i !== index));
+  };
+
+  const addItem = () => {
+    onChange([...items, '']);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">{label}</label>
+        {changed && <span className="text-[9px] text-status-hold-text font-medium">원본과 다름</span>}
+      </div>
+      {items.length > 0 ? (
+        <div className="space-y-1.5">
+          {items.map((item, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <span className="shrink-0 text-[10px] font-bold text-tx-tertiary w-4 text-right">{i + 1}</span>
+              <input
+                className="flex-1 rounded border border-ln bg-surface-base px-2.5 py-1.5 text-xs text-tx-primary focus:border-accent focus:outline-none transition-colors"
+                value={item}
+                onChange={(e) => updateItem(i, e.target.value)}
+                placeholder={placeholder}
+              />
+              <button
+                type="button"
+                onClick={() => removeItem(i)}
+                className="shrink-0 rounded p-1 text-tx-muted hover:text-status-fail-text hover:bg-status-fail-bg transition-colors"
+                title="삭제"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[10px] text-tx-muted py-2">항목이 없습니다</p>
+      )}
+      <button
+        type="button"
+        onClick={addItem}
+        className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-semibold text-tx-muted hover:text-accent-text transition-colors px-1 py-0.5"
+      >
+        <Plus size={11} /> 항목 추가
+      </button>
+    </div>
+  );
+}
+
 export function DetailFieldsEditor({ editing, setEditing, originalReq }: DetailFieldsEditorProps) {
   return (
     <>
-      {/* Evidence Examples */}
-      <div>
-        <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">증빙 예시</label>
-        <p className="text-[9px] text-tx-muted mt-0.5 mb-1">줄바꿈으로 항목을 구분합니다</p>
-        <textarea
-          className="w-full rounded border border-ln bg-surface-base px-3 py-2 text-xs text-tx-primary resize-y min-h-[60px]"
-          value={editing.evidenceExamples.join('\n')}
-          onChange={(e) => setEditing({
-            ...editing,
-            evidenceExamples: e.target.value ? e.target.value.split('\n') : [],
-          })}
-          rows={3}
-          placeholder="예: 테스트 결과 보고서 캡처"
-        />
-        {JSON.stringify(editing.evidenceExamples) !== JSON.stringify(originalReq.evidenceExamples ?? []) && (
-          <p className="mt-0.5 text-[9px] text-tx-muted">원본과 다름</p>
-        )}
-      </div>
+      <ListFieldEditor
+        label="증빙 예시"
+        placeholder="예: 테스트 결과 보고서 캡처"
+        items={editing.evidenceExamples}
+        originalItems={originalReq.evidenceExamples ?? []}
+        onChange={(next) => setEditing({ ...editing, evidenceExamples: next })}
+      />
 
-      {/* Test Suggestions */}
-      <div>
-        <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">테스트 제안</label>
-        <p className="text-[9px] text-tx-muted mt-0.5 mb-1">줄바꿈으로 항목을 구분합니다</p>
-        <textarea
-          className="w-full rounded border border-ln bg-surface-base px-3 py-2 text-xs text-tx-primary resize-y min-h-[60px]"
-          value={editing.testSuggestions.join('\n')}
-          onChange={(e) => setEditing({
-            ...editing,
-            testSuggestions: e.target.value ? e.target.value.split('\n') : [],
-          })}
-          rows={3}
-          placeholder="예: 기능 테스트 시나리오 작성"
-        />
-        {JSON.stringify(editing.testSuggestions) !== JSON.stringify(originalReq.testSuggestions ?? []) && (
-          <p className="mt-0.5 text-[9px] text-tx-muted">원본과 다름</p>
-        )}
-      </div>
+      <ListFieldEditor
+        label="테스트 제안"
+        placeholder="예: 기능 테스트 시나리오 작성"
+        items={editing.testSuggestions}
+        originalItems={originalReq.testSuggestions ?? []}
+        onChange={(next) => setEditing({ ...editing, testSuggestions: next })}
+      />
 
-      {/* Pass Criteria */}
+      {/* Pass Criteria — 단일 값이므로 텍스트영역 유지 */}
       <div>
         <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">판정 기준</label>
         <textarea
-          className="mt-1 w-full rounded border border-ln bg-surface-base px-3 py-2 text-xs text-tx-primary resize-y min-h-[40px]"
+          className="mt-1 w-full rounded border border-ln bg-surface-base px-3 py-2 text-xs text-tx-primary resize-y min-h-[40px] focus:border-accent focus:outline-none transition-colors"
           value={editing.passCriteria}
           onChange={(e) => setEditing({ ...editing, passCriteria: e.target.value })}
           rows={2}

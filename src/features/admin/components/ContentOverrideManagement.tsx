@@ -276,13 +276,13 @@ export function ContentOverrideManagement() {
     if (Object.keys(detailDiffs).length > 0) patch.checkpointDetails = detailDiffs;
 
     const origEvidence = req.evidenceExamples ?? [];
-    const editedEvidence = editing.evidenceExamples;
+    const editedEvidence = editing.evidenceExamples.filter(s => s.trim());
     if (JSON.stringify(editedEvidence) !== JSON.stringify(origEvidence)) {
       patch.evidenceExamples = editedEvidence;
     }
 
     const origSuggestions = req.testSuggestions ?? [];
-    const editedSuggestions = editing.testSuggestions;
+    const editedSuggestions = editing.testSuggestions.filter(s => s.trim());
     if (JSON.stringify(editedSuggestions) !== JSON.stringify(origSuggestions)) {
       patch.testSuggestions = editedSuggestions;
     }
