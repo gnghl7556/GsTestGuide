@@ -1,8 +1,9 @@
-import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle, EllipsisVertical, AlertCircle } from 'lucide-react';
+import { Building2, LogOut, User, List, Mail, Phone, Sun, Moon, RotateCcw, Calendar, CheckCircle, EllipsisVertical, AlertCircle, BookOpen } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { ConfirmModal } from '../ui/ConfirmModal';
 import type { FinalizeSummary } from '../../providers/ExecutionToolbarContext';
+import { GuideModal } from '../../features/guide/components/GuideModal';
 
 export type GlobalProjectInfo = {
   testNumber?: string;
@@ -197,6 +198,7 @@ export function GlobalProcessHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [finalizeConfirmOpen, setFinalizeConfirmOpen] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
   const companyPanelRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const testNumber = safeValue(projectInfo?.testNumber);
@@ -240,27 +242,36 @@ export function GlobalProcessHeader({
           <span className="hidden md:inline text-tx-tertiary truncate">{companyName}</span>
         </div>
         {onNavigateStep && (
-          <nav className="hidden md:flex items-center gap-0.5 rounded-lg bg-surface-sunken p-0.5 shrink-0">
-            {([
-              { step: 2, label: '참고 가이드' },
-              { step: 3, label: '점검' },
-              { step: 4, label: '리포트' },
-            ] as const).map(({ step, label }) => (
-              <button
-                key={step}
-                type="button"
-                onClick={() => onNavigateStep(step)}
-                className={`rounded-md px-3 py-1 text-[11px] font-semibold transition-all ${
-                  currentStep === step
-                    ? 'bg-surface-base text-tx-primary shadow-sm'
-                    : 'text-tx-tertiary hover:text-tx-secondary'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          <nav className="hidden md:flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowGuideModal(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-ln bg-surface-base px-2.5 py-1 text-[11px] font-semibold text-tx-tertiary hover:text-tx-primary hover:bg-surface-raised transition-colors"
+            >
+              <BookOpen size={12} />
+              참고 가이드
+            </button>
+            <div className="flex items-center gap-0.5 rounded-lg bg-surface-sunken p-0.5">
+              {([
+                { step: 3, label: '점검' },
+              ] as const).map(({ step, label }) => (
+                <button
+                  key={step}
+                  type="button"
+                  onClick={() => onNavigateStep(step)}
+                  className={`rounded-md px-3 py-1 text-[11px] font-semibold transition-all ${
+                    currentStep === step
+                      ? 'bg-surface-base text-tx-primary shadow-sm'
+                      : 'text-tx-tertiary hover:text-tx-secondary'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </nav>
         )}
+        <GuideModal open={showGuideModal} onClose={() => setShowGuideModal(false)} />
         {projectInfo && <DdayBadge info={projectInfo} />}
         <div className="flex-1 min-w-0" />
         {rightSlot && (
