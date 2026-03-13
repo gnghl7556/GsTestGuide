@@ -539,100 +539,101 @@ export function CenterDisplay({
                 </div>
               </div>
             )}
-            {/* 아코디언 토글 — 상세 참고 */}
-            <div className="mt-6 -mx-6 border-t border-ln">
-              <button
-                type="button"
-                onClick={() => setDetailOpen(prev => !prev)}
-                className="w-full flex items-center justify-between px-6 py-3 text-xs font-bold text-tx-muted hover:text-tx-secondary transition-colors"
-              >
-                <span>상세 참고</span>
-                <ChevronDown className={`transition-transform duration-200 ${detailOpen ? 'rotate-180' : ''}`} size={14} />
-              </button>
-              <div
-                className="grid transition-all duration-300 ease-out"
-                style={{ gridTemplateRows: detailOpen ? '1fr' : '0fr' }}
-              >
-                <div className="overflow-hidden">
-                  <div className="bg-surface-sunken/60 px-6 pb-4">
-                    <TabGroup
-                      tabs={[
-                        { id: 'guide', label: '가이드' },
-                        ...(hasEvidence ? [{ id: 'evidence', label: '증빙 안내' }] : []),
-                        ...(hasCriteria ? [{ id: 'criteria', label: '판정 기준' }] : []),
-                      ]}
-                      activeId={effectiveTab}
-                      onChange={(id) => setActiveTab(id as 'guide' | 'evidence' | 'criteria')}
-                    />
-                    <div role="tabpanel" className="pt-4 space-y-4">
-                      {effectiveTab === 'guide' && (
-                        <>
-                          {activeItem.description && (
-                            <div>
-                              <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">설명</div>
-                              <p className="text-sm text-tx-tertiary leading-loose">{activeItem.description}</p>
-                            </div>
-                          )}
-                          {!activeItem.description && !activeItem.testSuggestions?.length && (
-                            <p className="text-sm text-tx-muted py-4">이 항목에 대한 추가 가이드가 없습니다.</p>
-                          )}
-                          {activeItem.testSuggestions && activeItem.testSuggestions.length > 0 && (
-                            <div>
-                              <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">테스트 제안</div>
-                              <div className="space-y-1.5">
-                                {activeItem.testSuggestions.map((suggestion, i) => (
-                                  <div key={`test-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
-                                    <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
-                                    <span className="text-sm text-tx-tertiary leading-relaxed">{suggestion}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {effectiveTab === 'evidence' && hasEvidence && (
-                        <>
-                          <div>
-                            <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">증빙 예시</div>
-                            <div className="space-y-1.5">
-                              {activeItem.evidenceExamples!.map((example, i) => (
-                                <div key={`ev-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
-                                  <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
-                                  <span className="text-sm text-tx-tertiary leading-relaxed">{example}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          {refItems.length > 0 && (
-                            <div>
-                              <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">참조 문서</div>
-                              <div className="flex flex-wrap gap-1.5">
-                                {refItems.map((doc, i) => (
-                                  <button key={`tab-ref-${i}`} type="button" onClick={() => handleDocClick(doc)} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-surface-sunken border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors">
-                                    {doc.kind === 'external' ? <ExternalLink size={11} /> : <FileDown size={11} />}
-                                    {doc.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {effectiveTab === 'criteria' && hasCriteria && (
-                        <div className="rounded-lg border border-status-pass-border bg-status-pass-bg px-4 py-3.5 text-status-pass-text">
-                          <div className="text-xs font-bold mb-2 uppercase tracking-wide">합격 기준</div>
-                          <p className="text-sm leading-relaxed">{activeItem.passCriteria}</p>
+          </div>
+        )}
+      </div>
+      {!isNA && activeItem && (
+        <div className="shrink-0 border-t border-ln">
+          <button
+            type="button"
+            onClick={() => setDetailOpen(prev => !prev)}
+            className="w-full flex items-center justify-between px-6 py-3 text-xs font-bold text-tx-muted hover:text-tx-secondary transition-colors"
+          >
+            <span>상세 참고</span>
+            <ChevronDown className={`transition-transform duration-200 ${detailOpen ? 'rotate-180' : ''}`} size={14} />
+          </button>
+          <div
+            className="grid transition-all duration-300 ease-out"
+            style={{ gridTemplateRows: detailOpen ? '1fr' : '0fr' }}
+          >
+            <div className="overflow-hidden">
+              <div className="max-h-[40vh] overflow-y-auto bg-surface-sunken/60 px-6 pb-4">
+                <TabGroup
+                  tabs={[
+                    { id: 'guide', label: '가이드' },
+                    ...(hasEvidence ? [{ id: 'evidence', label: '증빙 안내' }] : []),
+                    ...(hasCriteria ? [{ id: 'criteria', label: '판정 기준' }] : []),
+                  ]}
+                  activeId={effectiveTab}
+                  onChange={(id) => setActiveTab(id as 'guide' | 'evidence' | 'criteria')}
+                />
+                <div role="tabpanel" className="pt-4 space-y-4">
+                  {effectiveTab === 'guide' && (
+                    <>
+                      {activeItem.description && (
+                        <div>
+                          <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">설명</div>
+                          <p className="text-sm text-tx-tertiary leading-loose">{activeItem.description}</p>
                         </div>
                       )}
+                      {!activeItem.description && !activeItem.testSuggestions?.length && (
+                        <p className="text-sm text-tx-muted py-4">이 항목에 대한 추가 가이드가 없습니다.</p>
+                      )}
+                      {activeItem.testSuggestions && activeItem.testSuggestions.length > 0 && (
+                        <div>
+                          <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">테스트 제안</div>
+                          <div className="space-y-1.5">
+                            {activeItem.testSuggestions.map((suggestion, i) => (
+                              <div key={`test-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
+                                <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
+                                <span className="text-sm text-tx-tertiary leading-relaxed">{suggestion}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {effectiveTab === 'evidence' && hasEvidence && (
+                    <>
+                      <div>
+                        <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">증빙 예시</div>
+                        <div className="space-y-1.5">
+                          {activeItem.evidenceExamples!.map((example, i) => (
+                            <div key={`ev-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
+                              <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
+                              <span className="text-sm text-tx-tertiary leading-relaxed">{example}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {refItems.length > 0 && (
+                        <div>
+                          <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">참조 문서</div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {refItems.map((doc, i) => (
+                              <button key={`tab-ref-${i}`} type="button" onClick={() => handleDocClick(doc)} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-surface-sunken border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors">
+                                {doc.kind === 'external' ? <ExternalLink size={11} /> : <FileDown size={11} />}
+                                {doc.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {effectiveTab === 'criteria' && hasCriteria && (
+                    <div className="rounded-lg border border-status-pass-border bg-status-pass-bg px-4 py-3.5 text-status-pass-text">
+                      <div className="text-xs font-bold mb-2 uppercase tracking-wide">합격 기준</div>
+                      <p className="text-sm leading-relaxed">{activeItem.passCriteria}</p>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       {selectedDoc && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-backdrop)] p-6"
