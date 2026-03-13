@@ -28,7 +28,7 @@ export function GuideModal({ open, onClose }: GuideModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-stretch bg-[var(--overlay-backdrop)] p-3"
+      className="fixed inset-0 z-50 flex items-stretch bg-black/80 p-3"
       onClick={onClose}
     >
       <div
