@@ -459,6 +459,25 @@ export function CenterDisplay({
                           </div>
                         </div>
                       </div>
+                      {/* 증빙 예시 — 활성 질문에만 표시 */}
+                      <div
+                        className="grid transition-all duration-300 ease-out"
+                        style={{ gridTemplateRows: !disabled && hasEvidence && (isCurrent || isKbFocused) ? '1fr' : '0fr' }}
+                      >
+                        <div className="overflow-hidden">
+                          <div className="pt-2 pl-9">
+                            <div className="border-l-2 border-ln-strong/40 pl-3 space-y-1">
+                              <span className="text-[10px] font-bold text-tx-muted uppercase tracking-wide">증빙 예시</span>
+                              {activeItem.evidenceExamples!.map((example, ei) => (
+                                <div key={`ev-${ei}`} className="flex items-start gap-2">
+                                  <span className="text-tx-muted/60 mt-[3px] shrink-0 text-[8px]">●</span>
+                                  <span className="text-xs text-tx-tertiary leading-relaxed">{example}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       {/* 분기 규칙 시각화: 건너뜀 대상 표시 */}
                       {(() => {
                         const triggered = getTriggeredSkips(index);
@@ -488,19 +507,6 @@ export function CenterDisplay({
                 </div>
               )}
             </div>
-            {hasEvidence && (
-              <div className="mt-5">
-                <div className="text-xs font-bold text-tx-secondary mb-2.5 tracking-wide">증빙 예시</div>
-                <div className="space-y-1.5">
-                  {activeItem.evidenceExamples!.map((example, i) => (
-                    <div key={`ev-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3 py-2.5">
-                      <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
-                      <span className="text-[13px] text-tx-tertiary leading-relaxed">{example}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
             {contacts.length > 0 && (
               <div className="mt-6">
                 <div className="text-xs font-bold text-tx-secondary mb-2.5 tracking-wide">담당자</div>
