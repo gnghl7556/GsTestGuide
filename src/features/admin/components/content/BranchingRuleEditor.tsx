@@ -79,7 +79,7 @@ export function BranchingRuleEditor({
                   <div
                     className={`relative z-10 mt-1 w-2.5 h-2.5 rounded-full shrink-0 border ${
                       isSource
-                        ? 'bg-amber-500 border-amber-400'
+                        ? 'bg-status-hold-text border-status-hold-border'
                         : isSkipped
                           ? 'bg-surface-base border-dashed border-tx-muted'
                           : 'bg-accent border-accent'
@@ -97,7 +97,7 @@ export function BranchingRuleEditor({
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-bold shrink-0">Q{i + 1}</span>
                       {isSource && (
-                        <span className="px-1.5 py-px rounded text-[8px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                        <span className="px-1.5 py-px rounded text-[8px] font-bold bg-status-hold-bg text-status-hold-text">
                           분기
                         </span>
                       )}
@@ -109,7 +109,7 @@ export function BranchingRuleEditor({
                       <span className={`truncate ${isSkipped ? 'opacity-50' : ''}`}>{label}</span>
                     </div>
                     {isSource && info.skips.length > 0 && (
-                      <p className="mt-0.5 text-[9px] text-amber-600 dark:text-amber-400">
+                      <p className="mt-0.5 text-[9px] text-status-hold-text">
                         NO → {info.skips.map((s) => `Q${s + 1}`).join(', ')} 건너뜀
                       </p>
                     )}
@@ -149,7 +149,7 @@ export function BranchingRuleEditor({
                     title={cpLabels[i]}
                     className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
                       isSkipped
-                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-500/30'
+                        ? 'bg-status-hold-bg text-status-hold-text border-status-hold-border'
                         : 'bg-surface-base text-tx-muted border-ln hover:border-ln-strong'
                     }`}
                   >
@@ -166,7 +166,7 @@ export function BranchingRuleEditor({
             <button
               type="button"
               onClick={() => onRemove(ruleIdx)}
-              className="shrink-0 rounded p-1 text-tx-muted hover:text-red-500"
+              className="shrink-0 rounded p-1 text-tx-muted hover:text-danger"
             >
               <X size={14} />
             </button>

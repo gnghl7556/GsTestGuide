@@ -48,7 +48,7 @@ export function AdminLayout() {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-admin-sidebar-item-text hover:bg-admin-sidebar-active-bg hover:text-red-400"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-admin-sidebar-item-text hover:bg-admin-sidebar-active-bg hover:text-danger"
           >
             <LogOut size={14} />
             관리자 나가기

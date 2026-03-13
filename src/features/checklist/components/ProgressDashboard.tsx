@@ -149,15 +149,15 @@ export function ProgressDashboard({ checklist, reviewData, setSelectedReqId }: P
                         className="group relative"
                       >
                         {status === 'Verified' ? (
-                          <span className="h-5 w-5 rounded-full bg-green-500 text-white inline-flex items-center justify-center group-hover:scale-125 transition-transform">
+                          <span className="h-5 w-5 rounded-full bg-status-pass-text text-white inline-flex items-center justify-center group-hover:scale-125 transition-transform">
                             <Check size={10} />
                           </span>
                         ) : status === 'Cannot_Verify' ? (
-                          <span className="h-5 w-5 rounded-full bg-red-500 text-white inline-flex items-center justify-center group-hover:scale-125 transition-transform">
+                          <span className="h-5 w-5 rounded-full bg-status-fail-text text-white inline-flex items-center justify-center group-hover:scale-125 transition-transform">
                             <X size={10} />
                           </span>
                         ) : status === 'Hold' ? (
-                          <span className="h-5 w-5 rounded-full bg-yellow-400 text-white inline-flex items-center justify-center group-hover:scale-125 transition-transform">
+                          <span className="h-5 w-5 rounded-full bg-status-hold-text text-white inline-flex items-center justify-center group-hover:scale-125 transition-transform">
                             <span className="text-[10px] font-bold leading-none">-</span>
                           </span>
                         ) : (
@@ -181,23 +181,23 @@ export function ProgressDashboard({ checklist, reviewData, setSelectedReqId }: P
         >
           <div className="rounded-xl bg-surface-raised border border-ln px-3 py-3 text-center">
             <div className="flex items-center justify-center mb-1.5">
-              <CheckCircle2 size={14} className="text-emerald-600" />
+              <CheckCircle2 size={14} className="text-status-pass-text" />
             </div>
-            <div className="text-xl font-extrabold text-emerald-600">{stats.pass}</div>
+            <div className="text-xl font-extrabold text-status-pass-text">{stats.pass}</div>
             <div className="text-[10px] text-tx-tertiary font-medium mt-0.5">적합</div>
           </div>
           <div className="rounded-xl bg-surface-raised border border-ln px-3 py-3 text-center">
             <div className="flex items-center justify-center mb-1.5">
-              <AlertCircle size={14} className="text-red-500" />
+              <AlertCircle size={14} className="text-status-fail-text" />
             </div>
-            <div className="text-xl font-extrabold text-red-500">{stats.fail}</div>
+            <div className="text-xl font-extrabold text-status-fail-text">{stats.fail}</div>
             <div className="text-[10px] text-tx-tertiary font-medium mt-0.5">부적합</div>
           </div>
           <div className="rounded-xl bg-surface-raised border border-ln px-3 py-3 text-center">
             <div className="flex items-center justify-center mb-1.5">
-              <Clock size={14} className="text-yellow-600" />
+              <Clock size={14} className="text-status-hold-text" />
             </div>
-            <div className="text-xl font-extrabold text-yellow-600">{stats.hold}</div>
+            <div className="text-xl font-extrabold text-status-hold-text">{stats.hold}</div>
             <div className="text-[10px] text-tx-tertiary font-medium mt-0.5">보류</div>
           </div>
           <div className="rounded-xl bg-surface-raised border border-ln px-3 py-3 text-center">

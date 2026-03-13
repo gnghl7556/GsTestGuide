@@ -355,12 +355,12 @@ export function TestSetupPage({
         className="pointer-events-none absolute inset-0 blur-[120px] opacity-40 dark:opacity-70 bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-pink-400/10 dark:from-blue-600/30 dark:via-purple-600/30 dark:to-pink-600/20"
         aria-hidden="true"
       />
-      <div className="relative w-full max-w-7xl rounded-3xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/10 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-10 text-slate-900 dark:text-white">
+      <div className="relative w-full max-w-7xl rounded-3xl border border-ln bg-surface-overlay backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.35)] p-10 text-tx-primary">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
             GS 인증 시험 시작
           </h1>
-          <p className="mt-2 text-sm text-slate-500 dark:text-white/60">GS 인증 시험 시작을 확인하고 시작하세요</p>
+          <p className="mt-2 text-sm text-tx-tertiary">GS 인증 시험 시작을 확인하고 시작하세요</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
@@ -369,27 +369,27 @@ export function TestSetupPage({
             {/* 1단계: 사용자 선택 */}
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm text-slate-600 dark:text-white/70 block">
+                <label className="text-sm text-tx-secondary block">
                   <span className="mr-2 inline-flex rounded-md border border-sky-400/40 dark:border-sky-300/40 bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-sky-700 dark:text-sky-100">1단계</span>
                   사용자 선택
                 </label>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.user ? 'border-emerald-400/50 dark:border-emerald-300/50 text-emerald-600 dark:text-emerald-200' : 'border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/50'}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.user ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
                   {sectionDone.user ? '완료' : '미완료'}
                 </span>
               </div>
               {users.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/5 p-4">
-                  <p className="text-xs text-slate-500 dark:text-white/60">
+                <div className="rounded-xl border border-dashed border-ln-strong bg-surface-sunken p-4">
+                  <p className="text-xs text-tx-tertiary">
                     등록된 사용자가 없습니다. 먼저 사용자 등록이 필요합니다.
                   </p>
                 </div>
               ) : (
-                <div className="h-11 flex items-center gap-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                  <User size={16} className="text-slate-400 dark:text-white/50" />
+                <div className="h-11 flex items-center gap-2 bg-surface-sunken border border-ln rounded-xl px-3 focus-within:ring-2 focus-within:ring-accent/60">
+                  <User size={16} className="text-tx-muted" />
                   <select
                     value={currentUserId}
                     onChange={(e) => onChangeUserId(e.target.value)}
-                    className="h-full bg-transparent w-full text-sm text-slate-700 dark:text-white/80 focus:outline-none"
+                    className="h-full bg-transparent w-full text-sm text-tx-secondary focus:outline-none"
                   >
                     <option value="" className="text-gray-900">선택하세요</option>
                     {users.map((user) => (
@@ -404,7 +404,7 @@ export function TestSetupPage({
                 <button
                   type="button"
                   onClick={() => setCreateUserOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-white/20 bg-slate-200/50 dark:bg-white/10 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-white/80 hover:bg-slate-300/50 dark:hover:bg-white/20"
+                  className="inline-flex items-center gap-2 rounded-lg border border-ln-strong bg-interactive-bg px-3 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover"
                 >
                   <User size={14} />
                   사용자 추가
@@ -413,7 +413,7 @@ export function TestSetupPage({
                   <button
                     type="button"
                     onClick={() => setManageUsersOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/5 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-200 dark:hover:bg-white/15"
+                    className="inline-flex items-center gap-2 rounded-lg border border-ln-strong bg-surface-sunken px-3 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover"
                   >
                     사용자 관리
                   </button>
@@ -425,20 +425,20 @@ export function TestSetupPage({
             {flowMode === 'create' && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm text-slate-600 dark:text-white/70 block">
+                <label className="text-sm text-tx-secondary block">
                   <span className="mr-2 inline-flex rounded-md border border-sky-400/40 dark:border-sky-300/40 bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-sky-700 dark:text-sky-100">3단계</span>
                   담당 PL 선택
                 </label>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.pl ? 'border-emerald-400/50 dark:border-emerald-300/50 text-emerald-600 dark:text-emerald-200' : 'border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/50'}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.pl ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
                   {sectionDone.pl ? '완료' : '미완료'}
                 </span>
               </div>
-              <div className="h-11 flex items-center gap-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                <Building2 size={16} className="text-slate-400 dark:text-white/50" />
+              <div className="h-11 flex items-center gap-2 bg-surface-sunken border border-ln rounded-xl px-3 focus-within:ring-2 focus-within:ring-accent/60">
+                <Building2 size={16} className="text-tx-muted" />
                 <select
                   value={plId}
                   onChange={(e) => onChangePlId(e.target.value)}
-                  className="h-full bg-transparent w-full text-sm text-slate-700 dark:text-white/80 focus:outline-none"
+                  className="h-full bg-transparent w-full text-sm text-tx-secondary focus:outline-none"
                 >
                   <option value="" className="text-gray-900">선택하세요</option>
                   {plDirectory.map((pl) => (
@@ -454,11 +454,11 @@ export function TestSetupPage({
             {flowMode === 'create' && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm text-slate-600 dark:text-white/70 block">
+                <label className="text-sm text-tx-secondary block">
                   <span className="mr-2 inline-flex rounded-md border border-sky-400/40 dark:border-sky-300/40 bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-sky-700 dark:text-sky-100">4단계</span>
                   시험 일정 입력
                 </label>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.schedule ? 'border-emerald-400/50 dark:border-emerald-300/50 text-emerald-600 dark:text-emerald-200' : 'border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/50'}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.schedule ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
                   {sectionDone.schedule ? '완료' : '미완료'}
                 </span>
               </div>
@@ -473,12 +473,12 @@ export function TestSetupPage({
             {flowMode === 'existing' && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm text-slate-600 dark:text-white/70 block">
+                <label className="text-sm text-tx-secondary block">
                   <span className="mr-2 inline-flex rounded-md border border-sky-400/40 dark:border-sky-300/40 bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-sky-700 dark:text-sky-100">2단계</span>
                   시험 선택
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full border border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/50">탐색</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full border border-ln-strong text-tx-muted">탐색</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -486,15 +486,15 @@ export function TestSetupPage({
                       onChangeTestNumber('');
                       setFlowMode('create');
                     }}
-                    className="text-[10px] px-2 py-0.5 rounded-full border border-slate-300 dark:border-white/20 text-slate-500 dark:text-white/60 hover:text-slate-900 dark:hover:text-white"
+                    className="text-[10px] px-2 py-0.5 rounded-full border border-ln-strong text-tx-tertiary hover:text-tx-primary"
                   >
                     선택 해제
                   </button>
                 </div>
               </div>
-              <div className="relative rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 p-3">
-                <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-white/50 mb-2">
-                  <List size={14} className="text-slate-400 dark:text-white/50" />
+              <div className="relative rounded-2xl border border-ln bg-surface-sunken p-3">
+                <div className="flex items-center gap-2 text-[11px] text-tx-muted mb-2">
+                  <List size={14} className="text-tx-muted" />
                   최근 작업 시험
                 </div>
                 {featuredProject ? (
@@ -505,18 +505,18 @@ export function TestSetupPage({
                     }}
                     className={`w-full rounded-2xl border px-4 py-4 text-left transition cursor-pointer ${
                       featuredProject.status === '완료'
-                        ? 'opacity-60 border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60'
+                        ? 'opacity-60 border-ln bg-surface-sunken text-tx-tertiary'
                         : trimmedTestNumber === featuredProject.testNumber
-                          ? 'border-purple-400/80 bg-purple-50 dark:bg-white/15 text-slate-900 dark:text-white shadow-[0_0_30px_rgba(124,58,237,0.2)] dark:shadow-[0_0_30px_rgba(124,58,237,0.35)]'
-                          : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-white/80 hover:border-slate-300 dark:hover:border-white/20'
+                          ? 'border-accent bg-accent-subtle text-tx-primary shadow-[0_0_30px_rgba(124,58,237,0.2)] dark:shadow-[0_0_30px_rgba(124,58,237,0.35)]'
+                          : 'border-ln bg-surface-base text-tx-secondary hover:border-ln-strong'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="text-[11px] text-slate-400 dark:text-white/50 mb-1">시험번호</div>
+                        <div className="text-[11px] text-tx-muted mb-1">시험번호</div>
                         <div className="text-lg font-semibold tracking-wide">{featuredProject.testNumber}</div>
                         {(featuredProject.projectName || featuredProject.productName || featuredProject.companyName) && (
-                          <div className="mt-1 text-sm text-slate-600 dark:text-white/70 truncate" title={`${featuredProject.projectName || featuredProject.productName || '-'}${featuredProject.companyName ? ` (${featuredProject.companyName})` : ''}`}>
+                          <div className="mt-1 text-sm text-tx-secondary truncate" title={`${featuredProject.projectName || featuredProject.productName || '-'}${featuredProject.companyName ? ` (${featuredProject.companyName})` : ''}`}>
                             {featuredProject.projectName || featuredProject.productName || '-'}
                             {featuredProject.companyName ? ` (${featuredProject.companyName})` : ''}
                           </div>
@@ -525,7 +525,7 @@ export function TestSetupPage({
                       <div className="flex flex-col items-end gap-1.5">
                         <div className="flex items-center gap-1.5">
                           {featuredProject.status === '완료' && (
-                            <span className="inline-flex items-center rounded-full border border-slate-300 dark:border-white/20 bg-slate-200 dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:text-white/50">
+                            <span className="inline-flex items-center rounded-full border border-ln-strong bg-interactive-bg px-2 py-0.5 text-[10px] font-semibold text-tx-muted">
                               완료
                             </span>
                           )}
@@ -535,7 +535,7 @@ export function TestSetupPage({
                               e.stopPropagation();
                               setTestDetailProject(featuredProject);
                             }}
-                            className="rounded-md border border-slate-300 dark:border-white/20 bg-slate-200/50 dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-300/50 dark:hover:bg-white/20 transition"
+                            className="rounded-md border border-ln-strong bg-interactive-bg px-2 py-0.5 text-[10px] font-semibold text-tx-secondary hover:bg-interactive-hover transition"
                           >
                             상세
                           </button>
@@ -552,17 +552,17 @@ export function TestSetupPage({
                             </button>
                           )}
                         </div>
-                        <div className="text-right text-[11px] text-slate-400 dark:text-white/50 whitespace-nowrap">
+                        <div className="text-right text-[11px] text-tx-muted whitespace-nowrap">
                           최근 수정 · {formatDate(featuredProject.updatedAt)}
                         </div>
                       </div>
                     </div>
-                    <div className="mt-3 flex items-center gap-3 text-[11px] text-slate-500 dark:text-white/60">
-                      <span className="rounded-full border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-2 py-1">
+                    <div className="mt-3 flex items-center gap-3 text-[11px] text-tx-tertiary">
+                      <span className="rounded-full border border-ln bg-surface-sunken px-2 py-1">
                         진행율 {featuredProject.progress}%
                       </span>
                     </div>
-                    <div className="mt-2 h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                    <div className="mt-2 h-2 rounded-full bg-interactive-bg overflow-hidden">
                       <div
                         className={`h-full transition-all duration-500 ${
                           featuredProject.status === '완료'
@@ -574,13 +574,13 @@ export function TestSetupPage({
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-dashed border-slate-300 dark:border-white/15 bg-slate-100 dark:bg-white/5 px-4 py-6 text-center text-xs text-slate-400 dark:text-white/40">
+                  <div className="rounded-xl border border-dashed border-ln-strong bg-surface-sunken px-4 py-6 text-center text-xs text-tx-muted">
                     현재 할당된 시험이 없습니다.
                   </div>
                 )}
                 {otherProjects.length > 0 && (
                   <div className="mt-4">
-                    <div className="text-[11px] text-slate-400 dark:text-white/50 mb-2">최근 수정 순</div>
+                    <div className="text-[11px] text-tx-muted mb-2">최근 수정 순</div>
                     <div className="flex items-stretch gap-2">
                       {recentSideProjects.map((project) => {
                         const isActive = trimmedTestNumber === project.testNumber;
@@ -594,17 +594,17 @@ export function TestSetupPage({
                             }}
                             className={`flex-1 rounded-xl border px-3 py-3 text-left text-sm transition cursor-pointer ${
                               isCompleted
-                                ? 'opacity-60 border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-white/60'
+                                ? 'opacity-60 border-ln bg-surface-sunken text-tx-tertiary'
                                 : isActive
-                                  ? 'border-purple-400/70 bg-purple-50 dark:bg-white/15 text-slate-900 dark:text-white shadow-[0_0_20px_rgba(124,58,237,0.15)] dark:shadow-[0_0_20px_rgba(124,58,237,0.25)]'
-                                  : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-white/70 hover:border-slate-300 dark:hover:border-white/20'
+                                  ? 'border-accent bg-accent-subtle text-tx-primary shadow-[0_0_20px_rgba(124,58,237,0.15)] dark:shadow-[0_0_20px_rgba(124,58,237,0.25)]'
+                                  : 'border-ln bg-surface-base text-tx-secondary hover:border-ln-strong'
                             }`}
                           >
                             <div className="flex items-center justify-between mb-1">
-                              <div className="text-xs text-slate-400 dark:text-white/50">시험번호</div>
+                              <div className="text-xs text-tx-muted">시험번호</div>
                               <div className="flex items-center gap-1">
                                 {isCompleted && (
-                                  <span className="inline-flex rounded-full border border-slate-300 dark:border-white/20 bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 text-[9px] font-semibold text-slate-500 dark:text-white/50">
+                                  <span className="inline-flex rounded-full border border-ln-strong bg-interactive-bg px-1.5 py-0.5 text-[9px] font-semibold text-tx-muted">
                                     완료
                                   </span>
                                 )}
@@ -614,7 +614,7 @@ export function TestSetupPage({
                                     e.stopPropagation();
                                     setTestDetailProject(project);
                                   }}
-                                  className="rounded-md border border-slate-300 dark:border-white/20 bg-slate-200/50 dark:bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-white/70 hover:bg-slate-300/50 dark:hover:bg-white/20 transition"
+                                  className="rounded-md border border-ln-strong bg-interactive-bg px-1.5 py-0.5 text-[10px] font-semibold text-tx-secondary hover:bg-interactive-hover transition"
                                 >
                                   상세
                                 </button>
@@ -633,11 +633,11 @@ export function TestSetupPage({
                               </div>
                             </div>
                             <div className="font-semibold tracking-wide">{project.testNumber}</div>
-                            <div className="mt-1 text-sm text-slate-600 dark:text-white/70 truncate" title={`${project.projectName || project.productName || '-'}${project.companyName ? ` (${project.companyName})` : ''}`}>
+                            <div className="mt-1 text-sm text-tx-secondary truncate" title={`${project.projectName || project.productName || '-'}${project.companyName ? ` (${project.companyName})` : ''}`}>
                               {project.projectName || project.productName || '-'}
                               {project.companyName ? ` (${project.companyName})` : ''}
                             </div>
-                            <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 dark:text-white/50">
+                            <div className="mt-2 flex items-center justify-between text-[11px] text-tx-muted">
                               <span>진행율 {project.progress}%</span>
                               <span>{formatDate(project.updatedAt)}</span>
                             </div>
@@ -648,7 +648,7 @@ export function TestSetupPage({
                         <button
                           type="button"
                           onClick={() => setProjectListOpen(true)}
-                          className="w-9 shrink-0 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-white/70 hover:border-slate-300 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white"
+                          className="w-9 shrink-0 rounded-xl border border-ln bg-surface-sunken text-tx-secondary hover:border-ln-strong hover:text-tx-primary"
                           aria-label="다른 시험 보기"
                           title="다른 시험 보기"
                         >
@@ -661,8 +661,8 @@ export function TestSetupPage({
                 {!currentUserId && (
                   <div className="absolute inset-0 z-10 rounded-2xl bg-[var(--overlay-backdrop)] backdrop-blur-[2px] flex items-center justify-center text-center px-4">
                     <div>
-                      <div className="text-sm font-semibold text-slate-800 dark:text-white/90">사용자 선택 필요</div>
-                      <div className="mt-1 text-xs text-slate-500 dark:text-white/60">
+                      <div className="text-sm font-semibold text-tx-primary">사용자 선택 필요</div>
+                      <div className="mt-1 text-xs text-tx-tertiary">
                         시험 목록은 사용자 선택 후 확인할 수 있습니다.
                       </div>
                     </div>
@@ -679,18 +679,18 @@ export function TestSetupPage({
             {flowMode === 'create' && (
             <div className="mb-2">
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm text-slate-600 dark:text-white/70 block">
+                <label className="text-sm text-tx-secondary block">
                   <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">2단계</span>
                   시험 번호 입력 후 저장
                 </label>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.testNumber ? 'border-emerald-400/50 dark:border-emerald-300/50 text-emerald-600 dark:text-emerald-200' : 'border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/50'}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.testNumber ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
                   {sectionDone.testNumber ? '완료' : '미완료'}
                 </span>
               </div>
-              <div className="h-11 flex items-center gap-2 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 focus-within:ring-2 focus-within:ring-purple-500/60">
-                <List size={16} className="text-slate-400 dark:text-white/50" />
+              <div className="h-11 flex items-center gap-2 bg-surface-sunken border border-ln rounded-xl px-3 focus-within:ring-2 focus-within:ring-accent/60">
+                <List size={16} className="text-tx-muted" />
                 <input
-                  className="h-full bg-transparent w-full text-sm text-slate-700 dark:text-white/80 placeholder:text-slate-400 dark:placeholder:text-white/40 focus:outline-none"
+                  className="h-full bg-transparent w-full text-sm text-tx-secondary placeholder:text-input-placeholder focus:outline-none"
                   placeholder="예: GS-A-25-0226"
                   value={trimmedTestNumber}
                   onChange={(e) => {
@@ -723,8 +723,8 @@ export function TestSetupPage({
                     disabled={!canSaveTestNumberValidated}
                     className={`text-[11px] font-semibold px-2 py-1 rounded-md border ${
                       canSaveTestNumberValidated
-                        ? 'border-purple-400/60 dark:border-purple-300/60 bg-purple-500/20 text-purple-700 dark:text-white hover:bg-purple-500/30'
-                        : 'border-slate-200 dark:border-white/10 text-slate-300 dark:text-white/30 cursor-not-allowed'
+                        ? 'border-accent bg-accent-subtle text-accent-text hover:bg-accent-subtle'
+                        : 'border-ln text-tx-muted cursor-not-allowed'
                     }`}
                   >
                     저장
@@ -734,7 +734,7 @@ export function TestSetupPage({
               {testNumberValidation.touched && (
                 <div
                   className={`mt-2 text-xs ${
-                    testNumberValidation.isValid ? 'text-emerald-300' : 'text-rose-300'
+                    testNumberValidation.isValid ? 'text-status-pass-text' : 'text-status-fail-text'
                   }`}
                 >
                   {testNumberValidation.message}
@@ -747,18 +747,18 @@ export function TestSetupPage({
             {flowMode === 'create' && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm text-slate-600 dark:text-white/70 block">
+                <label className="text-sm text-tx-secondary block">
                   <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">5단계</span>
                   시험 합의서 업로드
                 </label>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.agreement ? 'border-emerald-400/50 dark:border-emerald-300/50 text-emerald-600 dark:text-emerald-200' : 'border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/50'}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.agreement ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
                   {sectionDone.agreement ? '완료' : '미완료'}
                 </span>
               </div>
-              <div className="min-h-[230px] border border-slate-200 dark:border-white/10 rounded-2xl bg-slate-100 dark:bg-white/5 flex flex-col items-center justify-center gap-3 relative overflow-hidden">
-                <UploadCloud size={28} className="text-slate-500 dark:text-white/60" />
-                <div className="text-sm font-semibold text-slate-700 dark:text-white/80">시험 합의서</div>
-                <div className="text-xs text-slate-400 dark:text-white/50">드래그 파일을 업로드하세요.</div>
+              <div className="min-h-[230px] border border-ln rounded-2xl bg-surface-sunken flex flex-col items-center justify-center gap-3 relative overflow-hidden">
+                <UploadCloud size={28} className="text-tx-tertiary" />
+                <div className="text-sm font-semibold text-tx-secondary">시험 합의서</div>
+                <div className="text-xs text-tx-muted">드래그 파일을 업로드하세요.</div>
                 <label className="absolute inset-0 cursor-pointer">
                   <input
                     type="file"
@@ -778,13 +778,13 @@ export function TestSetupPage({
                 </label>
                 {agreementParsed?.parseStatus && (
                   <div className="absolute top-3 right-3 flex items-center gap-2">
-                    <div className="rounded-full border border-slate-200 dark:border-white/10 bg-slate-200/50 dark:bg-white/10 px-3 py-1 text-[10px] text-slate-600 dark:text-white/70">
+                    <div className="rounded-full border border-ln bg-interactive-bg px-3 py-1 text-[10px] text-tx-secondary">
                       {statusLabel}
                     </div>
                     <button
                       type="button"
                       onClick={() => setAgreementDeleteConfirmOpen(true)}
-                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-white/10 bg-slate-200/50 dark:bg-white/10 px-2 py-1 text-[10px] font-semibold text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white"
+                      className="inline-flex items-center gap-1 rounded-full border border-ln bg-interactive-bg px-2 py-1 text-[10px] font-semibold text-tx-secondary hover:text-tx-primary"
                       title="시험 합의서 삭제"
                       aria-label="시험 합의서 삭제"
                     >
@@ -793,11 +793,11 @@ export function TestSetupPage({
                   </div>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
-                  <div className="text-xs text-slate-400 dark:text-white/50 mb-1 flex justify-between">
+                  <div className="text-xs text-tx-muted mb-1 flex justify-between">
                     <span>{agreementParsed?.parseStatus === 'pending' ? '분석 중' : '대기'}</span>
                     <span>{hasAgreementDoc ? '업로드됨' : '미업로드'}</span>
                   </div>
-                  <div className="h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                  <div className="h-2 rounded-full bg-interactive-bg overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-500"
                       style={{ width: agreementParsed?.parseStatus === 'pending' ? '60%' : '20%' }}
@@ -814,15 +814,15 @@ export function TestSetupPage({
                 {!currentUserId && (
                   <div className="absolute inset-0 z-10 rounded-2xl bg-[var(--overlay-backdrop)] backdrop-blur-[2px] flex items-center justify-center text-center px-4">
                     <div>
-                      <div className="text-sm font-semibold text-slate-800 dark:text-white/90">사용자 선택 필요</div>
-                      <div className="mt-1 text-xs text-slate-500 dark:text-white/60">
+                      <div className="text-sm font-semibold text-tx-primary">사용자 선택 필요</div>
+                      <div className="mt-1 text-xs text-tx-tertiary">
                         시험 일정 확인은 사용자 선택 후 가능합니다.
                       </div>
                     </div>
                   </div>
                 )}
                 <div className="mb-2 flex items-center justify-between">
-                  <div className="text-sm text-slate-600 dark:text-white/70">
+                  <div className="text-sm text-tx-secondary">
                     <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">
                       3단계
                     </span>
@@ -834,13 +834,13 @@ export function TestSetupPage({
             ) : (
               <div className="mt-5 relative">
                 <div className="mb-2 flex items-center justify-between">
-                  <div className="text-sm text-slate-600 dark:text-white/70">
+                  <div className="text-sm text-tx-secondary">
                     <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">
                       6단계
                     </span>
                     시험 정보 입력
                   </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.info ? 'border-emerald-400/50 dark:border-emerald-300/50 text-emerald-600 dark:text-emerald-200' : 'border-slate-300 dark:border-white/20 text-slate-400 dark:text-white/50'}`}>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.info ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
                     {sectionDone.info ? '완료' : '미완료'}
                   </span>
                 </div>
@@ -878,7 +878,7 @@ export function TestSetupPage({
                     }
                     setFlowMode('existing');
                   }}
-                  className="w-full max-w-xs rounded-xl border border-slate-300 dark:border-white/20 bg-slate-200/50 dark:bg-white/10 px-4 py-3 text-sm font-semibold text-slate-700 dark:text-white/80 transition hover:bg-slate-300/50 dark:hover:bg-white/20"
+                  className="w-full max-w-xs rounded-xl border border-ln-strong bg-interactive-bg px-4 py-3 text-sm font-semibold text-tx-secondary transition hover:bg-interactive-hover"
                 >
                   {flowMode === 'existing' ? '+ 시험 생성' : '시험 생성 닫기'}
                 </button>
@@ -915,7 +915,7 @@ export function TestSetupPage({
                 </button>
               </div>
               {!canProceed && (
-                <div className="text-xs text-slate-500 dark:text-white/60">
+                <div className="text-xs text-tx-tertiary">
                   필수 입력: {missingFields.join(', ')}
                 </div>
               )}

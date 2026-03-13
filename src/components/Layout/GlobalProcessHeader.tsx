@@ -279,7 +279,7 @@ export function GlobalProcessHeader({
             <button
               type="button"
               onClick={() => setFinalizeConfirmOpen(true)}
-              className="inline-flex items-center gap-1.5 h-9 rounded-lg border border-emerald-400 dark:border-emerald-500 bg-emerald-500 dark:bg-emerald-600 px-2.5 text-[11px] font-semibold text-white hover:bg-emerald-600 dark:hover:bg-emerald-500 transition-colors"
+              className="inline-flex items-center gap-1.5 h-9 rounded-lg border border-status-pass-border bg-status-pass-text px-2.5 text-[11px] font-semibold text-white hover:brightness-110 transition-colors"
               title="검토 완료"
             >
               <CheckCircle size={14} />
@@ -398,22 +398,22 @@ export function GlobalProcessHeader({
                   <div className="text-[10px] text-tx-tertiary">점검 대상</div>
                 </div>
                 <div className="rounded-lg bg-surface-sunken px-3 py-2 text-center">
-                  <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">{finalizeSummary.pass}</div>
+                  <div className="text-base font-extrabold text-status-pass-text">{finalizeSummary.pass}</div>
                   <div className="text-[10px] text-tx-tertiary flex items-center justify-center gap-0.5"><CheckCircle size={9} /> 적합</div>
                 </div>
                 <div className="rounded-lg bg-surface-sunken px-3 py-2 text-center">
-                  <div className="text-base font-extrabold text-rose-600 dark:text-rose-400">{finalizeSummary.fail}</div>
+                  <div className="text-base font-extrabold text-status-fail-text">{finalizeSummary.fail}</div>
                   <div className="text-[10px] text-tx-tertiary flex items-center justify-center gap-0.5"><AlertCircle size={9} /> 부적합</div>
                 </div>
                 <div className="rounded-lg bg-surface-sunken px-3 py-2 text-center">
-                  <div className="text-base font-extrabold text-amber-600 dark:text-amber-400">{finalizeSummary.hold}</div>
+                  <div className="text-base font-extrabold text-status-hold-text">{finalizeSummary.hold}</div>
                   <div className="text-[10px] text-tx-tertiary">보류</div>
                 </div>
               </div>
               {finalizeSummary.none > 0 && (
-                <div className="flex items-center gap-1.5 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-3 py-2">
-                  <AlertCircle size={13} className="text-amber-500 shrink-0" />
-                  <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">미완료 {finalizeSummary.none}건이 남아있습니다</span>
+                <div className="flex items-center gap-1.5 rounded-lg bg-status-hold-bg border border-status-hold-border px-3 py-2">
+                  <AlertCircle size={13} className="text-status-hold-text shrink-0" />
+                  <span className="text-[11px] text-status-hold-text font-medium">미완료 {finalizeSummary.none}건이 남아있습니다</span>
                 </div>
               )}
               {finalizeSummary.total !== finalizeSummary.applicable && (

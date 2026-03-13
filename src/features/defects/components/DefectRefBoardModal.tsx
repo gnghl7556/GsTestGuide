@@ -13,25 +13,25 @@ type DefectItem = (typeof DEFECT_REFERENCES)[keyof typeof DEFECT_REFERENCES][num
 const SEVERITY_CONFIG: Record<Severity, { label: string; color: string; icon: typeof AlertTriangle }> = {
   H: {
     label: 'High — 치명적 결함',
-    color: 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10',
+    color: 'text-status-fail-text border-status-fail-border bg-status-fail-bg',
     icon: AlertTriangle,
   },
   M: {
     label: 'Medium — 주요 결함',
-    color: 'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10',
+    color: 'text-status-hold-text border-status-hold-border bg-status-hold-bg',
     icon: AlertCircle,
   },
   L: {
     label: 'Low — 경미한 결함',
-    color: 'text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10',
+    color: 'text-accent-text border-accent bg-accent-subtle',
     icon: Info,
   },
 };
 
 const SEVERITY_BADGE: Record<Severity, string> = {
-  H: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/25',
-  M: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/25',
-  L: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/25',
+  H: 'bg-status-fail-bg text-status-fail-text border-status-fail-border',
+  M: 'bg-status-hold-bg text-status-hold-text border-status-hold-border',
+  L: 'bg-accent-subtle text-accent-text border-accent',
 };
 
 function groupBySeverity(items: DefectItem[]) {
@@ -140,7 +140,7 @@ export function DefectRefBoardModal({ open, onClose }: DefectRefBoardModalProps)
                   return (
                     <span key={s} className="flex items-center gap-1">
                       <span className={`inline-block h-2 w-2 rounded-full ${
-                        s === 'H' ? 'bg-red-500' : s === 'M' ? 'bg-amber-500' : 'bg-blue-500'
+                        s === 'H' ? 'bg-status-fail-text' : s === 'M' ? 'bg-status-hold-text' : 'bg-accent'
                       }`} />
                       {SEVERITY_CONFIG[s].label.split('—')[0].trim()} {count}
                     </span>

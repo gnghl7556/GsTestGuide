@@ -132,19 +132,19 @@ export function ChecklistView({
               <div className="text-[10px] text-tx-tertiary font-medium">점검 항목</div>
             </div>
             <div className="rounded-lg bg-surface-base/80 px-3 py-2 text-center">
-              <div className="text-lg font-extrabold text-emerald-600">{finalizedStats.pass}</div>
+              <div className="text-lg font-extrabold text-status-pass-text">{finalizedStats.pass}</div>
               <div className="text-[10px] text-tx-tertiary font-medium flex items-center justify-center gap-1">
                 <CheckCircle2 size={10} /> 적합
               </div>
             </div>
             <div className="rounded-lg bg-surface-base/80 px-3 py-2 text-center">
-              <div className="text-lg font-extrabold text-red-500">{finalizedStats.fail}</div>
+              <div className="text-lg font-extrabold text-status-fail-text">{finalizedStats.fail}</div>
               <div className="text-[10px] text-tx-tertiary font-medium flex items-center justify-center gap-1">
                 <AlertCircle size={10} /> 부적합
               </div>
             </div>
             <div className="rounded-lg bg-surface-base/80 px-3 py-2 text-center">
-              <div className="text-lg font-extrabold text-yellow-600">{finalizedStats.hold}</div>
+              <div className="text-lg font-extrabold text-status-hold-text">{finalizedStats.hold}</div>
               <div className="text-[10px] text-tx-tertiary font-medium flex items-center justify-center gap-1">
                 <Clock size={10} /> 보류
               </div>

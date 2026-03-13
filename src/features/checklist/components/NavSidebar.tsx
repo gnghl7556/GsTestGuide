@@ -225,21 +225,21 @@ export function NavSidebar({
                         }
                         if (status === 'Verified') {
                           return (
-                            <span key={item.id} className="h-3 w-3 rounded-full bg-green-500 text-white inline-flex items-center justify-center" aria-label="적합">
+                            <span key={item.id} className="h-3 w-3 rounded-full bg-status-pass-text text-white inline-flex items-center justify-center" aria-label="적합">
                               <Check size={8} />
                             </span>
                           );
                         }
                         if (status === 'Cannot_Verify') {
                           return (
-                            <span key={item.id} className="h-3 w-3 rounded-full bg-red-500 text-white inline-flex items-center justify-center" aria-label="불가">
+                            <span key={item.id} className="h-3 w-3 rounded-full bg-status-fail-text text-white inline-flex items-center justify-center" aria-label="불가">
                               <X size={8} />
                             </span>
                           );
                         }
                         if (status === 'Hold') {
                           return (
-                            <span key={item.id} className="h-3 w-3 rounded-full bg-yellow-400 text-white inline-flex items-center justify-center" aria-label="보류">
+                            <span key={item.id} className="h-3 w-3 rounded-full bg-status-hold-text text-white inline-flex items-center justify-center" aria-label="보류">
                               <span className="text-[10px] font-bold leading-none">–</span>
                             </span>
                           );
@@ -263,11 +263,11 @@ export function NavSidebar({
                     const status = reviewData[item.id]?.status ?? 'None';
                     const statusIcon =
                       status === 'Verified' ? (
-                        <CheckCircle2 size={12} className="text-emerald-600" />
+                        <CheckCircle2 size={12} className="text-status-pass-text" />
                       ) : status === 'Cannot_Verify' ? (
-                        <AlertCircle size={12} className="text-red-500" />
+                        <AlertCircle size={12} className="text-status-fail-text" />
                       ) : status === 'Hold' ? (
-                        <Clock size={12} className="text-yellow-600" />
+                        <Clock size={12} className="text-status-hold-text" />
                       ) : (
                         <Circle size={10} className="text-tx-muted" />
                       );
@@ -316,10 +316,10 @@ export function NavSidebar({
                                             key={`${item.id}-mini-${q.id}`}
                                             title={q.text}
                                             className={`inline-block h-2 w-2 rounded-full ${
-                                              answer === 'YES' ? 'bg-emerald-500'
-                                              : answer === 'NO' ? 'bg-red-500'
-                                              : answer === 'NA' ? 'bg-yellow-400'
-                                              : 'bg-gray-300 dark:bg-white/15'
+                                              answer === 'YES' ? 'bg-status-pass-text'
+                                              : answer === 'NO' ? 'bg-status-fail-text'
+                                              : answer === 'NA' ? 'bg-status-hold-text'
+                                              : 'bg-surface-sunken'
                                             }`}
                                           />
                                         );

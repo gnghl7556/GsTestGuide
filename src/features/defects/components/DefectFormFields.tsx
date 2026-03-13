@@ -41,7 +41,7 @@ const ButtonGroup = <T extends string>({
   options,
   value,
   onChange,
-  activeClass = 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300',
+  activeClass = 'border-accent bg-accent-subtle text-accent-text',
   disabled
 }: {
   options: { value: T; label: string }[];
@@ -60,7 +60,7 @@ const ButtonGroup = <T extends string>({
         className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
           value === opt.value
             ? activeClass
-            : 'border-ln text-tx-tertiary hover:border-ln-strong dark:border-ln dark:text-tx-muted'
+            : 'border-ln text-tx-tertiary hover:border-ln-strong'
         } ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
       >
         {opt.label}
@@ -115,7 +115,7 @@ export function DefectFormFields({
           options={SEVERITY_OPTIONS}
           value={values.severity}
           onChange={(v) => onChange('severity', v)}
-          activeClass="border-red-400 bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300"
+          activeClass="border-status-fail-border bg-status-fail-bg text-status-fail-text"
           disabled={disabled}
         />
       </div>
@@ -127,7 +127,7 @@ export function DefectFormFields({
           options={FREQUENCY_OPTIONS}
           value={values.frequency}
           onChange={(v) => onChange('frequency', v)}
-          activeClass="border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+          activeClass="border-status-hold-border bg-status-hold-bg text-status-hold-text"
           disabled={disabled}
         />
       </div>
@@ -144,8 +144,8 @@ export function DefectFormFields({
               onClick={() => onChange('qualityCharacteristic', q)}
               className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
                 values.qualityCharacteristic === q
-                  ? 'border-blue-400 bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
-                  : 'border-ln text-tx-tertiary hover:border-ln-strong dark:border-ln dark:text-tx-muted'
+                  ? 'border-accent bg-accent-subtle text-accent-text'
+                  : 'border-ln text-tx-tertiary hover:border-ln-strong'
               } ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
             >
               {q}

@@ -661,8 +661,8 @@ export function MaterialManagement() {
                 <td className="px-4 py-3">
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
                     d.kind === 'external'
-                      ? 'bg-sky-50 text-sky-600 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/20'
-                      : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+                      ? 'bg-accent-subtle text-accent-text border-accent'
+                      : 'bg-status-pass-bg text-status-pass-text border-status-pass-border'
                   }`}>
                     {d.kind === 'external' ? 'External' : 'File'}
                   </span>
@@ -701,8 +701,8 @@ export function MaterialManagement() {
         onCancel={() => setDeleteTarget(null)}
         busy={busy}
         icon={
-          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-red-50 dark:bg-red-500/10 shrink-0">
-            <AlertTriangle size={20} className="text-red-500" />
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-danger-subtle shrink-0">
+            <AlertTriangle size={20} className="text-danger" />
           </div>
         }
       />

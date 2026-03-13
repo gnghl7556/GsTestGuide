@@ -120,7 +120,7 @@ export function ChangeHistoryModal({ reqId, reqTitle, onClose }: ChangeHistoryMo
                     <div className="flex items-center gap-2">
                       <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
                         entry.action === 'reset'
-                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
+                          ? 'bg-status-hold-bg text-status-hold-text'
                           : 'bg-accent-subtle text-accent-text'
                       }`}>
                         {entry.action === 'reset' ? '초기화' : '수정'}
@@ -135,11 +135,11 @@ export function ChangeHistoryModal({ reqId, reqTitle, onClose }: ChangeHistoryMo
                       <div key={i} className="px-3 py-2 space-y-1">
                         <div className="text-[10px] font-semibold text-tx-tertiary">{getFieldLabel(change.field)}</div>
                         <div className="flex items-start gap-1.5 text-[11px]">
-                          <span className="rounded bg-rose-50 dark:bg-rose-500/10 px-1.5 py-0.5 text-rose-600 dark:text-rose-400 line-through flex-1 min-w-0 break-words">
+                          <span className="rounded bg-danger-subtle px-1.5 py-0.5 text-danger-text line-through flex-1 min-w-0 break-words">
                             {truncate(change.before || '(비어있음)', 100)}
                           </span>
                           <ArrowRight size={12} className="text-tx-muted shrink-0 mt-0.5" />
-                          <span className="rounded bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 text-emerald-600 dark:text-emerald-400 flex-1 min-w-0 break-words">
+                          <span className="rounded bg-status-pass-bg px-1.5 py-0.5 text-status-pass-text flex-1 min-w-0 break-words">
                             {truncate(change.after || '(비어있음)', 100)}
                           </span>
                         </div>

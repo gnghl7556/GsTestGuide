@@ -20,9 +20,9 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   const confirmCls =
     confirmVariant === 'success'
-      ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
+      ? 'bg-status-pass-text hover:opacity-90 text-white'
       : confirmVariant === 'warning'
-        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+        ? 'bg-status-hold-text hover:opacity-90 text-white'
         : 'bg-danger hover:bg-danger-hover text-white';
 
   const handleClose = () => { if (!busy) onCancel(); };

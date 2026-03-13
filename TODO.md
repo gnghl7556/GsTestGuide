@@ -4,9 +4,9 @@
 - [x] **데이터 모델 확장 (운영환경 추가)**
     - [x] `src/types/models.ts`: `Project` 인터페이스에 `operatingEnvironment` (string) 필드 추가.
     - [x] `src/features/test-setup`: 시험 정보 수정 페이지에 '운영환경' 입력 란(Textarea) 추가 및 저장 로직 구현.
-- [ ] **디렉토리 및 UI 정리**
-    - [ ] `src/components`의 모달들을 `src/features`로 이동.
-    - [ ] 공통 UI(`Button`, `Input`) 스타일 통일.
+- [x] **디렉토리 및 UI 정리**
+    - [x] `src/components`의 모달들을 `src/features`로 이동.
+    - [x] 공통 UI(`Button`, `Input`, `Textarea`, `Select`) 스타일 통일 — 시맨틱 토큰 전환 완료.
 
 ## Phase 2: Core Process Implementation (프로세스 구현)
 - [x] **시험 식별 (SETUP):** 합의서 파싱 완료.

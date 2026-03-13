@@ -38,9 +38,9 @@ function StatusButton({
     (recommendation === 'FAIL' && type === 'Cannot_Verify') ||
     (recommendation === 'HOLD' && type === 'Hold');
   const recommendClass: Record<ReviewData['status'], string> = {
-    Verified: 'border-2 border-green-400 shadow-[0_0_8px_rgba(34,197,94,0.25)]',
-    Cannot_Verify: 'border-2 border-red-400 shadow-[0_0_8px_rgba(239,68,68,0.25)]',
-    Hold: 'border-2 border-yellow-400 shadow-[0_0_8px_rgba(245,158,11,0.25)]',
+    Verified: 'border-2 border-status-pass-border shadow-[0_0_8px_rgba(34,197,94,0.25)]',
+    Cannot_Verify: 'border-2 border-status-fail-border shadow-[0_0_8px_rgba(239,68,68,0.25)]',
+    Hold: 'border-2 border-status-hold-border shadow-[0_0_8px_rgba(245,158,11,0.25)]',
     None: 'border-2 border-ln-strong'
   };
 
@@ -90,7 +90,7 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
           </div>
         </div>
         {!canReview && (
-          <div className="mb-2 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2 py-1 rounded-md">
+          <div className="mb-2 text-[10px] font-semibold text-status-hold-text bg-status-hold-bg border border-status-hold-border px-2 py-1 rounded-md">
             답변을 모두 입력한 후 판정할 수 있습니다.
           </div>
         )}
@@ -104,7 +104,7 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
             type="Verified"
             label="적합"
             icon={Check}
-            activeClass="bg-green-600 border-green-600 text-white shadow-sm"
+            activeClass="bg-status-pass-text border-status-pass-text text-white shadow-sm"
             isDisabled={isDisabled}
             currentStatus={currentReview.status}
             recommendation={recommendation}
@@ -114,7 +114,7 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
             type="Cannot_Verify"
             label="불가"
             icon={AlertCircle}
-            activeClass="bg-red-50 dark:bg-red-500/15 border-red-500 text-red-600 dark:text-red-400"
+            activeClass="bg-status-fail-bg border-status-fail-border text-status-fail-text"
             isDisabled={isDisabled}
             currentStatus={currentReview.status}
             recommendation={recommendation}
@@ -124,7 +124,7 @@ export function RightActionPanel({ activeItem, reviewData, updateReviewData, evi
             type="Hold"
             label="보류"
             icon={Clock}
-            activeClass="bg-yellow-50 dark:bg-yellow-500/15 border-yellow-500 text-yellow-700 dark:text-yellow-400"
+            activeClass="bg-status-hold-bg border-status-hold-border text-status-hold-text"
             isDisabled={isDisabled}
             currentStatus={currentReview.status}
             recommendation={recommendation}

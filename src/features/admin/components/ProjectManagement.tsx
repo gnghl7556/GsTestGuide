@@ -13,7 +13,7 @@ const STATUS_COLORS: Record<ProjectStatus, string> = {
   '진행': 'bg-accent-subtle text-accent-text',
   '중단': 'bg-status-hold-bg text-status-hold-text',
   '완료': 'bg-status-pass-bg text-status-pass-text',
-  '재시험': 'bg-purple-100 text-purple-700',
+  '재시험': 'bg-accent-subtle text-accent-text',
 };
 
 export function ProjectManagement() {

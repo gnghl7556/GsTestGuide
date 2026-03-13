@@ -423,7 +423,7 @@ export function ContentOverrideManagement() {
             type="button"
             onClick={() => setResetAllConfirm(true)}
             disabled={busy}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-40 transition-colors"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-danger bg-danger-subtle px-3 py-1.5 text-xs font-semibold text-danger-text hover:opacity-80 disabled:opacity-40 transition-colors"
           >
             <Trash2 size={13} />
             전체 초기화
@@ -488,7 +488,7 @@ export function ContentOverrideManagement() {
                             {getDisplayValue(req.id, 'title')}
                           </span>
                           {modified && (
-                            <span className="shrink-0 inline-flex items-center gap-1 text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded">
+                            <span className="shrink-0 inline-flex items-center gap-1 text-[9px] font-bold text-status-hold-text bg-status-hold-bg px-1.5 py-0.5 rounded">
                               수정됨
                               {(() => {
                                 const ts = formatOverrideTime(overrides[req.id]?.updatedAt);
@@ -517,7 +517,7 @@ export function ContentOverrideManagement() {
                             <button
                               onClick={() => setResetTarget(req.id)}
                               disabled={busy}
-                              className="rounded p-1.5 text-tx-muted hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 disabled:opacity-40"
+                              className="rounded p-1.5 text-tx-muted hover:text-status-hold-text hover:bg-status-hold-bg disabled:opacity-40"
                               title="원본으로 되돌리기" aria-label="원본으로 되돌리기"
                             >
                               <RotateCcw size={14} />
@@ -549,8 +549,8 @@ export function ContentOverrideManagement() {
         onCancel={() => setResetTarget(null)}
         busy={busy}
         icon={
-          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-amber-50 dark:bg-amber-500/10 shrink-0">
-            <AlertTriangle size={20} className="text-amber-500" />
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-status-hold-bg shrink-0">
+            <AlertTriangle size={20} className="text-status-hold-text" />
           </div>
         }
       />
@@ -570,8 +570,8 @@ export function ContentOverrideManagement() {
         onCancel={() => setResetAllConfirm(false)}
         busy={busy}
         icon={
-          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-red-50 dark:bg-red-500/10 shrink-0">
-            <AlertTriangle size={20} className="text-red-500" />
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-danger-subtle shrink-0">
+            <AlertTriangle size={20} className="text-danger" />
           </div>
         }
       />

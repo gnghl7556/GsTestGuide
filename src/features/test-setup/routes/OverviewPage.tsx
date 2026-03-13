@@ -31,7 +31,7 @@ export function OverviewPage() {
         <button
           type="button"
           onClick={toggleTheme}
-          className="inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-white/20 bg-white/80 dark:bg-white/10 backdrop-blur-sm w-9 h-9 text-slate-500 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-white/40 hover:bg-white dark:hover:bg-white/15 transition-all"
+          className="inline-flex items-center justify-center rounded-lg border border-ln-strong bg-surface-overlay backdrop-blur-sm w-9 h-9 text-tx-tertiary hover:text-tx-primary hover:border-ln-strong hover:bg-interactive-hover transition-all"
           aria-label={theme === 'dark' ? '라이트 모드' : '다크 모드'}
           title={theme === 'dark' ? '라이트 모드' : '다크 모드'}
         >
@@ -40,7 +40,7 @@ export function OverviewPage() {
         <button
           type="button"
           onClick={() => setAdminModalOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-white/20 bg-white/80 dark:bg-white/10 backdrop-blur-sm px-3 py-2 text-xs font-semibold text-slate-500 dark:text-white/60 hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-white/40 hover:bg-white dark:hover:bg-white/15 transition-all"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-ln-strong bg-surface-overlay backdrop-blur-sm px-3 py-2 text-xs font-semibold text-tx-tertiary hover:text-tx-primary hover:border-ln-strong hover:bg-interactive-hover transition-all"
           aria-label="관리자 페이지"
           title="관리자 페이지"
         >

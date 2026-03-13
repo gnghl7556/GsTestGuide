@@ -64,9 +64,9 @@ export function CheckpointEditor({
                     })}
                     className={`shrink-0 px-2 py-1.5 rounded text-[10px] font-bold transition-colors ${
                       currentImportance === 'MUST'
-                        ? 'bg-red-500/15 text-red-600 dark:text-red-400'
-                        : 'bg-slate-500/10 text-slate-500 dark:text-slate-400'
-                    } ${importanceChanged ? 'ring-1 ring-amber-400' : ''}`}
+                        ? 'bg-danger-subtle text-danger-text'
+                        : 'bg-surface-sunken text-tx-tertiary'
+                    } ${importanceChanged ? 'ring-1 ring-status-hold-border' : ''}`}
                     title={`클릭하여 ${currentImportance === 'MUST' ? 'SHOULD' : 'MUST'}로 변경`}
                   >
                     {currentImportance}
