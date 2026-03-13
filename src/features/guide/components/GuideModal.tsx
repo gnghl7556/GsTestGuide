@@ -28,11 +28,11 @@ export function GuideModal({ open, onClose }: GuideModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-stretch bg-black p-3"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
       onClick={onClose}
     >
       <div
-        className="w-full h-full rounded-xl border border-ln bg-surface-overlay shadow-2xl flex flex-col overflow-hidden"
+        className="w-full max-w-4xl max-h-[75vh] rounded-xl border border-ln bg-surface-overlay shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
