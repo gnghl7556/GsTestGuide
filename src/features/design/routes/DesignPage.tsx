@@ -1,15 +1,19 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GuideView } from '../components/GuideView';
 import { ProcessLayout } from '../../../components/Layout/ProcessLayout';
 import { GlobalProcessHeader } from '../../../components/Layout/GlobalProcessHeader';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
-import { guideContent } from '../data/guideContent';
+import { useGuides } from '../../../hooks/useGuides';
+import { GuideListSidebar } from '../../guide/components/GuideListSidebar';
+import { WritingGuideContent } from '../../guide/components/WritingGuideContent';
 
 export function DesignPage() {
   const navigate = useNavigate();
   const { testSetup } = useTestSetupContext();
-  const [activeGuideId, setActiveGuideId] = useState(guideContent[0].id);
+  const guides = useGuides({ category: 'writing' });
+  const [activeGuideId, setActiveGuideId] = useState<string | null>(guides[0]?.id ?? null);
+
+  const activeGuide = guides.find((g) => g.id === activeGuideId) ?? guides[0] ?? null;
 
   const projectInfo = {
     testNumber: testSetup.testNumber,
@@ -38,28 +42,22 @@ export function DesignPage() {
       <ProcessLayout
         header={<GlobalProcessHeader currentStep={2} projectInfo={projectInfo} onNavigateStep={handleNavigateStep} />}
         sidebar={(
-          <div className="p-4 space-y-1 text-sm text-tx-secondary">
-            <div className="text-[10px] font-bold text-tx-muted uppercase tracking-wider px-2 mb-2">가이드</div>
-            {guideContent.map((section) => (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => setActiveGuideId(section.id)}
-                className={`w-full rounded-lg px-3 py-2 text-left text-xs transition-colors flex items-center gap-2 ${
-                  activeGuideId === section.id
-                    ? 'bg-accent-subtle text-accent-text font-semibold'
-                    : 'text-tx-secondary hover:bg-interactive-hover'
-                }`}
-              >
-                <span className="text-sm leading-none">{section.icon}</span>
-                <span className="truncate">{section.title}</span>
-              </button>
-            ))}
-          </div>
+          <GuideListSidebar
+            guides={guides}
+            activeGuideId={activeGuide?.id ?? null}
+            onSelectGuide={setActiveGuideId}
+            showCategoryLabels={false}
+          />
         )}
         content={(
           <div className="h-full">
-            <GuideView initialSectionId={activeGuideId} />
+            {activeGuide ? (
+              <WritingGuideContent guide={activeGuide} />
+            ) : (
+              <div className="h-full flex items-center justify-center p-6">
+                <p className="text-sm text-tx-muted">가이드를 선택해주세요.</p>
+              </div>
+            )}
           </div>
         )}
       />

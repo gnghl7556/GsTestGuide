@@ -1,4 +1,4 @@
-import type { Plugin } from 'vite';
+import type { Plugin, ModuleNode } from 'vite';
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
@@ -280,6 +280,47 @@ function generateRulesModule(rootDir: string): string {
   return `export const EXECUTION_GATE_CONFIG = ${JSON.stringify(config, null, 2)};`;
 }
 
+function generateGuidesModule(rootDir: string): string {
+  const guidesDir = path.join(rootDir, CONTENT_DIR, 'guides');
+  const files = readContentFiles(guidesDir);
+
+  const items = files.map((file) => {
+    const { data, content } = matter(file.content);
+    if (!data.id) return null;
+
+    const sections = extractSections(content);
+    const category = (data.category as string) || 'reference';
+
+    const guide: Record<string, unknown> = {
+      id: data.id as string,
+      title: (data.title as string) ?? '',
+      category,
+      icon: (data.icon as string) ?? '',
+      description: (data.description as string) ?? '',
+      order: (data.order as number) ?? 99,
+      sections: sections.map(s => ({ heading: s.heading, content: s.content })),
+    };
+
+    if (category === 'reference') {
+      guide.checkPoints = parseCheckboxList(
+        findSection(sections, '체크포인트')?.content ?? ''
+      );
+      guide.tip = findSection(sections, 'TIP')?.content?.trim() ?? '';
+    }
+
+    return guide;
+  }).filter(Boolean);
+
+  items.sort((a, b) => {
+    const ag = a as Record<string, unknown>;
+    const bg = b as Record<string, unknown>;
+    if (ag.category !== bg.category) return ag.category === 'reference' ? -1 : 1;
+    return ((ag.order as number) ?? 99) - ((bg.order as number) ?? 99);
+  });
+
+  return `export const GUIDES = ${JSON.stringify(items, null, 2)};`;
+}
+
 function generateReferencesModule(rootDir: string): string {
   const refsDir = path.join(rootDir, CONTENT_DIR, 'references');
   const files = readContentFiles(refsDir);
@@ -327,6 +368,9 @@ export function contentPlugin(): Plugin {
       if (id === '\0virtual:content/references') {
         return generateReferencesModule(rootDir);
       }
+      if (id === '\0virtual:content/guides') {
+        return generateGuidesModule(rootDir);
+      }
     },
     handleHotUpdate({ file, server }) {
       if (file.includes(path.sep + CONTENT_DIR + path.sep) || file.includes('/' + CONTENT_DIR + '/')) {
@@ -336,10 +380,11 @@ export function contentPlugin(): Plugin {
           '\0virtual:content/categories',
           '\0virtual:content/rules',
           '\0virtual:content/references',
+          '\0virtual:content/guides',
         ];
         const modules = moduleIds
           .map((id) => server.moduleGraph.getModuleById(id))
-          .filter(Boolean) as any[];
+          .filter(Boolean) as ModuleNode[];
 
         if (modules.length > 0) {
           modules.forEach((mod) => server.moduleGraph.invalidateModule(mod));

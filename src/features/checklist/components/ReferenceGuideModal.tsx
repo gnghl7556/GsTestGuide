@@ -1,22 +1,27 @@
 import { X, BookOpen } from 'lucide-react';
-import { useReferenceGuides } from '../../../hooks/useReferenceGuides';
-import type { ReferenceGuide } from 'virtual:content/references';
+import { useGuides } from '../../../hooks/useGuides';
+import type { GuideWithSource } from '../../../types/guide';
 
 interface ReferenceGuideModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-function ReferenceCard({ guide }: { guide: ReferenceGuide }) {
+function ReferenceCard({ guide }: { guide: GuideWithSource }) {
+  const description = guide.description ||
+    guide.sections.find(s => s.heading === '설명')?.content || '';
+  const checkPoints = guide.checkPoints ?? [];
+  const tip = guide.tip ?? '';
+
   return (
     <div className="rounded-lg border border-ln bg-surface-base p-4 space-y-3">
       <h3 className="text-sm font-bold text-tx-primary">{guide.title}</h3>
-      {guide.description && (
-        <p className="text-xs text-tx-secondary leading-relaxed">{guide.description}</p>
+      {description && (
+        <p className="text-xs text-tx-secondary leading-relaxed">{description}</p>
       )}
-      {guide.checkPoints.length > 0 && (
+      {checkPoints.length > 0 && (
         <ul className="space-y-1.5">
-          {guide.checkPoints.map((point, idx) => (
+          {checkPoints.map((point, idx) => (
             <li key={idx} className="flex items-start gap-2 text-xs text-tx-secondary">
               <span className="shrink-0 mt-0.5 h-4 w-4 rounded border border-ln-strong bg-surface-raised" />
               <span>{point}</span>
@@ -24,9 +29,9 @@ function ReferenceCard({ guide }: { guide: ReferenceGuide }) {
           ))}
         </ul>
       )}
-      {guide.tip && (
+      {tip && (
         <div className="rounded-md bg-status-hold-bg border border-status-hold-border px-3 py-2 text-xs text-status-hold-text leading-relaxed whitespace-pre-line">
-          {guide.tip}
+          {tip}
         </div>
       )}
     </div>
@@ -34,7 +39,7 @@ function ReferenceCard({ guide }: { guide: ReferenceGuide }) {
 }
 
 export function ReferenceGuideModal({ open, onClose }: ReferenceGuideModalProps) {
-  const guides = useReferenceGuides();
+  const guides = useGuides({ category: 'reference' });
 
   if (!open) return null;
 

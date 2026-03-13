@@ -4,6 +4,9 @@
 > 이 문서는 Claude Code가 본 프로젝트를 이해하고 일관성 있게 작업하기 위한 컨텍스트를 제공한다.
 
 ---
+## Language
+IMPORTANT: Always respond in Korean (한국어).
+모든 답변은 반드시 한국어로 작성할 것.
 
 ## 1. 프로젝트 개요
 

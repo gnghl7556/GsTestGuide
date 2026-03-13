@@ -45,3 +45,8 @@ declare module 'virtual:content/references' {
   }
   export const REFERENCES: ReferenceGuide[];
 }
+
+declare module 'virtual:content/guides' {
+  import type { Guide } from './guide';
+  export const GUIDES: Guide[];
+}
