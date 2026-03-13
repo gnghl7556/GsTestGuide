@@ -50,9 +50,9 @@ export function CenterDisplay({
   const [selectedDoc, setSelectedDoc] = useState<RequiredDoc | null>(null);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const [showDefectBoard, setShowDefectBoard] = useState(false);
-  const [activeTab, setActiveTab] = useState<'guide' | 'evidence' | 'criteria'>('guide');
+  const [activeTab, setActiveTab] = useState<'evidence' | 'criteria'>('evidence');
   const [detailOpen, setDetailOpen] = useState(false);
-  useEffect(() => { setActiveTab('guide'); }, [activeItem?.id]);
+  useEffect(() => { setActiveTab('evidence'); }, [activeItem?.id]);
   useEffect(() => { setDetailOpen(false); }, [activeItem?.id]);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [docDescriptions, setDocDescriptions] = useState<Record<string, string>>({});
@@ -166,9 +166,11 @@ export function CenterDisplay({
   const questions = quickModeItem?.quickQuestions ?? [];
   const hasEvidence = Boolean(activeItem.evidenceExamples && activeItem.evidenceExamples.length > 0);
   const hasCriteria = Boolean(activeItem.passCriteria);
-  const effectiveTab = activeTab === 'evidence' && !hasEvidence ? 'guide'
-    : activeTab === 'criteria' && !hasCriteria ? 'guide'
+  const effectiveTab = activeTab === 'evidence' && !hasEvidence ? 'criteria'
+    : activeTab === 'criteria' && !hasCriteria ? 'evidence'
     : activeTab;
+  const hasTestSuggestions = Boolean(activeItem.testSuggestions && activeItem.testSuggestions.length > 0);
+  const hasDetailContent = hasTestSuggestions || hasEvidence || hasCriteria;
   const branchingRules = quickModeItem?.branchingRules;
   const hasBranching = Boolean(branchingRules && branchingRules.length > 0);
 
@@ -309,6 +311,9 @@ export function CenterDisplay({
             </div>
           )}
         </div>
+        {activeItem.description && !isNA && (
+          <p className="mt-2.5 text-[13px] text-tx-secondary leading-relaxed">{activeItem.description}</p>
+        )}
       </div>
 
       <div className="px-6 py-5 flex-1 overflow-y-auto">
@@ -323,11 +328,6 @@ export function CenterDisplay({
           </div>
         ) : (
           <div className="max-w-none">
-            {activeItem.description && (
-              <div className="mb-4">
-                <p className="text-sm text-tx-tertiary leading-loose">{activeItem.description}</p>
-              </div>
-            )}
             <div className="space-y-4">
               {activeItem.inputFields && activeItem.inputFields.length > 0 ? (
                 <div className="space-y-4">
@@ -547,7 +547,7 @@ export function CenterDisplay({
           </div>
         )}
       </div>
-      {!isNA && activeItem && (
+      {!isNA && activeItem && hasDetailContent && (
         <div className="shrink-0 border-t border-ln">
           <button
             type="button"
@@ -563,71 +563,67 @@ export function CenterDisplay({
           >
             <div className="overflow-hidden">
               <div className="max-h-[40vh] overflow-y-auto bg-surface-sunken/60 px-6 pb-4">
-                <TabGroup
-                  tabs={[
-                    { id: 'guide', label: '가이드' },
-                    ...(hasEvidence ? [{ id: 'evidence', label: '증빙 안내' }] : []),
-                    ...(hasCriteria ? [{ id: 'criteria', label: '판정 기준' }] : []),
-                  ]}
-                  activeId={effectiveTab}
-                  onChange={(id) => setActiveTab(id as 'guide' | 'evidence' | 'criteria')}
-                />
-                <div role="tabpanel" className="pt-4 space-y-4">
-                  {effectiveTab === 'guide' && (
-                    <>
-                      {!activeItem.testSuggestions?.length && (
-                        <p className="text-sm text-tx-muted py-4">이 항목에 대한 추가 가이드가 없습니다.</p>
-                      )}
-                      {activeItem.testSuggestions && activeItem.testSuggestions.length > 0 && (
-                        <div>
-                          <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">테스트 제안</div>
-                          <div className="space-y-1.5">
-                            {activeItem.testSuggestions.map((suggestion, i) => (
-                              <div key={`test-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
-                                <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
-                                <span className="text-sm text-tx-tertiary leading-relaxed">{suggestion}</span>
-                              </div>
-                            ))}
-                          </div>
+                {hasTestSuggestions && (
+                  <div className={hasEvidence || hasCriteria ? 'pt-4 pb-2' : 'pt-4'}>
+                    <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">테스트 제안</div>
+                    <div className="space-y-1.5">
+                      {activeItem.testSuggestions!.map((suggestion, i) => (
+                        <div key={`test-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
+                          <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
+                          <span className="text-sm text-tx-tertiary leading-relaxed">{suggestion}</span>
                         </div>
-                      )}
-                    </>
-                  )}
-                  {effectiveTab === 'evidence' && hasEvidence && (
-                    <>
-                      <div>
-                        <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">증빙 예시</div>
-                        <div className="space-y-1.5">
-                          {activeItem.evidenceExamples!.map((example, i) => (
-                            <div key={`ev-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
-                              <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
-                              <span className="text-sm text-tx-tertiary leading-relaxed">{example}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      {refItems.length > 0 && (
-                        <div>
-                          <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">참조 문서</div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {refItems.map((doc, i) => (
-                              <button key={`tab-ref-${i}`} type="button" onClick={() => handleDocClick(doc)} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-surface-sunken border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors">
-                                {doc.kind === 'external' ? <ExternalLink size={11} /> : <FileDown size={11} />}
-                                {doc.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {effectiveTab === 'criteria' && hasCriteria && (
-                    <div className="rounded-lg border border-status-pass-border bg-status-pass-bg px-4 py-3.5 text-status-pass-text">
-                      <div className="text-xs font-bold mb-2 uppercase tracking-wide">합격 기준</div>
-                      <p className="text-sm leading-relaxed">{activeItem.passCriteria}</p>
+                      ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+                {(hasEvidence || hasCriteria) && (
+                  <>
+                    <TabGroup
+                      tabs={[
+                        ...(hasEvidence ? [{ id: 'evidence', label: '증빙 안내' }] : []),
+                        ...(hasCriteria ? [{ id: 'criteria', label: '판정 기준' }] : []),
+                      ]}
+                      activeId={effectiveTab}
+                      onChange={(id) => setActiveTab(id as 'evidence' | 'criteria')}
+                    />
+                    <div role="tabpanel" className="pt-4 space-y-4">
+                      {effectiveTab === 'evidence' && hasEvidence && (
+                        <>
+                          <div>
+                            <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">증빙 예시</div>
+                            <div className="space-y-1.5">
+                              {activeItem.evidenceExamples!.map((example, i) => (
+                                <div key={`ev-${i}`} className="flex items-start gap-2.5 rounded-lg bg-surface-sunken px-3.5 py-2.5">
+                                  <span className="text-[11px] font-bold text-tx-muted mt-0.5 shrink-0">{i + 1}</span>
+                                  <span className="text-sm text-tx-tertiary leading-relaxed">{example}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          {refItems.length > 0 && (
+                            <div>
+                              <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">참조 문서</div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {refItems.map((doc, i) => (
+                                  <button key={`tab-ref-${i}`} type="button" onClick={() => handleDocClick(doc)} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-surface-sunken border border-ln text-tx-secondary hover:border-ln-strong hover:text-tx-primary transition-colors">
+                                    {doc.kind === 'external' ? <ExternalLink size={11} /> : <FileDown size={11} />}
+                                    {doc.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {effectiveTab === 'criteria' && hasCriteria && (
+                        <div className="rounded-lg border border-status-pass-border bg-status-pass-bg px-4 py-3.5 text-status-pass-text">
+                          <div className="text-xs font-bold mb-2 uppercase tracking-wide">합격 기준</div>
+                          <p className="text-sm leading-relaxed">{activeItem.passCriteria}</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
