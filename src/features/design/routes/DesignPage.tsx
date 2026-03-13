@@ -10,7 +10,7 @@ import { WritingGuideContent } from '../../guide/components/WritingGuideContent'
 export function DesignPage() {
   const navigate = useNavigate();
   const { testSetup } = useTestSetupContext();
-  const guides = useGuides({ category: 'writing' });
+  const guides = useGuides();
   const [activeGuideId, setActiveGuideId] = useState<string | null>(guides[0]?.id ?? null);
 
   const activeGuide = guides.find((g) => g.id === activeGuideId) ?? guides[0] ?? null;
@@ -46,7 +46,6 @@ export function DesignPage() {
             guides={guides}
             activeGuideId={activeGuide?.id ?? null}
             onSelectGuide={setActiveGuideId}
-            showCategoryLabels={false}
           />
         )}
         content={(

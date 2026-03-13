@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp, Check, X, BookOpen, Search } from 'lucide-react';
 
 import type { ChecklistItem, ExecutionItemGate, QuickModeItem, QuickReviewAnswer, ReviewData } from '../../../types';
 import { CATEGORIES, CATEGORY_THEMES } from 'virtual:content/categories';
-import { ReferenceGuideModal } from './ReferenceGuideModal';
 
 
 interface NavSidebarProps {
@@ -30,7 +30,7 @@ export function NavSidebar({
   const [expandedCats, setExpandedCats] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'HOLD' | 'FAIL'>('ALL');
   const [evidenceOnly, setEvidenceOnly] = useState(false);
-  const [showRefGuide, setShowRefGuide] = useState(false);
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const shortLabelMap: Record<string, string> = {
     '담당 PL 및 시험 배정 안내 메일을 확인했는가?': '시험 배정 안내',
@@ -343,14 +343,13 @@ export function NavSidebar({
       <div className="p-3 border-t border-ln-subtle">
         <button
           type="button"
-          onClick={() => setShowRefGuide(true)}
+          onClick={() => navigate('/design')}
           className="w-full flex items-center justify-center gap-2 rounded-lg border border-ln bg-surface-base px-3 py-2 text-xs font-semibold text-tx-tertiary hover:bg-surface-raised hover:text-tx-primary transition-colors"
         >
           <BookOpen size={14} />
-          참조 가이드
+          가이드
         </button>
       </div>
-      <ReferenceGuideModal open={showRefGuide} onClose={() => setShowRefGuide(false)} />
     </nav>
   );
 }

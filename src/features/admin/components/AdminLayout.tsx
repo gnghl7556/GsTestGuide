@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { path: '/admin/contacts', label: '담당자 관리', icon: Contact },
   { path: '/admin/materials', label: '자료 관리', icon: FileBox },
   { path: '/admin/content', label: '콘텐츠 관리', icon: FileText },
-  { path: '/admin/guides', label: '참조 가이드', icon: BookOpen },
+  { path: '/admin/guides', label: '가이드', icon: BookOpen },
 ] as const;
 
 export function AdminLayout() {

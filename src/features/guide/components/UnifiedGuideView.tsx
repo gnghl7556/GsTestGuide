@@ -2,12 +2,8 @@ import { useState } from 'react';
 import { useGuides } from '../../../hooks/useGuides';
 import { GuideListSidebar } from './GuideListSidebar';
 import { WritingGuideContent } from './WritingGuideContent';
-import { ReferenceGuideContent } from './ReferenceGuideContent';
-import type { GuideCategory } from '../../../types/guide';
 
 interface UnifiedGuideViewProps {
-  /** 특정 카테고리만 표시 (미지정 시 전체) */
-  category?: GuideCategory;
   /** 초기 선택 가이드 ID */
   initialGuideId?: string;
   /** 사이드바 포함 여부 (false면 콘텐츠만 렌더링) */
@@ -15,11 +11,10 @@ interface UnifiedGuideViewProps {
 }
 
 export function UnifiedGuideView({
-  category,
   initialGuideId,
   showSidebar = true,
 }: UnifiedGuideViewProps) {
-  const guides = useGuides({ category });
+  const guides = useGuides();
   const [activeGuideId, setActiveGuideId] = useState<string | null>(
     initialGuideId ?? guides[0]?.id ?? null
   );
@@ -35,11 +30,7 @@ export function UnifiedGuideView({
   }
 
   const content = activeGuide ? (
-    activeGuide.category === 'writing' ? (
-      <WritingGuideContent guide={activeGuide} />
-    ) : (
-      <ReferenceGuideContent guide={activeGuide} />
-    )
+    <WritingGuideContent guide={activeGuide} />
   ) : (
     <div className="h-full flex items-center justify-center p-6">
       <p className="text-sm text-tx-muted">가이드를 선택해주세요.</p>
@@ -57,7 +48,6 @@ export function UnifiedGuideView({
           guides={guides}
           activeGuideId={activeGuide?.id ?? null}
           onSelectGuide={setActiveGuideId}
-          showCategoryLabels={!category}
         />
       </div>
       <div className="flex-1 min-w-0">{content}</div>

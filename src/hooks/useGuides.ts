@@ -2,13 +2,9 @@ import { useEffect, useState, useMemo } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { GUIDES } from 'virtual:content/guides';
-import type { Guide, GuideCategory, GuideWithSource } from '../types/guide';
+import type { Guide, GuideWithSource } from '../types/guide';
 
-interface UseGuidesOptions {
-  category?: GuideCategory;
-}
-
-export function useGuides(options?: UseGuidesOptions): GuideWithSource[] {
+export function useGuides(): GuideWithSource[] {
   const [dbGuides, setDbGuides] = useState<Record<string, Partial<Guide>>>({});
 
   useEffect(() => {
@@ -26,7 +22,7 @@ export function useGuides(options?: UseGuidesOptions): GuideWithSource[] {
   return useMemo(() => {
     const mdIds = new Set(GUIDES.map((g) => g.id));
 
-    let merged: GuideWithSource[] = GUIDES.map((g) => {
+    const merged: GuideWithSource[] = GUIDES.map((g) => {
       const override = dbGuides[g.id];
       if (!override) return { ...g, source: 'markdown' as const };
       return { ...g, ...override, id: g.id, source: 'firestore' as const };
@@ -49,12 +45,8 @@ export function useGuides(options?: UseGuidesOptions): GuideWithSource[] {
       }
     }
 
-    if (options?.category) {
-      merged = merged.filter((g) => g.category === options.category);
-    }
-
     merged.sort((a, b) => a.order - b.order);
 
     return merged;
-  }, [dbGuides, options?.category]);
+  }, [dbGuides]);
 }
