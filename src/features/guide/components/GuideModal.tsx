@@ -32,7 +32,7 @@ export function GuideModal({ open, onClose }: GuideModalProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-4xl max-h-[75vh] rounded-xl border border-ln bg-surface-overlay shadow-2xl flex flex-col overflow-hidden"
+        className="w-full max-w-[112rem] max-h-[75vh] rounded-xl border border-ln bg-surface-overlay shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
