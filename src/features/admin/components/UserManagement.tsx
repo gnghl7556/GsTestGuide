@@ -4,6 +4,7 @@ import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 import { Button } from '../../../components/ui';
 import { AdminPageHeader, AdminTable } from '../shared';
 import type { UserRank } from '../../../types';
+import { isValidEmail, isValidPhone } from '../../../utils/validation';
 
 const RANK_OPTIONS: UserRank[] = ['전임', '선임', '책임', '수석'];
 
@@ -22,9 +23,20 @@ export function UserManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<UserFormData>(emptyForm);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof UserFormData, string>>>({});
+
+  const validate = (): boolean => {
+    const next: Partial<Record<keyof UserFormData, string>> = {};
+    if (!form.name.trim()) next.name = '이름을 입력해주세요.';
+    if (form.email.trim() && !isValidEmail(form.email.trim())) next.email = '올바른 이메일 형식이 아닙니다.';
+    if (form.phone.trim() && !isValidPhone(form.phone.trim())) next.phone = '올바른 연락처 형식이 아닙니다.';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
 
   const handleAdd = async () => {
-    if (!form.name.trim() || !form.email.trim()) return;
+    if (!validate()) return;
+    if (!form.email.trim()) return;
     await createUser({
       name: form.name.trim(),
       rank: form.rank,
@@ -41,7 +53,8 @@ export function UserManagement() {
   };
 
   const handleEditSave = async () => {
-    if (!editingId || !form.name.trim()) return;
+    if (!validate()) return;
+    if (!editingId) return;
     await updateUser(editingId, {
       name: form.name.trim(),
       rank: form.rank,
@@ -113,21 +126,23 @@ export function UserManagement() {
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
+                      className={`w-full rounded border px-2 py-1 text-sm bg-surface-base text-tx-primary ${errors.email ? 'border-danger' : 'border-ln'}`}
                       value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      onChange={(e) => { setForm({ ...form, email: e.target.value }); setErrors((p) => ({ ...p, email: undefined })); }}
                       placeholder="이메일"
                       aria-label="이메일"
                     />
+                    {errors.email && <div className="text-xs text-danger-text mt-0.5">{errors.email}</div>}
                   </td>
                   <td className="px-4 py-2">
                     <input
-                      className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
+                      className={`w-full rounded border px-2 py-1 text-sm bg-surface-base text-tx-primary ${errors.phone ? 'border-danger' : 'border-ln'}`}
                       value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      onChange={(e) => { setForm({ ...form, phone: e.target.value }); setErrors((p) => ({ ...p, phone: undefined })); }}
                       placeholder="연락처"
                       aria-label="연락처"
                     />
+                    {errors.phone && <div className="text-xs text-danger-text mt-0.5">{errors.phone}</div>}
                   </td>
                   <td className="px-4 py-2 text-right">
                     <div className="flex items-center justify-end gap-1">
@@ -175,19 +190,21 @@ export function UserManagement() {
                       </td>
                       <td className="px-4 py-2">
                         <input
-                          className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
+                          className={`w-full rounded border px-2 py-1 text-sm bg-surface-base text-tx-primary ${errors.email ? 'border-danger' : 'border-ln'}`}
                           value={form.email}
-                          onChange={(e) => setForm({ ...form, email: e.target.value })}
+                          onChange={(e) => { setForm({ ...form, email: e.target.value }); setErrors((p) => ({ ...p, email: undefined })); }}
                           aria-label="이메일"
                         />
+                        {errors.email && <div className="text-xs text-danger-text mt-0.5">{errors.email}</div>}
                       </td>
                       <td className="px-4 py-2">
                         <input
-                          className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
+                          className={`w-full rounded border px-2 py-1 text-sm bg-surface-base text-tx-primary ${errors.phone ? 'border-danger' : 'border-ln'}`}
                           value={form.phone}
-                          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                          onChange={(e) => { setForm({ ...form, phone: e.target.value }); setErrors((p) => ({ ...p, phone: undefined })); }}
                           aria-label="연락처"
                         />
+                        {errors.phone && <div className="text-xs text-danger-text mt-0.5">{errors.phone}</div>}
                       </td>
                       <td className="px-4 py-2 text-right">
                         <div className="flex items-center justify-end gap-1">

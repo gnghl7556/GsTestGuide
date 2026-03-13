@@ -4,6 +4,7 @@ import { addDoc, collection, serverTimestamp, setDoc, doc } from 'firebase/fires
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../../../lib/firebase';
 import { DefectFormFields } from './DefectFormFields';
+import { logger } from '../../../utils/logger';
 
 export interface DefectContext {
   qualityCharacteristic?: string;
@@ -112,7 +113,7 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose, initia
       resetForm();
       onClose();
     } catch (error) {
-      console.warn('[Defects] 저장 실패:', error);
+      logger.warn('Defects', '저장 실패', error);
       setErrorMsg('저장에 실패했습니다.');
     } finally {
       setSaving(false);

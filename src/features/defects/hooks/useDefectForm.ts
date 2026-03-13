@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { httpsCallable } from 'firebase/functions';
 import { functions, storage } from '../../../lib/firebase';
+import { logger } from '../../../utils/logger';
 
 export type DefectFormState = {
   summary: string;
@@ -103,7 +104,7 @@ export const useDefectForm = (projectId: string, testCaseId: string, isFinalized
       reset();
       return true;
     } catch (error) {
-      console.warn('[Defects] 저장 실패:', error);
+      logger.warn('Defects', '저장 실패', error);
       setErrorMsg('저장에 실패했습니다.');
       return false;
     } finally {

@@ -12,6 +12,7 @@ import { deleteObject, getDownloadURL, ref, uploadBytes, type FirebaseStorage } 
 import type { PlContact } from '../../pl-directory/components/PlDirectoryPage';
 import type { Project, TestSetupState, User } from '../../../types';
 import { isDocEntry } from '../../../utils/testSetup';
+import { logger } from '../../../utils/logger';
 
 export type UseTestSetupParams = {
   db: Firestore | null | undefined;
@@ -259,21 +260,21 @@ export function useTestSetupState({
         { merge: true }
       );
     } catch (error) {
-      console.warn('[Firestore] 프로젝트 기본 생성 실패:', error);
+      logger.warn('Firestore', '프로젝트 기본 생성 실패', error);
     }
   };
 
   const saveProjectNow = async (): Promise<{ ok: boolean; reason?: string }> => {
     if (!db || !authReady) {
-      console.warn('[Firestore] 연결되지 않았습니다.');
+      logger.warn('Firestore', '연결되지 않았습니다.');
       return { ok: false, reason: 'Firestore 연결되지 않음' };
     }
     if (!currentTestNumber || !currentPlId) {
-      console.warn('[Firestore] 시험번호/담당 PL 누락.');
+      logger.warn('Firestore', '시험번호/담당 PL 누락.');
       return { ok: false, reason: '시험번호/담당 PL 누락' };
     }
     if (!currentUserId) {
-      console.warn('[Firestore] 시험원 누락.');
+      logger.warn('Firestore', '시험원 누락.');
       return { ok: false, reason: '시험원 누락' };
     }
     const parts = currentTestNumber.split('-').map((part) => part.trim());
@@ -322,18 +323,18 @@ export function useTestSetupState({
       return { ok: true };
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      console.warn('[Firestore] 프로젝트 저장 실패:', error);
+      logger.warn('Firestore', '프로젝트 저장 실패', error);
       return { ok: false, reason };
     }
   };
 
   const saveDocsNow = async (): Promise<{ ok: boolean; reason?: string }> => {
     if (!db || !authReady) {
-      console.warn('[Firestore] 연결되지 않았습니다.');
+      logger.warn('Firestore', '연결되지 않았습니다.');
       return { ok: false, reason: 'Firestore 연결되지 않음' };
     }
     if (!currentTestNumber) {
-      console.warn('[Firestore] 시험번호 누락.');
+      logger.warn('Firestore', '시험번호 누락.');
       return { ok: false, reason: '시험번호 누락' };
     }
     let docs = Array.isArray(testSetup.docs) ? testSetup.docs.filter(isDocEntry) : [];
@@ -342,7 +343,7 @@ export function useTestSetupState({
       const fixedFileName = `${currentTestNumber}_시험 합의서.pdf`;
       const storagePath = `agreements/${currentTestNumber}/${fixedFileName}`;
       if (!storage) {
-        console.warn('[Storage] 연결되지 않았습니다.');
+        logger.warn('Storage', '연결되지 않았습니다.');
         return { ok: false, reason: 'Storage 연결되지 않음' };
       }
       const fileRef = ref(storage, storagePath);
@@ -379,7 +380,7 @@ export function useTestSetupState({
       return { ok: true };
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      console.warn('[Firestore] 시험자료 저장 실패:', error);
+      logger.warn('Firestore', '시험자료 저장 실패', error);
       return { ok: false, reason };
     }
   };
@@ -387,7 +388,7 @@ export function useTestSetupState({
   const uploadAgreementNow = async (file: File) => {
     if (!db || !authReady || !currentTestNumber) return false;
     if (!storage) {
-      console.warn('[Storage] 연결되지 않았습니다.');
+      logger.warn('Storage', '연결되지 않았습니다.');
       return false;
     }
     const fixedFileName = `${currentTestNumber}_시험 합의서.pdf`;
@@ -423,7 +424,7 @@ export function useTestSetupState({
       );
       return true;
     } catch (error) {
-      console.warn('[Storage] 합의서 업로드 실패:', error);
+      logger.warn('Storage', '합의서 업로드 실패', error);
       return false;
     }
   };
@@ -470,13 +471,13 @@ export function useTestSetupState({
       );
       await deleteDoc(doc(db, 'agreementDocs', currentTestNumber));
     } catch (error) {
-      console.warn('[Firestore] 합의서 삭제 실패:', error);
+      logger.warn('Firestore', '합의서 삭제 실패', error);
     }
     if (storage) {
       const fixedFileName = `${currentTestNumber}_시험 합의서.pdf`;
       const storagePath = `agreements/${currentTestNumber}/${fixedFileName}`;
       deleteObject(ref(storage, storagePath)).catch((error) => {
-        console.warn('[Storage] 합의서 삭제 실패:', error);
+        logger.warn('Storage', '합의서 삭제 실패', error);
       });
     }
   };

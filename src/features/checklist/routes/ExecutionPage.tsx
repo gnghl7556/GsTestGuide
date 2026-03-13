@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { ChecklistView } from './ChecklistView';
 import { generateChecklist } from '../../../utils/checklistGenerator';
 import { toQuickModeItem, getRecommendation } from '../../../utils/quickMode';
@@ -7,6 +7,10 @@ import { computeSkippedIndices, computeTriggeredSourceIndices, findNextActiveInd
 import { useDefects } from '../../report/hooks/useDefects';
 import { computeExecutionGate } from '../utils/executionGate';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useContentOverrideMonitor } from '../hooks/useContentOverrideMonitor';
+import { useFirestoreReviewLoader } from '../hooks/useFirestoreReviewLoader';
+import { useTestSwitch } from '../hooks/useTestSwitch';
+import { useExecutionStateSync } from '../hooks/useExecutionStateSync';
 import type {
   QuickAnswer,
   QuickDecision,
@@ -23,6 +27,7 @@ import { mergeOverrides, mergeDocLinks } from '../../../lib/content/mergeOverrid
 import { db } from '../../../lib/firebase';
 import { useRegisterExecutionToolbar } from '../../../providers/ExecutionToolbarContext';
 import { isProjectFinalized } from '../../../utils/projectUtils';
+import { logger } from '../../../utils/logger';
 
 const storageKey = 'gs-test-guide:review';
 
@@ -79,117 +84,18 @@ export function ExecutionPage() {
   const [selectedReqId, setSelectedReqId] = useState<string | null>(stored.selectedReqId || null);
   const [reviewData, setReviewData] = useState<Record<string, ReviewData>>(stored.reviewData || {});
   const [quickReviewById, setQuickReviewById] = useState<Record<string, QuickReviewAnswer>>(stored.quickReviewById || {});
-  const [firestoreLoaded, setFirestoreLoaded] = useState(false);
-  const activeTestRef = useRef(currentTestNumber);
   const { defects } = useDefects(currentTestNumber || null);
   const contentOverrides = useContentOverrides();
   const docMaterials = useDocMaterials();
 
-  // 콘텐츠 오버라이드 변경 감지 (초기 로드 후 3초 뒤부터 모니터링)
-  const [contentUpdateNotice, setContentUpdateNotice] = useState(false);
-  const overrideMonitorRef = useRef(false);
-  const prevOverrideFpRef = useRef('');
-  useEffect(() => {
-    const t = setTimeout(() => {
-      overrideMonitorRef.current = true;
-      prevOverrideFpRef.current = JSON.stringify(
-        Object.entries(contentOverrides).map(([k, v]) => [k, v.title, JSON.stringify(v.checkpoints), v.passCriteria])
-      );
-    }, 3000);
-    return () => clearTimeout(t);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (!overrideMonitorRef.current) return;
-    const fp = JSON.stringify(
-      Object.entries(contentOverrides).map(([k, v]) => [k, v.title, JSON.stringify(v.checkpoints), v.passCriteria])
-    );
-    if (fp !== prevOverrideFpRef.current) {
-      setContentUpdateNotice(true);
-      prevOverrideFpRef.current = fp;
-    }
-  }, [contentOverrides]);
+  const { contentUpdateNotice, dismissNotice: dismissContentNotice } = useContentOverrideMonitor(contentOverrides);
 
-  // Firestore에서 점검 데이터 로드 (localStorage에 데이터가 없을 때 fallback)
-  useEffect(() => {
-    if (!db || !currentTestNumber) return;
-    activeTestRef.current = currentTestNumber;
-    if (firestoreLoaded) return;
-    const hasLocalData = Object.keys(quickReviewById).length > 0 || Object.keys(reviewData).length > 0;
-    if (hasLocalData) {
-      setFirestoreLoaded(true);
-      return;
-    }
+  const hasLocalData = Object.keys(quickReviewById).length > 0 || Object.keys(reviewData).length > 0;
+  const { setFirestoreLoaded } = useFirestoreReviewLoader(
+    currentTestNumber, hasLocalData, setQuickReviewById, setReviewData,
+  );
 
-    let alive = true;
-    const load = async () => {
-      try {
-        const snap = await getDoc(doc(db!, 'quickReviews', currentTestNumber));
-        if (!alive || currentTestNumber !== activeTestRef.current) return;
-        setFirestoreLoaded(true);
-        if (!snap.exists()) return;
-        const data = snap.data() as { items?: Record<string, Record<string, unknown>> };
-        if (!data.items || Object.keys(data.items).length === 0) return;
-
-        setQuickReviewById((prev) => {
-          if (Object.keys(prev).length > 0) return prev;
-          const result: Record<string, QuickReviewAnswer> = {};
-          for (const [itemId, item] of Object.entries(data.items!)) {
-            result[itemId] = {
-              requirementId: (item.requirementId as string) || itemId,
-              answers: (item.answers as Record<string, QuickAnswer>) || {},
-              inputValues: (item.inputValues as QuickInputValues) || {},
-              answeredQuestions: (item.answeredQuestions as Record<string, boolean>) || {},
-              autoRecommendation: (item.autoRecommendation as QuickDecision) || 'HOLD',
-              finalDecision: (item.finalDecision as QuickDecision) || undefined,
-              note: (item.note as string) || ''
-            };
-          }
-          return result;
-        });
-
-        setReviewData((prev) => {
-          if (Object.keys(prev).length > 0) return prev;
-          const result: Record<string, ReviewData> = {};
-          for (const [itemId, item] of Object.entries(data.items!)) {
-            const status = item.reviewStatus as ReviewData['status'] | undefined;
-            if (status && status !== 'None') {
-              result[itemId] = {
-                status,
-                comment: (item.reviewComment as string) || '',
-                docName: (item.reviewDocName as string) || '',
-                page: (item.reviewPage as string) || ''
-              };
-            }
-          }
-          return result;
-        });
-      } catch (error) {
-        if (alive) setFirestoreLoaded(true);
-        console.warn('[Firestore] 점검 데이터 로드 실패:', error);
-      }
-    };
-    void load();
-    return () => { alive = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTestNumber, firestoreLoaded]);
-
-  // 시험 전환 감지 — 다른 시험 선택 시 Firestore에서 새 데이터 로드
-  const prevTestRef = useRef(currentTestNumber);
-  useEffect(() => {
-    if (prevTestRef.current === currentTestNumber) return;
-    prevTestRef.current = currentTestNumber;
-    if (!currentTestNumber) {
-      setReviewData({});
-      setQuickReviewById({});
-      setSelectedReqId(null);
-      return;
-    }
-    // 시험 전환 시 기존 데이터 클리어 후 Firestore 로드
-    setReviewData({});
-    setQuickReviewById({});
-    setSelectedReqId(null);
-    setFirestoreLoaded(false);
-  }, [currentTestNumber]);
+  useTestSwitch(currentTestNumber, setReviewData, setQuickReviewById, setSelectedReqId, setFirestoreLoaded);
 
   // localStorage 캐시 저장 (testNumber 포함)
   useEffect(() => {
@@ -219,15 +125,7 @@ export function ExecutionPage() {
     [checklist, reviewData, defects, isFinalized]
   );
 
-  useEffect(() => {
-    if (!db || !currentTestNumber) return;
-    const existingFinalizedAt = currentProject?.executionState?.finalizedAt;
-    void setDoc(
-      doc(db, 'projects', currentTestNumber),
-      { executionState: { ...executionState, ...(existingFinalizedAt ? { finalizedAt: existingFinalizedAt } : {}), updatedAt: serverTimestamp() } },
-      { merge: true }
-    );
-  }, [currentTestNumber, executionState]); // eslint-disable-line react-hooks/exhaustive-deps
+  useExecutionStateSync(currentTestNumber, executionState, currentProject);
 
   const quickModeItems = useMemo(() => checklist.map(toQuickModeItem), [checklist]);
   const quickModeById = useMemo(() => {
@@ -380,7 +278,7 @@ export function ExecutionPage() {
         { merge: true }
       );
     } catch (error) {
-      console.warn('[Firestore] 질문 저장 실패:', error);
+      logger.warn('Firestore', '질문 저장 실패', error);
     }
   }, [currentTestNumber, quickReviewById, reviewData]);
 
@@ -711,7 +609,7 @@ export function ExecutionPage() {
         { merge: true },
       );
     } catch (error) {
-      console.error('[Firestore] 최종 검토 완료 저장 실패:', error);
+      logger.error('Firestore', '최종 검토 완료 저장 실패', error);
     }
   }, [currentTestNumber]);
 
@@ -783,7 +681,7 @@ export function ExecutionPage() {
       onCloseDefectModal={() => setShowDefectModal(false)}
       currentTestNumber={currentTestNumber}
       contentUpdateNotice={contentUpdateNotice}
-      onDismissContentNotice={() => setContentUpdateNotice(false)}
+      onDismissContentNotice={dismissContentNotice}
     />
   );
 }

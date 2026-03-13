@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { OverviewPage } from './features/test-setup/routes/OverviewPage';
 import { WorkspaceLayout } from './components/Layout/WorkspaceLayout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const DesignPage = lazy(() => import('./features/design/routes/DesignPage').then(m => ({ default: m.DesignPage })));
 const ExecutionPage = lazy(() => import('./features/checklist/routes/ExecutionPage').then(m => ({ default: m.ExecutionPage })));
@@ -26,6 +27,7 @@ function RouteFallback() {
 
 export function AppRoutes() {
   return (
+    <ErrorBoundary>
     <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route index element={<Navigate to="/dashboard" replace />} />
@@ -52,5 +54,6 @@ export function AppRoutes() {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>
+    </ErrorBoundary>
   );
 }

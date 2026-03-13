@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Building2, List, UploadCloud, User, Trash2 } from 'lucide-react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+import { logger } from '../../../utils/logger';
 import type {
   AgreementParsed,
   DocEntry,
@@ -283,7 +284,7 @@ export function TestSetupPage({
       });
       return true;
     } catch (e) {
-      console.error('Project duplication failed:', e);
+      logger.error('TestSetup', 'Project duplication failed', e);
       return false;
     }
   }, [currentUserId]);

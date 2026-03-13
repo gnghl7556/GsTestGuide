@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Plus, Pencil, Trash2, Check, X, User, ChevronDown, AlertTriangle } from 'lucide-react';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db } from '../../../lib/firebase';
+import { isValidEmail, isValidPhone, isValidUrl } from '../../../utils/validation';
 import { doc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { Button } from '../../../components/ui';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
@@ -63,6 +64,17 @@ export function ContactManagement() {
     }
     return list.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
   }, [plDirectory, users]);
+
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+
+  const validateContact = (): boolean => {
+    const next: Partial<Record<keyof FormData, string>> = {};
+    if (form.email.trim() && form.email.trim() !== '-' && !isValidEmail(form.email.trim())) next.email = '올바른 이메일 형식이 아닙니다.';
+    if (form.phone.trim() && form.phone.trim() !== '-' && !isValidPhone(form.phone.trim())) next.phone = '올바른 연락처 형식이 아닙니다.';
+    if (form.requestUrl.trim() && !isValidUrl(form.requestUrl.trim())) next.requestUrl = '올바른 URL 형식이 아닙니다.';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
 
   const handlePersonSelect = useCallback((name: string) => {
     if (!name) {
@@ -160,6 +172,7 @@ export function ContactManagement() {
 
   const handleAdd = async () => {
     if (!form.role.trim() || !form.name.trim() || !db) return;
+    if (!validateContact()) return;
     const snapshot = { ...form };
     setBusy(true);
     try {
@@ -195,6 +208,7 @@ export function ContactManagement() {
 
   const handleEditSave = async () => {
     if (!editingRole || !form.name.trim() || !db) return;
+    if (!validateContact()) return;
     const roleToSave = editingRole;
     const snapshot = { ...form };
     setBusy(true);
@@ -292,21 +306,23 @@ export function ContactManagement() {
             </td>
             <td className="px-4 py-2">
               <input
-                className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken text-tx-primary"
+                className={`w-full rounded border px-2 py-1 text-sm bg-surface-sunken text-tx-primary ${errors.phone ? 'border-danger' : 'border-ln'}`}
                 value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                onChange={(e) => { setForm({ ...form, phone: e.target.value }); setErrors((p) => ({ ...p, phone: undefined })); }}
                 placeholder="연락처"
                 aria-label="연락처"
               />
+              {errors.phone && <div className="text-xs text-danger-text mt-0.5">{errors.phone}</div>}
             </td>
             <td className="px-4 py-2">
               <input
-                className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken text-tx-primary"
+                className={`w-full rounded border px-2 py-1 text-sm bg-surface-sunken text-tx-primary ${errors.email ? 'border-danger' : 'border-ln'}`}
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onChange={(e) => { setForm({ ...form, email: e.target.value }); setErrors((p) => ({ ...p, email: undefined })); }}
                 placeholder="이메일"
                 aria-label="이메일"
               />
+              {errors.email && <div className="text-xs text-danger-text mt-0.5">{errors.email}</div>}
             </td>
             <td className="px-4 py-2">
               <input
@@ -317,12 +333,13 @@ export function ContactManagement() {
                 aria-label="요청방법"
               />
               <input
-                className="w-full rounded border border-ln px-2 py-1 text-[11px] text-tx-tertiary"
+                className={`w-full rounded border px-2 py-1 text-[11px] text-tx-tertiary ${errors.requestUrl ? 'border-danger' : 'border-ln'}`}
                 value={form.requestUrl}
-                onChange={(e) => setForm({ ...form, requestUrl: e.target.value })}
+                onChange={(e) => { setForm({ ...form, requestUrl: e.target.value }); setErrors((p) => ({ ...p, requestUrl: undefined })); }}
                 placeholder="관련 링크 (선택)"
                 aria-label="관련 링크"
               />
+              {errors.requestUrl && <div className="text-xs text-danger-text mt-0.5">{errors.requestUrl}</div>}
             </td>
             <td className="px-4 py-2">
               <StepChips mode="toggle" selected={form.linkedSteps} onToggle={toggleStep} />
@@ -392,19 +409,21 @@ export function ContactManagement() {
                 </td>
                 <td className="px-4 py-2">
                   <input
-                    className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken"
+                    className={`w-full rounded border px-2 py-1 text-sm bg-surface-sunken ${errors.phone ? 'border-danger' : 'border-ln'}`}
                     value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, phone: e.target.value }); setErrors((p) => ({ ...p, phone: undefined })); }}
                     aria-label="연락처"
                   />
+                  {errors.phone && <div className="text-xs text-danger-text mt-0.5">{errors.phone}</div>}
                 </td>
                 <td className="px-4 py-2">
                   <input
-                    className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken"
+                    className={`w-full rounded border px-2 py-1 text-sm bg-surface-sunken ${errors.email ? 'border-danger' : 'border-ln'}`}
                     value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, email: e.target.value }); setErrors((p) => ({ ...p, email: undefined })); }}
                     aria-label="이메일"
                   />
+                  {errors.email && <div className="text-xs text-danger-text mt-0.5">{errors.email}</div>}
                 </td>
                 <td className="px-4 py-2">
                   <input
@@ -415,12 +434,13 @@ export function ContactManagement() {
                     aria-label="요청방법"
                   />
                   <input
-                    className="w-full rounded border border-ln px-2 py-1 text-[11px] text-tx-tertiary"
+                    className={`w-full rounded border px-2 py-1 text-[11px] text-tx-tertiary ${errors.requestUrl ? 'border-danger' : 'border-ln'}`}
                     value={form.requestUrl}
-                    onChange={(e) => setForm({ ...form, requestUrl: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, requestUrl: e.target.value }); setErrors((p) => ({ ...p, requestUrl: undefined })); }}
                     placeholder="관련 링크 (선택)"
                     aria-label="관련 링크"
                   />
+                  {errors.requestUrl && <div className="text-xs text-danger-text mt-0.5">{errors.requestUrl}</div>}
                 </td>
                 <td className="px-4 py-2">
                   <StepChips mode="toggle" selected={form.linkedSteps} onToggle={toggleStep} />

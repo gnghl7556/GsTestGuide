@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback, Fragment } from 'rea
 import { Plus, Pencil, Trash2, Check, X, Upload, Image, FileDown, Loader2, ChevronDown, ChevronUp, AlertTriangle, Link2 } from 'lucide-react';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db, storage } from '../../../lib/firebase';
+import { logger } from '../../../utils/logger';
 import { doc, setDoc, deleteDoc, collection, onSnapshot, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, listAll, deleteObject, getBytes } from 'firebase/storage';
 import { Button } from '../../../components/ui';
@@ -329,7 +330,7 @@ export function MaterialManagement() {
       );
       setFileState((prev) => ({ ...prev, [label]: { previewFiles, sampleFiles, loaded: true } }));
     } catch (e) {
-      console.error('Failed to load files for', label, e);
+      logger.error('Materials', `Failed to load files for ${label}`, e);
     }
   };
 
@@ -359,7 +360,7 @@ export function MaterialManagement() {
       }, { merge: true });
       await loadFilesForDoc(label);
     } catch (e) {
-      console.error('Upload failed:', e);
+      logger.error('Materials', 'Upload failed', e);
     }
     setUploading(null);
   };
@@ -378,7 +379,7 @@ export function MaterialManagement() {
       }, { merge: true });
       await loadFilesForDoc(label);
     } catch (e) {
-      console.error('Delete failed:', e);
+      logger.error('Materials', 'Delete failed', e);
     }
   };
 

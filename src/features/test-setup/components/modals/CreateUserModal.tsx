@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { UserCreateInput, UserRank } from '../../../../types';
+import { isValidEmail, isValidPhone } from '../../../../utils/validation';
 
 interface CreateUserModalProps {
   open: boolean;
@@ -28,6 +29,14 @@ export function CreateUserModal({
   const handleSubmit = async () => {
     if (!form.name.trim()) {
       setError('이름을 입력해주세요.');
+      return;
+    }
+    if (form.email.trim() && !isValidEmail(form.email.trim())) {
+      setError('올바른 이메일 형식이 아닙니다.');
+      return;
+    }
+    if (form.phone.trim() && !isValidPhone(form.phone.trim())) {
+      setError('올바른 연락처 형식이 아닙니다. (예: 010-0000-0000)');
       return;
     }
     if (hasDuplicateUser({ name: form.name, email: form.email })) {

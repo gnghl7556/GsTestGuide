@@ -3,6 +3,7 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getFunctions, type Functions } from 'firebase/functions';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { logger } from '../utils/logger';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
@@ -28,7 +29,7 @@ if (firebaseReady) {
   storage = getStorage(app);
   functions = getFunctions(app, 'asia-northeast3');
 } else {
-  console.warn('[Firebase] 환경변수가 설정되지 않아 초기화를 건너뜁니다.');
+  logger.warn('Firebase', '환경변수가 설정되지 않아 초기화를 건너뜁니다.');
 }
 
 export { auth, db, storage, functions };

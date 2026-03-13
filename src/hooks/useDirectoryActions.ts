@@ -1,6 +1,7 @@
 import { addDoc, collection, deleteDoc, doc, serverTimestamp, setDoc, type Firestore } from 'firebase/firestore';
 import type { PlContactInput } from '../features/pl-directory/components/PlDirectoryPage';
 import type { UserCreateInput, UserUpdateInput } from '../types';
+import { logger } from '../utils/logger';
 
 export function useDirectoryActions(db: Firestore | null | undefined, authReady: boolean) {
   const addPlContact = async (input: PlContactInput) => {
@@ -42,7 +43,7 @@ export function useDirectoryActions(db: Firestore | null | undefined, authReady:
       );
       return docId;
     } catch (error) {
-      console.warn('[Firestore] 사용자 생성 실패:', error);
+      logger.warn('Firestore', '사용자 생성 실패', error);
       return null;
     }
   };
@@ -68,7 +69,7 @@ export function useDirectoryActions(db: Firestore | null | undefined, authReady:
       );
       return true;
     } catch (error) {
-      console.warn('[Firestore] 사용자 수정 실패:', error);
+      logger.warn('Firestore', '사용자 수정 실패', error);
       return false;
     }
   };
@@ -82,7 +83,7 @@ export function useDirectoryActions(db: Firestore | null | undefined, authReady:
       await deleteDoc(doc(db, 'users', id));
       return true;
     } catch (error) {
-      console.warn('[Firestore] 사용자 삭제 실패:', error);
+      logger.warn('Firestore', '사용자 삭제 실패', error);
       return false;
     }
   };

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, signInAnonymously, type Auth } from 'firebase/auth';
+import { logger } from '../utils/logger';
 
 export function useAuthReady(auth: Auth | null | undefined) {
   const [authReady, setAuthReady] = useState(false);
@@ -15,7 +16,7 @@ export function useAuthReady(auth: Auth | null | undefined) {
       });
       if (!user) {
         signInAnonymously(currentAuth).catch((error) => {
-          console.warn('[Firebase] 익명 로그인 실패:', error);
+          logger.warn('Firebase', '익명 로그인 실패', error);
         });
         return;
       }

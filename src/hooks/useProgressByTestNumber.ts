@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { doc, getDoc, type Firestore } from 'firebase/firestore';
 import type { Project } from '../types';
 import { isProjectFinalized } from '../utils/projectUtils';
+import { logger } from '../utils/logger';
 
 export function useProgressByTestNumber(
   db: Firestore | null | undefined,
@@ -37,7 +38,7 @@ export function useProgressByTestNumber(
             const percent = Math.round((decided / total) * 100);
             return [project.testNumber, percent] as const;
           } catch (error) {
-            console.warn('[QuickReviews] 진행율 조회 실패:', error);
+            logger.warn('QuickReviews', '진행율 조회 실패', error);
             return [project.testNumber, 0] as const;
           }
         })
