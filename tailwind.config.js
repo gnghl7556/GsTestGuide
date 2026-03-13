@@ -146,6 +146,12 @@ export default {
             'pending-bg': 'var(--status-pending-bg)',
             'pending-text': 'var(--status-pending-text)',
             'pending-border': 'var(--status-pending-border)',
+            'modified-bg': 'var(--status-modified-bg)',
+            'modified-text': 'var(--status-modified-text)',
+            'modified-border': 'var(--status-modified-border)',
+            'retry-bg': 'var(--status-retry-bg)',
+            'retry-text': 'var(--status-retry-text)',
+            'retry-border': 'var(--status-retry-border)',
           },
         }
       },

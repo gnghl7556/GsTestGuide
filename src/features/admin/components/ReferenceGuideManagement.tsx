@@ -263,7 +263,7 @@ export function ReferenceGuideManagement() {
                   <span className="shrink-0 text-[10px] font-bold text-tx-tertiary bg-surface-sunken px-1.5 py-0.5 rounded">{guide.id}</span>
                   <span className="text-sm font-semibold text-tx-primary">{guide.title}</span>
                   {isModified(guide.id) && isMarkdownOriginal(guide.id) && (
-                    <span className="shrink-0 text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded">수정됨</span>
+                    <span className="shrink-0 text-[9px] font-bold text-status-modified-text bg-status-modified-bg px-1.5 py-0.5 rounded">수정됨</span>
                   )}
                   {!isMarkdownOriginal(guide.id) && (
                     <span className="shrink-0 text-[9px] font-bold text-accent-text bg-accent-subtle px-1.5 py-0.5 rounded">추가됨</span>
@@ -274,7 +274,7 @@ export function ReferenceGuideManagement() {
                     <Pencil size={14} />
                   </button>
                   {isModified(guide.id) && isMarkdownOriginal(guide.id) && (
-                    <button onClick={() => handleReset(guide.id)} className="rounded p-1.5 text-tx-muted hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10" title="원본으로 되돌리기" aria-label="원본으로 되돌리기">
+                    <button onClick={() => handleReset(guide.id)} className="rounded p-1.5 text-tx-muted hover:text-status-modified-text hover:bg-status-modified-bg" title="원본으로 되돌리기" aria-label="원본으로 되돌리기">
                       <RotateCcw size={14} />
                     </button>
                   )}

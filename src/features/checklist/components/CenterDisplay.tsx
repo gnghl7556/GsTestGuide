@@ -363,7 +363,7 @@ export function CenterDisplay({
                             : isCurrent
                               ? 'bg-surface-base scale-100 shadow-[0_4px_16px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.25),0_1px_3px_rgba(0,0,0,0.15)]'
                               : 'bg-surface-sunken/40 scale-[0.97] opacity-35'
-                      } ${isKbFocused && !disabled ? 'ring-2 ring-blue-500/50 ring-offset-1' : ''}`}
+                      } ${isKbFocused && !disabled ? 'ring-2 ring-accent/50 ring-offset-1' : ''}`}
                     >
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">

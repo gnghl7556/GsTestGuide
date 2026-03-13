@@ -99,6 +99,16 @@ html.dark #root {
   --status-pending-bg: #f9fafb;
   --status-pending-text: #6b7280;
   --status-pending-border: #e5e7eb;
+
+  /* Status - Modified (수정됨) */
+  --status-modified-bg: #fffbeb;
+  --status-modified-text: #d97706;
+  --status-modified-border: #fde68a;
+
+  /* Status - Retry (재시험) */
+  --status-retry-bg: #f3e8ff;
+  --status-retry-text: #7c3aed;
+  --status-retry-border: #d8b4fe;
 }
 
 .dark {
@@ -155,6 +165,14 @@ html.dark #root {
   --status-pending-bg: rgba(255, 255, 255, 0.05);
   --status-pending-text: rgba(255, 255, 255, 0.50);
   --status-pending-border: rgba(255, 255, 255, 0.10);
+
+  --status-modified-bg: rgba(245, 158, 11, 0.15);
+  --status-modified-text: #fcd34d;
+  --status-modified-border: rgba(251, 191, 35, 0.3);
+
+  --status-retry-bg: rgba(139, 92, 246, 0.15);
+  --status-retry-text: #c4b5fd;
+  --status-retry-border: rgba(167, 139, 250, 0.3);
 
   /* Admin Sidebar */
   --admin-sidebar-bg: rgba(0, 0, 0, 0.3);

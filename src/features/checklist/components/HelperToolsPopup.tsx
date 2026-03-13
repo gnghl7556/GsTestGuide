@@ -18,7 +18,7 @@ const TOOL_CATEGORIES: ToolCategory[] = [
   {
     label: '캡처 / 녹화',
     icon: Camera,
-    color: 'text-rose-500 dark:text-rose-400',
+    color: 'text-status-fail-text',
     tools: [
       { name: 'PickPick', description: '화면 캡처 및 간단 편집', url: 'https://picpick.app/ko/' },
       { name: 'FastStone Capture', description: '스크롤 캡처 및 화면 녹화', url: 'https://www.faststone.org/FSCaptureDetail.htm' },
@@ -27,7 +27,7 @@ const TOOL_CATEGORIES: ToolCategory[] = [
   {
     label: '원격 접속',
     icon: Monitor,
-    color: 'text-sky-500 dark:text-sky-400',
+    color: 'text-accent-text',
     tools: [
       { name: 'Putty', description: 'SSH/Telnet 원격 터미널', url: 'https://www.putty.org/' },
       { name: 'RemoteView', description: '원격 데스크톱 접속', url: 'https://www.remoteview.com/' },
@@ -36,7 +36,7 @@ const TOOL_CATEGORIES: ToolCategory[] = [
   {
     label: '테스트 도구',
     icon: TestTube,
-    color: 'text-emerald-500 dark:text-emerald-400',
+    color: 'text-status-pass-text',
     tools: [
       { name: 'Postman', description: 'API 요청 테스트', url: 'https://www.postman.com/downloads/' },
       { name: 'Wireshark', description: '네트워크 패킷 분석', url: 'https://www.wireshark.org/download.html' },
@@ -45,7 +45,7 @@ const TOOL_CATEGORIES: ToolCategory[] = [
   {
     label: '성능 측정',
     icon: Gauge,
-    color: 'text-amber-500 dark:text-amber-400',
+    color: 'text-status-hold-text',
     tools: [
       { name: 'PotPlayer', description: '미디어 성능 확인 및 재생', url: 'https://potplayer.daum.net/' },
     ],

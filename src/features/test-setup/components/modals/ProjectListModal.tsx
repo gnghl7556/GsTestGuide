@@ -13,7 +13,7 @@ const STATUS_COLORS: Record<string, string> = {
   '진행': 'bg-accent-subtle text-accent-text',
   '중단': 'bg-status-hold-bg text-status-hold-text',
   '완료': 'bg-status-pass-bg text-status-pass-text',
-  '재시험': 'bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400',
+  '재시험': 'bg-status-retry-bg text-status-retry-text',
 };
 
 interface ProjectListModalProps {
@@ -167,7 +167,7 @@ export function ProjectListModal({
                     key={project.id}
                     className={`relative rounded-xl border px-3 py-3 text-left text-sm transition ${
                       isActive
-                        ? 'border-purple-400/60 bg-accent text-white'
+                        ? 'border-accent/60 bg-accent text-white'
                         : 'border-ln bg-surface-base text-tx-secondary hover:border-ln-strong'
                     }`}
                   >
