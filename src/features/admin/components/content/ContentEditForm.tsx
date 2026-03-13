@@ -123,6 +123,7 @@ export function ContentEditForm({
             refDropdownIdx={refDropdownIdx}
             setRefDropdownIdx={setRefDropdownIdx}
             dropdownRef={dropdownRef}
+            evidenceExamples={editing.evidenceExamples}
           />
 
           {/* Branching Rules */}

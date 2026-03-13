@@ -86,7 +86,30 @@ export function DetailFieldsEditor({ editing, setEditing, originalReq }: DetailF
         placeholder="예: 테스트 결과 보고서 캡처"
         items={editing.evidenceExamples}
         originalItems={originalReq.evidenceExamples ?? []}
-        onChange={(next) => setEditing({ ...editing, evidenceExamples: next })}
+        onChange={(next) => {
+          // 증빙 삭제 시 checkpointEvidences 인덱스 리매핑
+          if (next.length < editing.evidenceExamples.length) {
+            let removedIdx = -1;
+            for (let i = 0; i < editing.evidenceExamples.length; i++) {
+              if (i >= next.length || editing.evidenceExamples[i] !== next[i]) {
+                removedIdx = i;
+                break;
+              }
+            }
+            if (removedIdx >= 0) {
+              const remapped: Record<number, number[]> = {};
+              for (const [cpStr, indices] of Object.entries(editing.checkpointEvidences)) {
+                const updated = indices
+                  .filter(ei => ei !== removedIdx)
+                  .map(ei => ei > removedIdx ? ei - 1 : ei);
+                if (updated.length > 0) remapped[Number(cpStr)] = updated;
+              }
+              setEditing({ ...editing, evidenceExamples: next, checkpointEvidences: remapped });
+              return;
+            }
+          }
+          setEditing({ ...editing, evidenceExamples: next });
+        }}
       />
 
       <ListFieldEditor

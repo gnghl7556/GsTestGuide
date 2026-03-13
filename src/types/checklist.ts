@@ -25,6 +25,7 @@ export interface Requirement {
   passCriteria?: string;
   checkpointImportances?: Record<number, QuestionImportance>;
   checkpointDetails?: Record<number, string>;
+  checkpointEvidences?: Record<number, number[]>;
   branchingRules?: BranchingRule[];
   excludeConditions?: {
     isSaMD?: boolean;
@@ -83,6 +84,7 @@ export interface ExpertDetails {
   description: string;
   checkPoints: string[];
   checkpointDetails?: string[];
+  checkpointEvidences?: Record<number, number[]>;
   evidenceExamples: string[];
   testSuggestions: string[];
   passCriteria: string;

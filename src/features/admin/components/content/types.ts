@@ -11,6 +11,7 @@ export type EditingState = {
   checkpointRefs: Record<number, string[]>; // refs per checkpoint
   checkpointImportances: Record<number, QuestionImportance>;
   checkpointDetails: Record<number, string>;
+  checkpointEvidences: Record<number, number[]>;
   evidenceExamples: string[];
   testSuggestions: string[];
   passCriteria: string;

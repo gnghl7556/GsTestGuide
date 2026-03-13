@@ -11,6 +11,7 @@ type CheckpointEditorProps = {
   refDropdownIdx: number | null;
   setRefDropdownIdx: (idx: number | null) => void;
   dropdownRef: React.RefObject<HTMLDivElement | null>;
+  evidenceExamples: string[];
 };
 
 export function CheckpointEditor({
@@ -22,7 +23,18 @@ export function CheckpointEditor({
   refDropdownIdx,
   setRefDropdownIdx,
   dropdownRef,
+  evidenceExamples,
 }: CheckpointEditorProps) {
+  const toggleEvidence = (cpIdx: number, evIdx: number) => {
+    const current = editing.checkpointEvidences[cpIdx] ?? [];
+    const next = current.includes(evIdx)
+      ? current.filter(i => i !== evIdx)
+      : [...current, evIdx].sort((a, b) => a - b);
+    setEditing({
+      ...editing,
+      checkpointEvidences: { ...editing.checkpointEvidences, [cpIdx]: next },
+    });
+  };
   if (!checkPoints || checkPoints.length === 0) return null;
 
   return (
@@ -139,7 +151,7 @@ export function CheckpointEditor({
               </div>
               </div>
               {/* detail memo at card bottom */}
-              <div className="border-t border-ln bg-surface-sunken/40 px-3 py-2">
+              <div className="border-t border-ln bg-surface-sunken/40 px-3 py-2 space-y-2">
                 <textarea
                   className="w-full rounded border border-ln bg-surface-base px-2.5 py-1.5 text-xs text-tx-primary resize-y placeholder:text-tx-muted/50"
                   value={editing.checkpointDetails[i] ?? ''}
@@ -150,6 +162,37 @@ export function CheckpointEditor({
                   rows={1}
                   placeholder="이 체크포인트에 대한 상세 메모를 입력하세요"
                 />
+                {evidenceExamples.length > 0 && (
+                  <div>
+                    <span className="text-[9px] font-bold text-tx-muted uppercase tracking-wider">증빙 예시 연결</span>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {evidenceExamples.map((ev, evIdx) => {
+                        const selected = (editing.checkpointEvidences[i] ?? []).includes(evIdx);
+                        return (
+                          <button
+                            key={evIdx}
+                            type="button"
+                            onClick={() => toggleEvidence(i, evIdx)}
+                            className={`inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border transition-colors ${
+                              selected
+                                ? 'bg-accent/10 text-accent-text border-accent/30 font-semibold'
+                                : 'bg-surface-base text-tx-muted border-ln hover:border-ln-strong hover:text-tx-secondary'
+                            }`}
+                          >
+                            <span className={`shrink-0 h-3 w-3 rounded-sm border flex items-center justify-center text-[7px] ${
+                              selected
+                                ? 'bg-accent border-accent text-white'
+                                : 'border-ln bg-surface-base'
+                            }`}>
+                              {selected && '\u2713'}
+                            </span>
+                            {ev}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );

@@ -227,6 +227,7 @@ export function ContentOverrideManagement() {
       checkpointRefs: Object.fromEntries(cpEntries.map(({ i, refs }: { i: number; body: string; refs: string[] }) => [i, refs])),
       checkpointImportances: cpImportances,
       checkpointDetails: ov?.checkpointDetails ?? {},
+      checkpointEvidences: ov?.checkpointEvidences ?? req.checkpointEvidences ?? {},
       evidenceExamples: ov?.evidenceExamples ?? req.evidenceExamples ?? [],
       testSuggestions: ov?.testSuggestions ?? req.testSuggestions ?? [],
       passCriteria: ov?.passCriteria ?? req.passCriteria ?? '',
@@ -279,6 +280,26 @@ export function ContentOverrideManagement() {
     const editedEvidence = editing.evidenceExamples.filter(s => s.trim());
     if (JSON.stringify(editedEvidence) !== JSON.stringify(origEvidence)) {
       patch.evidenceExamples = editedEvidence;
+    }
+
+    // 빈 증빙이 필터링되면 인덱스 시프트 발생 → checkpointEvidences 리매핑
+    const origCpEvidences = req.checkpointEvidences ?? {};
+    const editedCpEvidences: Record<number, number[]> = {};
+    const evidenceIndexMap = new Map<number, number>();
+    let newIdx = 0;
+    for (let oldIdx = 0; oldIdx < editing.evidenceExamples.length; oldIdx++) {
+      if (editing.evidenceExamples[oldIdx].trim()) {
+        evidenceIndexMap.set(oldIdx, newIdx++);
+      }
+    }
+    for (const [iStr, indices] of Object.entries(editing.checkpointEvidences)) {
+      const remapped = indices
+        .map(ei => evidenceIndexMap.get(ei))
+        .filter((ei): ei is number => ei !== undefined);
+      if (remapped.length > 0) editedCpEvidences[Number(iStr)] = remapped;
+    }
+    if (JSON.stringify(editedCpEvidences) !== JSON.stringify(origCpEvidences)) {
+      patch.checkpointEvidences = editedCpEvidences;
     }
 
     const origSuggestions = req.testSuggestions ?? [];
@@ -336,7 +357,7 @@ export function ContentOverrideManagement() {
 
     setBusy(true);
     try {
-      const isEmpty = !patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.checkpointDetails && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules;
+      const isEmpty = !patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.checkpointDetails && !patch.checkpointEvidences && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules;
       if (isEmpty) {
         await deleteDoc(doc(db, 'contentOverrides', editing.reqId));
       } else {

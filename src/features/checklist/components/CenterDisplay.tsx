@@ -161,7 +161,6 @@ export function CenterDisplay({
 
   const requirementId = quickModeItem?.requirementId ?? activeItem.id;
   const questions = quickModeItem?.quickQuestions ?? [];
-  const hasEvidence = Boolean(activeItem.evidenceExamples && activeItem.evidenceExamples.length > 0);
   const hasCriteria = Boolean(activeItem.passCriteria);
   const hasTestSuggestions = Boolean(activeItem.testSuggestions && activeItem.testSuggestions.length > 0);
   const hasDetailContent = hasTestSuggestions || hasCriteria;
@@ -459,25 +458,35 @@ export function CenterDisplay({
                           </div>
                         </div>
                       </div>
-                      {/* 증빙 예시 — 활성 질문에만 표시 */}
-                      <div
-                        className="grid transition-all duration-300 ease-out"
-                        style={{ gridTemplateRows: !disabled && hasEvidence && (isCurrent || isKbFocused) ? '1fr' : '0fr' }}
-                      >
-                        <div className="overflow-hidden">
-                          <div className="pt-2 pl-9">
-                            <div className="border-l-2 border-ln-strong/40 pl-3 space-y-1">
-                              <span className="text-[10px] font-bold text-tx-muted uppercase tracking-wide">증빙 예시</span>
-                              {activeItem.evidenceExamples!.map((example, ei) => (
-                                <div key={`ev-${ei}`} className="flex items-start gap-2">
-                                  <span className="text-tx-muted/60 mt-[3px] shrink-0 text-[8px]">●</span>
-                                  <span className="text-xs text-tx-tertiary leading-relaxed">{example}</span>
+                      {/* 증빙 예시 — 활성 질문에 해당하는 항목만 표시 */}
+                      {(() => {
+                        const cpEvidenceMapping = quickModeItem?.expertDetails?.checkpointEvidences ?? activeItem.checkpointEvidences;
+                        const hasCpMapping = cpEvidenceMapping && Object.keys(cpEvidenceMapping).length > 0;
+                        const filteredEvidence = hasCpMapping
+                          ? (cpEvidenceMapping[index] ?? []).map(ei => activeItem.evidenceExamples![ei]).filter(Boolean)
+                          : (activeItem.evidenceExamples ?? []);
+                        const hasFilteredEvidence = filteredEvidence.length > 0;
+                        return (
+                          <div
+                            className="grid transition-all duration-300 ease-out"
+                            style={{ gridTemplateRows: !disabled && hasFilteredEvidence && (isCurrent || isKbFocused) ? '1fr' : '0fr' }}
+                          >
+                            <div className="overflow-hidden">
+                              <div className="pt-2 pl-9">
+                                <div className="border-l-2 border-ln-strong/40 pl-3 space-y-1">
+                                  <span className="text-[10px] font-bold text-tx-muted uppercase tracking-wide">증빙 예시</span>
+                                  {filteredEvidence.map((example, ei) => (
+                                    <div key={`ev-${ei}`} className="flex items-start gap-2">
+                                      <span className="text-tx-muted/60 mt-[3px] shrink-0 text-[8px]">●</span>
+                                      <span className="text-xs text-tx-tertiary leading-relaxed">{example}</span>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
                       {/* 분기 규칙 시각화: 건너뜀 대상 표시 */}
                       {(() => {
                         const triggered = getTriggeredSkips(index);
