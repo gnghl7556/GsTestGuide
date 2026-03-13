@@ -1,9 +1,9 @@
 # 📝 GsTestGuide Development Roadmap
 
 ## Phase 1: Foundation (기반 및 데이터 설계)
-- [ ] **데이터 모델 확장 (운영환경 추가)**
+- [x] **데이터 모델 확장 (운영환경 추가)**
     - [x] `src/types/models.ts`: `Project` 인터페이스에 `operatingEnvironment` (string) 필드 추가.
-    - [ ] `src/features/test-setup`: 시험 정보 수정 페이지에 '운영환경' 입력 란(Textarea) 추가 및 저장 로직 구현.
+    - [x] `src/features/test-setup`: 시험 정보 수정 페이지에 '운영환경' 입력 란(Textarea) 추가 및 저장 로직 구현.
 - [ ] **디렉토리 및 UI 정리**
     - [ ] `src/components`의 모달들을 `src/features`로 이동.
     - [ ] 공통 UI(`Button`, `Input`) 스타일 통일.

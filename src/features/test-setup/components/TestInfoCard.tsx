@@ -19,6 +19,7 @@ interface TestInfoCardProps {
   managerName: string;
   managerPhone: string;
   managerEmail: string;
+  operatingEnvironment: string;
   plDirectory: PlEntry[];
   agreementStatus?: 'pending' | 'parsed' | 'failed';
   onChangePlId: (v: string) => void;
@@ -37,6 +38,7 @@ export function TestInfoCard({
   managerName,
   managerPhone,
   managerEmail,
+  operatingEnvironment,
   plDirectory,
   agreementStatus,
   onChangePlId,
@@ -171,6 +173,18 @@ export function TestInfoCard({
               onChange={(e) => onChangeField('companyContactEmail', e.target.value)}
             />
           </div>
+        </div>
+
+        {/* 운영환경 — 전체 너비 (textarea) */}
+        <div className="space-y-1 md:col-span-2">
+          <div className="text-[11px] text-slate-400 dark:text-white/50">운영환경</div>
+          <textarea
+            className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm text-slate-700 dark:text-white/80 placeholder:text-slate-400 dark:placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/60 resize-none"
+            placeholder="운영환경 정보를 입력하세요 (OS, 하드웨어, 네트워크 등)"
+            value={operatingEnvironment}
+            onChange={(e) => onChangeField('operatingEnvironment', e.target.value)}
+            rows={3}
+          />
         </div>
       </div>
     </div>

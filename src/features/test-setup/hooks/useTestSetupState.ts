@@ -45,6 +45,7 @@ const createEmptyTestSetup = (): TestSetupState => ({
   schedulePatchDate: '',
   scheduleEndDate: '',
   projectName: '',
+  operatingEnvironment: '',
   docs: [],
   agreementParsed: undefined
 });
@@ -225,6 +226,7 @@ export function useTestSetupState({
     companyContactName?: string;
     companyContactPhone?: string;
     companyContactEmail?: string;
+    operatingEnvironment?: string;
   }) => {
     setTestSetup((prev) => ({
       ...prev,
@@ -299,6 +301,7 @@ export function useTestSetupState({
           startDate: startDate || serverTimestamp(),
           endDate: endDate || serverTimestamp(),
           contractType: testSetup.agreementParsed?.contractType || '',
+          operatingEnvironment: testSetup.operatingEnvironment || '',
           companyContactName: testSetup.companyContactName,
           companyContactEmail: testSetup.companyContactEmail,
           companyContactPhone: testSetup.companyContactPhone,
@@ -506,6 +509,7 @@ export function useTestSetupState({
       schedulePatchDate: testNumber ? project?.schedulePatchDate || '' : '',
       scheduleEndDate: testNumber ? project?.scheduleEndDate || '' : '',
       projectName: testNumber ? project?.projectName || '' : '',
+      operatingEnvironment: testNumber ? project?.operatingEnvironment || '' : '',
       docs: testNumber && testNumber === prev.testNumber ? prev.docs : [],
       agreementParsed: testNumber && testNumber === prev.testNumber ? prev.agreementParsed : undefined
     }));
@@ -570,6 +574,7 @@ export function useTestSetupState({
       scheduleDefect2: '',
       schedulePatchDate: '',
       scheduleEndDate: '',
+      operatingEnvironment: '',
       docs: [],
       agreementParsed: undefined
     }));

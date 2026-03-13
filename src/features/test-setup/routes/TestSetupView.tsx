@@ -45,6 +45,7 @@ export function TestSetupView({ onStartProject, onQuickStart }: TestSetupViewPro
         companyContactName={testSetup.companyContactName}
         companyContactPhone={testSetup.companyContactPhone}
         companyContactEmail={testSetup.companyContactEmail}
+        operatingEnvironment={testSetup.operatingEnvironment}
         projects={projects}
         plDirectory={plDirectory}
         users={users}

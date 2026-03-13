@@ -39,6 +39,7 @@ interface TestSetupPageProps {
   companyContactName: string;
   companyContactPhone: string;
   companyContactEmail: string;
+  operatingEnvironment: string;
   users: AppUser[];
   currentUserId: string;
   onChangeUserId: (userId: string) => void;
@@ -62,6 +63,7 @@ interface TestSetupPageProps {
     companyContactName?: string;
     companyContactPhone?: string;
     companyContactEmail?: string;
+    operatingEnvironment?: string;
   }) => void;
   onUploadAgreementDoc: (file: File) => void | Promise<void>;
   onDeleteAgreementDoc: () => void | Promise<void>;
@@ -83,6 +85,7 @@ export function TestSetupPage({
   companyContactName,
   companyContactPhone,
   companyContactEmail,
+  operatingEnvironment,
   users,
   currentUserId,
   onChangeUserId,
@@ -246,7 +249,8 @@ export function TestSetupPage({
       companyName: '',
       companyContactName: '',
       companyContactPhone: '',
-      companyContactEmail: ''
+      companyContactEmail: '',
+      operatingEnvironment: ''
     });
     setTestNumberValidation({ touched: false, isValid: false, message: '' });
   };
@@ -271,6 +275,7 @@ export function TestSetupPage({
         ...(companyContactName ? { companyContactName } : {}),
         ...(companyContactPhone ? { companyContactPhone } : {}),
         ...(companyContactEmail ? { companyContactEmail } : {}),
+        ...(operatingEnvironment ? { operatingEnvironment } : {}),
         ...(scheduleWorkingDays ? { scheduleWorkingDays } : {}),
         ...(srcStart ? { scheduleStartDate: srcStart } : {}),
         ...(srcEnd ? { scheduleEndDate: srcEnd } : {}),
@@ -849,6 +854,7 @@ export function TestSetupPage({
                   managerName={companyContactName}
                   managerPhone={companyContactPhone}
                   managerEmail={companyContactEmail}
+                  operatingEnvironment={operatingEnvironment}
                   plDirectory={plDirectory}
                   agreementStatus={agreementParsed?.parseStatus}
                   onChangePlId={onChangePlId}

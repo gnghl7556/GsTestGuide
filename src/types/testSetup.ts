@@ -47,6 +47,7 @@ export type TestSetupState = {
   schedulePatchDate: string;
   scheduleEndDate: string;
   projectName: string;
+  operatingEnvironment: string;
   docs: DocEntry[];
   agreementParsed?: AgreementParsed;
 };
