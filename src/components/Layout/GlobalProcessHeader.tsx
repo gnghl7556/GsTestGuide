@@ -179,7 +179,6 @@ function DdayBadge({ info }: { info?: GlobalProjectInfo }) {
 }
 
 export function GlobalProcessHeader({
-  currentStep,
   projectInfo,
   rightSlot,
   onReset,
@@ -190,7 +189,6 @@ export function GlobalProcessHeader({
   onLogout,
   onOpenTestList,
   onOpenSchedule,
-  onNavigateStep
 }: GlobalProcessHeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const [companyOpen, setCompanyOpen] = useState(false);
@@ -239,7 +237,6 @@ export function GlobalProcessHeader({
           <span className="hidden md:inline text-tx-muted">|</span>
           <span className="hidden md:inline text-tx-tertiary truncate">{companyName}</span>
         </div>
-        {false && onNavigateStep}
         {projectInfo && <DdayBadge info={projectInfo} />}
         <div className="flex-1 min-w-0" />
         {rightSlot && (
