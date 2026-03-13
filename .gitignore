@@ -13,6 +13,15 @@ dist
 dist-ssr
 *.local
 functions/lib
+tsconfig.app.tsbuildinfo
+
+# Tool config
+.bkit/
+.claude/
+.firebase/
+
+# Prompt files
+gstestguide-phase1-prompt.md
 
 # Editor directories and files
 .vscode/*
