@@ -259,6 +259,7 @@ export function ContactManagement() {
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
                 placeholder="예: 보안 담당"
+                aria-label="역할"
                 autoFocus
               />
             </td>
@@ -295,6 +296,7 @@ export function ContactManagement() {
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 placeholder="연락처"
+                aria-label="연락처"
               />
             </td>
             <td className="px-4 py-2">
@@ -303,6 +305,7 @@ export function ContactManagement() {
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="이메일"
+                aria-label="이메일"
               />
             </td>
             <td className="px-4 py-2">
@@ -311,12 +314,14 @@ export function ContactManagement() {
                 value={form.requestMethod}
                 onChange={(e) => setForm({ ...form, requestMethod: e.target.value })}
                 placeholder="예: 내선 전화 요청"
+                aria-label="요청방법"
               />
               <input
                 className="w-full rounded border border-ln px-2 py-1 text-[11px] text-tx-tertiary"
                 value={form.requestUrl}
                 onChange={(e) => setForm({ ...form, requestUrl: e.target.value })}
                 placeholder="관련 링크 (선택)"
+                aria-label="관련 링크"
               />
             </td>
             <td className="px-4 py-2">
@@ -328,14 +333,14 @@ export function ContactManagement() {
                   onClick={handleAdd}
                   disabled={busy}
                   className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg disabled:opacity-40"
-                  title="저장"
+                  title="저장" aria-label="저장"
                 >
                   <Check size={16} />
                 </button>
                 <button
                   onClick={() => setShowAddForm(false)}
                   className="rounded p-1 text-tx-muted hover:bg-interactive-hover"
-                  title="취소"
+                  title="취소" aria-label="취소"
                 >
                   <X size={16} />
                 </button>
@@ -390,6 +395,7 @@ export function ContactManagement() {
                     className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken"
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    aria-label="연락처"
                   />
                 </td>
                 <td className="px-4 py-2">
@@ -397,6 +403,7 @@ export function ContactManagement() {
                     className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-sunken"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    aria-label="이메일"
                   />
                 </td>
                 <td className="px-4 py-2">
@@ -405,12 +412,14 @@ export function ContactManagement() {
                     value={form.requestMethod}
                     onChange={(e) => setForm({ ...form, requestMethod: e.target.value })}
                     placeholder="요청방법"
+                    aria-label="요청방법"
                   />
                   <input
                     className="w-full rounded border border-ln px-2 py-1 text-[11px] text-tx-tertiary"
                     value={form.requestUrl}
                     onChange={(e) => setForm({ ...form, requestUrl: e.target.value })}
                     placeholder="관련 링크 (선택)"
+                    aria-label="관련 링크"
                   />
                 </td>
                 <td className="px-4 py-2">
@@ -422,14 +431,14 @@ export function ContactManagement() {
                       onClick={handleEditSave}
                       disabled={busy}
                       className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg disabled:opacity-40"
-                      title="저장"
+                      title="저장" aria-label="저장"
                     >
                       <Check size={16} />
                     </button>
                     <button
                       onClick={cancelEdit}
                       className="rounded p-1 text-tx-muted hover:bg-interactive-hover"
-                      title="취소"
+                      title="취소" aria-label="취소"
                     >
                       <X size={16} />
                     </button>
@@ -475,7 +484,7 @@ export function ContactManagement() {
                     onClick={() => handleEditStart(r)}
                     disabled={busy}
                     className="rounded p-1 text-tx-muted hover:text-accent-text hover:bg-accent-subtle disabled:opacity-40"
-                    title="수정"
+                    title="수정" aria-label="수정"
                   >
                     <Pencil size={14} />
                   </button>
@@ -483,7 +492,7 @@ export function ContactManagement() {
                     onClick={() => setDeleteTarget(r.role)}
                     disabled={busy}
                     className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle disabled:opacity-40"
-                    title="삭제"
+                    title="삭제" aria-label="삭제"
                   >
                     <Trash2 size={14} />
                   </button>

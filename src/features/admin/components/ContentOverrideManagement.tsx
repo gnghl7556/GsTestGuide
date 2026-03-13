@@ -502,14 +502,14 @@ export function ContentOverrideManagement() {
                             onClick={() => handleEditStart(req.id)}
                             disabled={busy}
                             className="rounded p-1.5 text-tx-muted hover:text-accent-text hover:bg-accent-subtle disabled:opacity-40"
-                            title="수정"
+                            title="수정" aria-label="수정"
                           >
                             <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => setHistoryTarget({ reqId: req.id, title: getDisplayValue(req.id, 'title') })}
                             className="rounded p-1.5 text-tx-muted hover:text-tx-secondary hover:bg-surface-sunken"
-                            title="변경 이력"
+                            title="변경 이력" aria-label="변경 이력"
                           >
                             <Clock size={14} />
                           </button>
@@ -518,7 +518,7 @@ export function ContentOverrideManagement() {
                               onClick={() => setResetTarget(req.id)}
                               disabled={busy}
                               className="rounded p-1.5 text-tx-muted hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 disabled:opacity-40"
-                              title="원본으로 되돌리기"
+                              title="원본으로 되돌리기" aria-label="원본으로 되돌리기"
                             >
                               <RotateCcw size={14} />
                             </button>
@@ -537,7 +537,7 @@ export function ContentOverrideManagement() {
       {/* Reset single item confirm modal */}
       <ConfirmModal
         open={!!resetTarget}
-        title="원본으로 되돌리기"
+        title="원본으로 되돌리기" aria-label="원본으로 되돌리기"
         description={
           <p className="text-xs text-tx-tertiary">
             <strong className="text-tx-secondary">{resetTarget}</strong> 항목의 수정 내용을 삭제하고 원본으로 복원하시겠습니까?

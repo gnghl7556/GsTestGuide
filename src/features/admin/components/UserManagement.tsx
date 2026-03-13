@@ -95,6 +95,7 @@ export function UserManagement() {
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       placeholder="이름"
+                      aria-label="이름"
                       autoFocus
                     />
                   </td>
@@ -103,6 +104,7 @@ export function UserManagement() {
                       className="rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                       value={form.rank}
                       onChange={(e) => setForm({ ...form, rank: e.target.value as UserRank })}
+                      aria-label="직급"
                     >
                       {RANK_OPTIONS.map((r) => (
                         <option key={r} value={r}>{r}</option>
@@ -115,6 +117,7 @@ export function UserManagement() {
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
                       placeholder="이메일"
+                      aria-label="이메일"
                     />
                   </td>
                   <td className="px-4 py-2">
@@ -123,6 +126,7 @@ export function UserManagement() {
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
                       placeholder="연락처"
+                      aria-label="연락처"
                     />
                   </td>
                   <td className="px-4 py-2 text-right">
@@ -130,14 +134,14 @@ export function UserManagement() {
                       <button
                         onClick={handleAdd}
                         className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg"
-                        title="저장"
+                        title="저장" aria-label="저장"
                       >
                         <Check size={16} />
                       </button>
                       <button
                         onClick={() => setShowAddForm(false)}
                         className="rounded p-1 text-tx-muted hover:bg-interactive-hover"
-                        title="취소"
+                        title="취소" aria-label="취소"
                       >
                         <X size={16} />
                       </button>
@@ -154,6 +158,7 @@ export function UserManagement() {
                           className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                           value={form.name}
                           onChange={(e) => setForm({ ...form, name: e.target.value })}
+                          aria-label="이름"
                         />
                       </td>
                       <td className="px-4 py-2">
@@ -161,6 +166,7 @@ export function UserManagement() {
                           className="rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                           value={form.rank}
                           onChange={(e) => setForm({ ...form, rank: e.target.value as UserRank })}
+                          aria-label="직급"
                         >
                           {RANK_OPTIONS.map((r) => (
                             <option key={r} value={r}>{r}</option>
@@ -172,6 +178,7 @@ export function UserManagement() {
                           className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                           value={form.email}
                           onChange={(e) => setForm({ ...form, email: e.target.value })}
+                          aria-label="이메일"
                         />
                       </td>
                       <td className="px-4 py-2">
@@ -179,6 +186,7 @@ export function UserManagement() {
                           className="w-full rounded border border-ln px-2 py-1 text-sm bg-surface-base text-tx-primary"
                           value={form.phone}
                           onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                          aria-label="연락처"
                         />
                       </td>
                       <td className="px-4 py-2 text-right">
@@ -186,14 +194,14 @@ export function UserManagement() {
                           <button
                             onClick={handleEditSave}
                             className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg"
-                            title="저장"
+                            title="저장" aria-label="저장"
                           >
                             <Check size={16} />
                           </button>
                           <button
                             onClick={() => { setEditingId(null); setForm(emptyForm); }}
                             className="rounded p-1 text-tx-muted hover:bg-interactive-hover"
-                            title="취소"
+                            title="취소" aria-label="취소"
                           >
                             <X size={16} />
                           </button>
@@ -211,7 +219,7 @@ export function UserManagement() {
                           <button
                             onClick={() => handleEditStart(user)}
                             className="rounded p-1 text-tx-muted hover:text-accent-text hover:bg-accent-subtle"
-                            title="수정"
+                            title="수정" aria-label="수정"
                           >
                             <Pencil size={14} />
                           </button>
@@ -234,7 +242,7 @@ export function UserManagement() {
                             <button
                               onClick={() => setDeleteConfirmId(user.id)}
                               className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle"
-                              title="삭제"
+                              title="삭제" aria-label="삭제"
                             >
                               <Trash2 size={14} />
                             </button>

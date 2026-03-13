@@ -426,7 +426,7 @@ export function MaterialManagement() {
                   <div key={f.fullPath} className="flex items-center gap-2.5 text-xs bg-surface-base rounded-lg px-3 py-2 border border-ln">
                     <img src={f.url} alt={f.name} className="h-10 w-10 rounded object-cover border border-ln" />
                     <span className="flex-1 truncate text-tx-secondary">{f.name}</span>
-                    <button onClick={() => handleFileDelete(f.fullPath, label)} className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle" title="삭제">
+                    <button onClick={() => handleFileDelete(f.fullPath, label)} className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle" title="삭제" aria-label="삭제">
                       <Trash2 size={13} />
                     </button>
                   </div>
@@ -454,7 +454,7 @@ export function MaterialManagement() {
                   <div key={f.fullPath} className="flex items-center gap-2.5 text-xs bg-surface-base rounded-lg px-3 py-2 border border-ln">
                     <FileDown size={14} className="text-tx-muted shrink-0" />
                     <a href={f.url} target="_blank" rel="noreferrer" className="flex-1 truncate text-accent-text hover:text-accent-hover underline">{f.name}</a>
-                    <button onClick={() => handleFileDelete(f.fullPath, label)} className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle" title="삭제">
+                    <button onClick={() => handleFileDelete(f.fullPath, label)} className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle" title="삭제" aria-label="삭제">
                       <Trash2 size={13} />
                     </button>
                   </div>
@@ -572,10 +572,10 @@ export function MaterialManagement() {
             </td>
             <td className="px-4 py-2 text-right align-top">
               <div className="flex items-center justify-end gap-1">
-                <button onClick={handleAdd} disabled={busy} className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg" title="저장">
+                <button onClick={handleAdd} disabled={busy} className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg" title="저장" aria-label="저장">
                   <Check size={16} />
                 </button>
-                <button onClick={() => setShowAddForm(false)} className="rounded p-1 text-tx-muted hover:bg-interactive-hover" title="취소">
+                <button onClick={() => setShowAddForm(false)} className="rounded p-1 text-tx-muted hover:bg-interactive-hover" title="취소" aria-label="취소">
                   <X size={16} />
                 </button>
               </div>
@@ -622,10 +622,10 @@ export function MaterialManagement() {
                   </td>
                   <td className="px-4 py-2 text-right align-top">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={handleEditSave} disabled={busy} className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg" title="저장">
+                      <button onClick={handleEditSave} disabled={busy} className="rounded p-1 text-status-pass-text hover:bg-status-pass-bg" title="저장" aria-label="저장">
                         <Check size={16} />
                       </button>
-                      <button onClick={cancelEdit} className="rounded p-1 text-tx-muted hover:bg-interactive-hover" title="취소">
+                      <button onClick={cancelEdit} className="rounded p-1 text-tx-muted hover:bg-interactive-hover" title="취소" aria-label="취소">
                         <X size={16} />
                       </button>
                     </div>
@@ -672,10 +672,10 @@ export function MaterialManagement() {
                 <td className="px-4 py-3 text-xs text-tx-tertiary">{d.description || '-'}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <button onClick={() => handleEditStart(d)} className="rounded p-1 text-tx-muted hover:text-accent-text hover:bg-accent-subtle" title="수정">
+                    <button onClick={() => handleEditStart(d)} className="rounded p-1 text-tx-muted hover:text-accent-text hover:bg-accent-subtle" title="수정" aria-label="수정">
                       <Pencil size={14} />
                     </button>
-                    <button onClick={() => setDeleteTarget(d.label)} disabled={busy} className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle disabled:opacity-40" title="삭제">
+                    <button onClick={() => setDeleteTarget(d.label)} disabled={busy} className="rounded p-1 text-tx-muted hover:text-danger-text hover:bg-danger-subtle disabled:opacity-40" title="삭제" aria-label="삭제">
                       <Trash2 size={14} />
                     </button>
                   </div>

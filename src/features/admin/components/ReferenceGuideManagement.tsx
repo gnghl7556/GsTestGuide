@@ -225,10 +225,10 @@ export function ReferenceGuideManagement() {
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-1 pt-1">
-        <button onClick={handleSave} disabled={saving || !form.title.trim()} className="rounded p-1.5 text-status-pass-text hover:bg-status-pass-bg disabled:opacity-40" title="저장">
+        <button onClick={handleSave} disabled={saving || !form.title.trim()} className="rounded p-1.5 text-status-pass-text hover:bg-status-pass-bg disabled:opacity-40" title="저장" aria-label="저장">
           <Check size={16} />
         </button>
-        <button onClick={handleCancel} className="rounded p-1.5 text-tx-muted hover:bg-interactive-hover" title="취소">
+        <button onClick={handleCancel} className="rounded p-1.5 text-tx-muted hover:bg-interactive-hover" title="취소" aria-label="취소">
           <X size={16} />
         </button>
       </div>
@@ -270,11 +270,11 @@ export function ReferenceGuideManagement() {
                   )}
                 </div>
                 <div className="flex items-center gap-1 shrink-0 ml-2">
-                  <button onClick={() => handleEditStart(guide)} className="rounded p-1.5 text-tx-muted hover:text-accent-text hover:bg-accent-subtle" title="수정">
+                  <button onClick={() => handleEditStart(guide)} className="rounded p-1.5 text-tx-muted hover:text-accent-text hover:bg-accent-subtle" title="수정" aria-label="수정">
                     <Pencil size={14} />
                   </button>
                   {isModified(guide.id) && isMarkdownOriginal(guide.id) && (
-                    <button onClick={() => handleReset(guide.id)} className="rounded p-1.5 text-tx-muted hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10" title="원본으로 되돌리기">
+                    <button onClick={() => handleReset(guide.id)} className="rounded p-1.5 text-tx-muted hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10" title="원본으로 되돌리기" aria-label="원본으로 되돌리기">
                       <RotateCcw size={14} />
                     </button>
                   )}
@@ -285,7 +285,7 @@ export function ReferenceGuideManagement() {
                         <button onClick={() => setDeleteConfirm(null)} className="rounded px-2 py-0.5 text-xs font-semibold text-tx-tertiary hover:bg-interactive-hover">취소</button>
                       </div>
                     ) : (
-                      <button onClick={() => setDeleteConfirm(guide.id)} className="rounded p-1.5 text-tx-muted hover:text-danger-text hover:bg-danger-subtle" title="삭제">
+                      <button onClick={() => setDeleteConfirm(guide.id)} className="rounded p-1.5 text-tx-muted hover:text-danger-text hover:bg-danger-subtle" title="삭제" aria-label="삭제">
                         <Trash2 size={14} />
                       </button>
                     )
