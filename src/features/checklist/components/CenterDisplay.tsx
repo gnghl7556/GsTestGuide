@@ -323,6 +323,11 @@ export function CenterDisplay({
           </div>
         ) : (
           <div className="max-w-none">
+            {activeItem.description && (
+              <div className="mb-4">
+                <p className="text-sm text-tx-tertiary leading-loose">{activeItem.description}</p>
+              </div>
+            )}
             <div className="space-y-4">
               {activeItem.inputFields && activeItem.inputFields.length > 0 ? (
                 <div className="space-y-4">
@@ -550,7 +555,7 @@ export function CenterDisplay({
             className="w-full flex items-center justify-between px-6 py-3 text-xs font-bold text-tx-muted hover:text-tx-secondary transition-colors"
           >
             <span>상세 참고</span>
-            <ChevronDown className={`transition-transform duration-200 ${detailOpen ? 'rotate-180' : ''}`} size={14} />
+            <ChevronDown className={`transition-transform duration-200 ${detailOpen ? '' : 'rotate-180'}`} size={14} />
           </button>
           <div
             className="grid transition-all duration-300 ease-out"
@@ -570,13 +575,7 @@ export function CenterDisplay({
                 <div role="tabpanel" className="pt-4 space-y-4">
                   {effectiveTab === 'guide' && (
                     <>
-                      {activeItem.description && (
-                        <div>
-                          <div className="text-xs font-bold text-tx-muted mb-2 uppercase tracking-wide">설명</div>
-                          <p className="text-sm text-tx-tertiary leading-loose">{activeItem.description}</p>
-                        </div>
-                      )}
-                      {!activeItem.description && !activeItem.testSuggestions?.length && (
+                      {!activeItem.testSuggestions?.length && (
                         <p className="text-sm text-tx-muted py-4">이 항목에 대한 추가 가이드가 없습니다.</p>
                       )}
                       {activeItem.testSuggestions && activeItem.testSuggestions.length > 0 && (
