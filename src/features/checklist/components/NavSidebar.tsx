@@ -347,7 +347,7 @@ export function NavSidebar({
           className="w-full flex items-center justify-center gap-2 rounded-lg border border-ln bg-surface-base px-3 py-2 text-xs font-semibold text-tx-tertiary hover:bg-surface-raised hover:text-tx-primary transition-colors"
         >
           <BookOpen size={14} />
-          가이드
+          참고 가이드
         </button>
       </div>
     </nav>

@@ -145,12 +145,12 @@ export function ReferenceGuideManagement() {
   return (
     <div className="p-6">
       <AdminPageHeader
-        title="가이드 관리"
-        description={`가이드 내용을 추가·수정합니다. (${allGuides.length}건)`}
+        title="참고 가이드 관리"
+        description={`참고 가이드 내용을 추가·수정합니다. (${allGuides.length}건)`}
         action={
           <Button size="sm" onClick={handleAddStart} disabled={adding}>
             <Plus size={14} className="mr-1" />
-            가이드 추가
+            참고 가이드 추가
           </Button>
         }
       />
@@ -211,7 +211,7 @@ export function ReferenceGuideManagement() {
         })}
 
         {allGuides.length === 0 && !adding && (
-          <div className="text-center py-8 text-sm text-tx-muted">등록된 가이드가 없습니다.</div>
+          <div className="text-center py-8 text-sm text-tx-muted">등록된 참고 가이드가 없습니다.</div>
         )}
       </div>
     </div>

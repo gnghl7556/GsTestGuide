@@ -24,7 +24,7 @@ export function UnifiedGuideView({
   if (guides.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="text-sm text-tx-muted">가이드가 없습니다.</p>
+        <p className="text-sm text-tx-muted">참고 가이드가 없습니다.</p>
       </div>
     );
   }
@@ -33,7 +33,7 @@ export function UnifiedGuideView({
     <WritingGuideContent guide={activeGuide} />
   ) : (
     <div className="h-full flex items-center justify-center p-6">
-      <p className="text-sm text-tx-muted">가이드를 선택해주세요.</p>
+      <p className="text-sm text-tx-muted">참고 가이드를 선택해주세요.</p>
     </div>
   );
 
