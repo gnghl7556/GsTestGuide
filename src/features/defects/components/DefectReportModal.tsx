@@ -5,6 +5,7 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../../../lib/firebase';
 import { DefectFormFields } from './DefectFormFields';
 import { logger } from '../../../utils/logger';
+import { BaseModal } from '../../../components/ui/BaseModal';
 
 export interface DefectContext {
   qualityCharacteristic?: string;
@@ -66,6 +67,11 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose, initia
     setErrorMsg(null);
   };
 
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   const handleSave = async () => {
     if (!db || !projectId) return;
     if (!summary.trim() || !severity || !qualityCharacteristic.trim()) {
@@ -120,8 +126,6 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose, initia
     }
   };
 
-  if (!open) return null;
-
   const formValues = {
     summary,
     severity,
@@ -150,13 +154,13 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose, initia
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-backdrop)] p-6">
-      <div className="w-full max-w-2xl max-h-[90vh] rounded-2xl border border-ln bg-surface-base shadow-xl flex flex-col">
+    <BaseModal open={open} onClose={handleClose} size="2xl">
+      <div className="flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between border-b border-ln px-5 py-4 shrink-0">
           <div className="text-sm font-extrabold text-tx-primary">결함 보고</div>
           <button
             type="button"
-            onClick={() => { resetForm(); onClose(); }}
+            onClick={handleClose}
             className="rounded-md border border-ln px-2 py-1 text-xs font-semibold text-tx-tertiary hover:text-tx-secondary"
           >
             <X size={14} />
@@ -206,7 +210,7 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose, initia
         <div className="border-t border-ln px-5 py-4 flex justify-end gap-2 shrink-0">
           <button
             type="button"
-            onClick={() => { resetForm(); onClose(); }}
+            onClick={handleClose}
             className="rounded-md border border-ln px-4 py-2 text-xs font-semibold text-tx-secondary hover:bg-interactive-hover"
           >
             취소
@@ -221,6 +225,6 @@ export function DefectReportModal({ open, projectId, testCaseId, onClose, initia
           </button>
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }

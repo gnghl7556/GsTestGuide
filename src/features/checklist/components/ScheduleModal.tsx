@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import type { Project } from '../../../types';
 import { ScheduleWizard } from '../../../components/schedule/ScheduleWizard';
+import { BaseModal } from '../../../components/ui/BaseModal';
 
 type ScheduleModalProps = {
   open: boolean;
@@ -11,21 +11,9 @@ type ScheduleModalProps = {
 };
 
 export function ScheduleModal({ open, onClose, project, otherProjects, onSave }: ScheduleModalProps) {
-  useEffect(() => {
-    if (!open) return;
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-backdrop)] p-4">
-      <div className="w-full max-w-2xl rounded-2xl border border-ln bg-surface-overlay shadow-xl max-h-[85vh] flex flex-col">
-        {/* Header */}
+    <BaseModal open={open} onClose={onClose} size="2xl">
+      <div className="flex flex-col max-h-[85vh]">
         <div className="border-b border-ln px-5 py-4 shrink-0">
           <div className="flex items-center justify-between">
             <div>
@@ -44,11 +32,10 @@ export function ScheduleModal({ open, onClose, project, otherProjects, onSave }:
           </div>
         </div>
 
-        {/* Wizard */}
         <div className="flex-1 flex flex-col min-h-0">
           <ScheduleWizard project={project} otherProjects={otherProjects} onSave={onSave} onClose={onClose} />
         </div>
       </div>
-    </div>
+    </BaseModal>
   );
 }

@@ -4,5 +4,6 @@ export { Textarea } from './Textarea';
 export { Select } from './Select';
 export { RequiredDocChip } from './RequiredDocChip';
 export { BaseModal } from './BaseModal';
+export { FormModal } from './FormModal';
 export { ConfirmModal } from './ConfirmModal';
 export { TabGroup } from './TabGroup';
