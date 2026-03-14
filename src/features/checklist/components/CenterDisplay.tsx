@@ -643,7 +643,7 @@ export function CenterDisplay({
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-[7fr_3fr] gap-0 min-h-[60vh]" onClick={(e) => e.stopPropagation()}>
+            <div className="grid grid-cols-1 md:grid-cols-[7fr_3fr] gap-0 min-h-[40vh] md:min-h-[60vh]" onClick={(e) => e.stopPropagation()}>
               <div className="border-r border-ln-subtle bg-surface-sunken p-4">
                 {selectedPreviewUrl && (
                   <img

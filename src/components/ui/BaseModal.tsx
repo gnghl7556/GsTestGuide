@@ -91,7 +91,7 @@ export function BaseModal({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-backdrop)] backdrop-blur-sm ${isFullSize ? 'p-3' : 'p-4'}`}
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[var(--overlay-backdrop)] backdrop-blur-sm ${isFullSize ? 'p-0 sm:p-3' : 'p-0 sm:p-4'}`}
       aria-modal="true"
       role="dialog"
       aria-labelledby={ariaLabelledBy}
@@ -99,7 +99,7 @@ export function BaseModal({
     >
       <div
         ref={panelRef}
-        className={`w-full ${sizeClasses[size]} ${isFullSize ? 'rounded-xl' : 'rounded-2xl'} border border-ln bg-surface-overlay shadow-2xl ${className}`}
+        className={`w-full ${sizeClasses[size]} ${isFullSize ? 'rounded-xl' : 'rounded-t-2xl sm:rounded-2xl'} border border-ln bg-surface-overlay shadow-2xl max-h-[100vh] sm:max-h-[calc(100vh-2rem)] overflow-y-auto ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

@@ -161,7 +161,7 @@ export function ChecklistView({
           </button>
         </div>
       )}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)_clamp(280px,24vw,380px)] gap-5 min-h-0 pb-2">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)] 2xl:grid-cols-[300px_minmax(0,1fr)_clamp(280px,24vw,380px)] gap-3 md:gap-4 lg:gap-5 min-h-0 pb-2">
       <div className="h-full overflow-hidden flex flex-col">
         <div className="flex-1 min-h-0 overflow-hidden">
           <NavSidebar

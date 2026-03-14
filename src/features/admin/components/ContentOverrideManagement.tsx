@@ -472,10 +472,10 @@ export function ContentOverrideManagement() {
         />
       </div>
 
-      {/* Body — left/right split */}
-      <div className="flex flex-1 min-h-0 px-6 pb-6 gap-0">
+      {/* Body — left/right split (수직 스택 on mobile) */}
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0 px-6 pb-6 gap-0">
         {/* Left panel — item list */}
-        <div className="w-72 shrink-0 flex flex-col border border-ln rounded-l-xl bg-surface-base overflow-hidden">
+        <div className="w-full lg:w-72 shrink-0 flex flex-col border border-ln rounded-t-xl lg:rounded-l-xl lg:rounded-tr-none max-h-64 lg:max-h-none bg-surface-base overflow-hidden">
           {/* Search + filter */}
           <div className="shrink-0 p-3 space-y-2 border-b border-ln bg-surface-raised">
             <div className="relative">
@@ -570,7 +570,7 @@ export function ContentOverrideManagement() {
         </div>
 
         {/* Right panel — edit form or placeholder */}
-        <div className="flex-1 flex flex-col border border-l-0 border-ln rounded-r-xl bg-surface-base overflow-hidden">
+        <div className="flex-1 flex flex-col border border-t-0 lg:border-t border-ln lg:border-l-0 rounded-b-xl lg:rounded-r-xl lg:rounded-bl-none bg-surface-base overflow-hidden">
           {editing && editingReq ? (
             <ContentEditForm
               key={editing.reqId}
