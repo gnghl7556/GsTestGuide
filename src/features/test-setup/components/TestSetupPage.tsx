@@ -28,6 +28,7 @@ import {
   ProjectListModal,
   TestDetailModal
 } from './modals';
+import { DashboardWidgets } from './DashboardWidgets';
 
 interface TestSetupPageProps {
   testNumber: string;
@@ -863,6 +864,17 @@ export function TestSetupPage({
                   onChangeField={(field, value) => onUpdateManualInfo({ [field]: value })}
                 />
               </div>
+            )}
+
+            {/* 대시보드 위젯 — 프로젝트 선택 시에만 표시 */}
+            {flowMode === 'existing' && selectedProject && (
+              <DashboardWidgets
+                project={selectedProject}
+                progress={progressByTestNumber[selectedProject.testNumber] ?? 0}
+                onNavigateExecution={() => {
+                  if (canProceed) onStartProject();
+                }}
+              />
             )}
 
             {/* 하단 액션 버튼 */}
