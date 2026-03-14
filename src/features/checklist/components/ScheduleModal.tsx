@@ -1,6 +1,11 @@
+import { lazy, Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import type { Project } from '../../../types';
-import { ScheduleWizard } from '../../../components/schedule/ScheduleWizard';
 import { BaseModal } from '../../../components/ui/BaseModal';
+
+const ScheduleWizard = lazy(() =>
+  import('../../../components/schedule/ScheduleWizard').then(m => ({ default: m.ScheduleWizard }))
+);
 
 type ScheduleModalProps = {
   open: boolean;
@@ -33,7 +38,9 @@ export function ScheduleModal({ open, onClose, project, otherProjects, onSave }:
         </div>
 
         <div className="flex-1 flex flex-col min-h-0">
-          <ScheduleWizard project={project} otherProjects={otherProjects} onSave={onSave} onClose={onClose} />
+          <Suspense fallback={<div className="flex items-center justify-center py-8"><Loader2 size={20} className="animate-spin text-tx-muted" /></div>}>
+            <ScheduleWizard project={project} otherProjects={otherProjects} onSave={onSave} onClose={onClose} />
+          </Suspense>
         </div>
       </div>
     </BaseModal>
