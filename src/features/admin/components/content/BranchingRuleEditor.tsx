@@ -4,6 +4,7 @@ import { splitRef, type BranchingRule } from './types';
 
 type BranchingRuleEditorProps = {
   checkPoints: string[];
+  checkpointOrder: number[];
   rules: BranchingRule[];
   onAdd: () => void;
   onRemove: (ruleIdx: number) => void;
@@ -17,6 +18,7 @@ function truncate(text: string, max: number) {
 
 export function BranchingRuleEditor({
   checkPoints,
+  checkpointOrder,
   rules,
   onAdd,
   onRemove,
@@ -29,6 +31,13 @@ export function BranchingRuleEditor({
     () => checkPoints.map((cp) => splitRef(cp).body),
     [checkPoints],
   );
+
+  // origIdx → display position (1-based)
+  const displayNumMap = useMemo(() => {
+    const map = new Map<number, number>();
+    checkpointOrder.forEach((origIdx, pos) => map.set(origIdx, pos + 1));
+    return map;
+  }, [checkpointOrder]);
 
   // Collect branching info per checkpoint for flow summary
   const flowInfo = useMemo(() => {
@@ -67,14 +76,15 @@ export function BranchingRuleEditor({
             {/* Vertical connector line */}
             <div className="absolute left-[7px] top-2 bottom-2 w-px bg-ln" />
 
-            {checkPoints.map((_, i) => {
-              const info = flowInfo[i];
-              const label = truncate(cpLabels[i], 40);
+            {checkpointOrder.map((origIdx) => {
+              const info = flowInfo[origIdx];
+              const dn = displayNumMap.get(origIdx) ?? origIdx + 1;
+              const label = truncate(cpLabels[origIdx], 40);
               const isSource = info.isSource;
               const isSkipped = info.isSkipped;
 
               return (
-                <div key={i} className="relative flex items-start gap-2 mb-1.5 last:mb-0">
+                <div key={origIdx} className="relative flex items-start gap-2 mb-1.5 last:mb-0">
                   {/* Node dot */}
                   <div
                     className={`relative z-10 mt-1 w-2.5 h-2.5 rounded-full shrink-0 border ${
@@ -95,7 +105,7 @@ export function BranchingRuleEditor({
                     }`}
                   >
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-bold shrink-0">Q{i + 1}</span>
+                      <span className="font-bold shrink-0">Q{dn}</span>
                       {isSource && (
                         <span className="px-1.5 py-px rounded text-[8px] font-bold bg-status-hold-bg text-status-hold-text">
                           분기
@@ -110,7 +120,7 @@ export function BranchingRuleEditor({
                     </div>
                     {isSource && info.skips.length > 0 && (
                       <p className="mt-0.5 text-[9px] text-status-hold-text">
-                        NO → {info.skips.map((s) => `Q${s + 1}`).join(', ')} 건너뜀
+                        NO → {info.skips.map((s) => `Q${(displayNumMap.get(s) ?? s + 1)}`).join(', ')} 건너뜀
                       </p>
                     )}
                   </div>
@@ -132,7 +142,7 @@ export function BranchingRuleEditor({
             >
               {checkPoints.map((_: string, i: number) => (
                 <option key={i} value={i}>
-                  Q{i + 1} — {truncate(cpLabels[i], 30)}
+                  Q{displayNumMap.get(i) ?? i + 1} — {truncate(cpLabels[i], 30)}
                 </option>
               ))}
             </select>
@@ -141,6 +151,7 @@ export function BranchingRuleEditor({
               {checkPoints.map((_: string, i: number) => {
                 if (i <= rule.sourceIndex) return null;
                 const isSkipped = rule.skipIndices.includes(i);
+                const dn = displayNumMap.get(i) ?? i + 1;
                 return (
                   <button
                     key={i}
@@ -153,7 +164,7 @@ export function BranchingRuleEditor({
                         : 'bg-surface-base text-tx-muted border-ln hover:border-ln-strong'
                     }`}
                   >
-                    <span>Q{i + 1}</span>
+                    <span>Q{dn}</span>
                     {isSkipped && (
                       <span className="block text-[8px] opacity-70 max-w-[120px] truncate">
                         {truncate(cpLabels[i], 20)}

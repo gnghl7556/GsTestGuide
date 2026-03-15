@@ -233,6 +233,10 @@ export function ContentOverrideManagement() {
       cpImportances[i] = ov?.checkpointImportances?.[i] ?? inferImportance(ovText);
     });
 
+    const cpCount = (req.checkPoints ?? []).length;
+    const defaultOrder = Array.from({ length: cpCount }, (_, i) => i);
+    const checkpointOrder = ov?.checkpointOrder ?? defaultOrder;
+
     setEditing({
       reqId,
       title: ov?.title ?? req.title,
@@ -242,6 +246,7 @@ export function ContentOverrideManagement() {
       checkpointImportances: cpImportances,
       checkpointDetails: ov?.checkpointDetails ?? {},
       checkpointEvidences: ov?.checkpointEvidences ?? {},
+      checkpointOrder,
       evidenceExamples: ov?.evidenceExamples ?? req.evidenceExamples ?? [],
       testSuggestions: ov?.testSuggestions ?? req.testSuggestions ?? [],
       passCriteria: ov?.passCriteria ?? req.passCriteria ?? '',
@@ -331,6 +336,13 @@ export function ContentOverrideManagement() {
       patch.branchingRules = editing.branchingRules;
     }
 
+    const cpCount = (req.checkPoints ?? []).length;
+    const defaultOrder = Array.from({ length: cpCount }, (_, idx) => idx);
+    const isReordered = JSON.stringify(editing.checkpointOrder) !== JSON.stringify(defaultOrder);
+    if (isReordered) {
+      patch.checkpointOrder = editing.checkpointOrder;
+    }
+
     // Compute change entries for history
     const ov = overrides[editing.reqId];
     const changes: Array<{ field: string; before: string; after: string }> = [];
@@ -371,7 +383,7 @@ export function ContentOverrideManagement() {
 
     setBusy(true);
     try {
-      const isEmpty = !patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.checkpointDetails && !patch.checkpointEvidences && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules;
+      const isEmpty = !patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.checkpointDetails && !patch.checkpointEvidences && !patch.checkpointOrder && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules;
       if (isEmpty) {
         await deleteDoc(doc(db, 'contentOverrides', editing.reqId));
       } else {

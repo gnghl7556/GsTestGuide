@@ -244,6 +244,7 @@ export function ContentEditForm({
             <EditSection title="분기 규칙" badge={branchingBadge} defaultOpen={false}>
               <BranchingRuleEditor
                 checkPoints={req.checkPoints ?? []}
+                checkpointOrder={editing.checkpointOrder}
                 rules={editing.branchingRules}
                 onAdd={addBranchingRule}
                 onRemove={removeBranchingRule}

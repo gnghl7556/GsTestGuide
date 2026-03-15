@@ -12,6 +12,7 @@ export type EditingState = {
   checkpointImportances: Record<number, QuestionImportance>;
   checkpointDetails: Record<number, string>;
   checkpointEvidences: Record<number, number[]>;
+  checkpointOrder: number[]; // display order — values are original indices
   evidenceExamples: string[];
   testSuggestions: string[];
   passCriteria: string;

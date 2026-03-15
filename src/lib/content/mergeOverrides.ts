@@ -20,6 +20,7 @@ export interface ContentOverride {
   checkpointImportances?: Record<number, QuestionImportance>;
   checkpointDetails?: Record<number, string>;
   checkpointEvidences?: Record<number, number[]>;
+  checkpointOrder?: number[];
   evidenceExamples?: string[];
   testSuggestions?: string[];
   passCriteria?: string;
@@ -84,6 +85,50 @@ export function mergeOverrides(
     if (ov.checkpoints != null && merged.checkPoints && merged.requiredDocs) {
       const activeRefs = collectActiveRefs(merged.checkPoints);
       merged.requiredDocs = merged.requiredDocs.filter((d) => activeRefs.has(d.label));
+    }
+
+    // checkpointOrder가 있으면 체크포인트 및 관련 메타데이터 재정렬
+    if (ov.checkpointOrder && merged.checkPoints) {
+      const order = ov.checkpointOrder;
+      merged.checkPoints = order.map((origIdx) => merged.checkPoints![origIdx]);
+      if (merged.checkpointImportances) {
+        const reordered: Record<number, QuestionImportance> = {};
+        order.forEach((origIdx, newIdx) => {
+          if (merged.checkpointImportances![origIdx] != null) {
+            reordered[newIdx] = merged.checkpointImportances![origIdx];
+          }
+        });
+        merged.checkpointImportances = reordered;
+      }
+      if (merged.checkpointDetails) {
+        const reordered: Record<number, string> = {};
+        order.forEach((origIdx, newIdx) => {
+          if (merged.checkpointDetails![origIdx] != null) {
+            reordered[newIdx] = merged.checkpointDetails![origIdx];
+          }
+        });
+        merged.checkpointDetails = reordered;
+      }
+      if (merged.checkpointEvidences) {
+        const reordered: Record<number, number[]> = {};
+        order.forEach((origIdx, newIdx) => {
+          if (merged.checkpointEvidences![origIdx] != null) {
+            reordered[newIdx] = merged.checkpointEvidences![origIdx];
+          }
+        });
+        merged.checkpointEvidences = reordered;
+      }
+      if (merged.branchingRules) {
+        const indexMap = new Map<number, number>();
+        order.forEach((origIdx, newIdx) => indexMap.set(origIdx, newIdx));
+        merged.branchingRules = merged.branchingRules.map((rule) => ({
+          ...rule,
+          sourceIndex: indexMap.get(rule.sourceIndex) ?? rule.sourceIndex,
+          skipIndices: rule.skipIndices
+            .map((i) => indexMap.get(i) ?? i)
+            .sort((a, b) => a - b),
+        }));
+      }
     }
 
     return merged;

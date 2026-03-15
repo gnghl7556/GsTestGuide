@@ -12,13 +12,30 @@ type ContentPreviewProps = {
 
 export function ContentPreview({ editing, category }: ContentPreviewProps) {
   const quickItem = useMemo<QuickModeItem>(() => {
-    const checkPoints = Object.entries(editing.checkpoints)
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([iStr, body]) => {
-        const i = Number(iStr);
-        const refs = editing.checkpointRefs[i] ?? [];
-        return joinRef(body, refs);
-      });
+    const checkPoints = editing.checkpointOrder.map((origIdx) => {
+      const body = editing.checkpoints[origIdx] ?? '';
+      const refs = editing.checkpointRefs[origIdx] ?? [];
+      return joinRef(body, refs);
+    });
+
+    // Remap index-based metadata to match reordered checkPoints
+    const order = editing.checkpointOrder;
+    const reorderedImportances: typeof editing.checkpointImportances = {};
+    const reorderedDetails: typeof editing.checkpointDetails = {};
+    const reorderedEvidences: typeof editing.checkpointEvidences = {};
+    order.forEach((origIdx, newIdx) => {
+      if (editing.checkpointImportances[origIdx] != null) reorderedImportances[newIdx] = editing.checkpointImportances[origIdx];
+      if (editing.checkpointDetails[origIdx] != null) reorderedDetails[newIdx] = editing.checkpointDetails[origIdx];
+      if (editing.checkpointEvidences[origIdx] != null) reorderedEvidences[newIdx] = editing.checkpointEvidences[origIdx];
+    });
+
+    const indexMap = new Map<number, number>();
+    order.forEach((origIdx, newIdx) => indexMap.set(origIdx, newIdx));
+    const reorderedBranching = editing.branchingRules.map((rule) => ({
+      ...rule,
+      sourceIndex: indexMap.get(rule.sourceIndex) ?? rule.sourceIndex,
+      skipIndices: rule.skipIndices.map((i) => indexMap.get(i) ?? i).sort((a, b) => a - b),
+    }));
 
     const mockReq: Requirement = {
       id: editing.reqId,
@@ -26,12 +43,13 @@ export function ContentPreview({ editing, category }: ContentPreviewProps) {
       title: editing.title,
       description: editing.description,
       checkPoints,
-      checkpointImportances: editing.checkpointImportances,
-      checkpointDetails: editing.checkpointDetails,
+      checkpointImportances: reorderedImportances,
+      checkpointDetails: reorderedDetails,
+      checkpointEvidences: reorderedEvidences,
       evidenceExamples: editing.evidenceExamples,
       testSuggestions: editing.testSuggestions,
       passCriteria: editing.passCriteria,
-      branchingRules: editing.branchingRules,
+      branchingRules: reorderedBranching,
     };
 
     return toQuickModeItem(mockReq);
