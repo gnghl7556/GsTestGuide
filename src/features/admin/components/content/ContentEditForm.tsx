@@ -53,11 +53,11 @@ function EditSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-ln rounded-lg overflow-hidden">
+    <div className="border border-ln rounded-lg">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-2 px-3 py-2 bg-surface-raised hover:bg-interactive-hover transition-colors"
+        className="flex w-full items-center gap-2 px-3 py-2 rounded-t-lg bg-surface-raised hover:bg-interactive-hover transition-colors"
       >
         {open
           ? <ChevronDown size={14} className="text-tx-muted shrink-0" />
