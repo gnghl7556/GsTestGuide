@@ -66,7 +66,17 @@ export function mergeOverrides(
       ...(ov.passCriteria != null && { passCriteria: ov.passCriteria }),
       ...(ov.checkpointImportances != null && { checkpointImportances: ov.checkpointImportances }),
       ...(ov.checkpointDetails != null && { checkpointDetails: ov.checkpointDetails }),
-      ...(ov.checkpointEvidences != null && { checkpointEvidences: ov.checkpointEvidences }),
+      ...(ov.checkpointEvidences != null && {
+        checkpointEvidences: (() => {
+          const evLen = (ov.evidenceExamples ?? req.evidenceExamples ?? []).length;
+          const cleaned: Record<number, number[]> = {};
+          for (const [cpStr, indices] of Object.entries(ov.checkpointEvidences!)) {
+            const valid = indices.filter(ei => ei >= 0 && ei < evLen);
+            if (valid.length > 0) cleaned[Number(cpStr)] = valid;
+          }
+          return cleaned;
+        })(),
+      }),
       ...(ov.branchingRules != null && { branchingRules: ov.branchingRules }),
     };
 

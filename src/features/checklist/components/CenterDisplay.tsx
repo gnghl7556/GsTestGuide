@@ -462,9 +462,13 @@ export function CenterDisplay({
                       {(() => {
                         const cpEvidenceMapping = quickModeItem?.expertDetails?.checkpointEvidences ?? activeItem.checkpointEvidences;
                         const hasCpMapping = cpEvidenceMapping && Object.keys(cpEvidenceMapping).length > 0;
+                        const allEvidence = activeItem.evidenceExamples ?? [];
                         const filteredEvidence = hasCpMapping
-                          ? (cpEvidenceMapping[index] ?? []).map(ei => activeItem.evidenceExamples![ei]).filter(Boolean)
-                          : (activeItem.evidenceExamples ?? []);
+                          ? (cpEvidenceMapping[index] ?? [])
+                              .filter(ei => ei >= 0 && ei < allEvidence.length)
+                              .map(ei => allEvidence[ei])
+                              .filter(Boolean)
+                          : allEvidence;
                         const hasFilteredEvidence = filteredEvidence.length > 0;
                         return (
                           <div

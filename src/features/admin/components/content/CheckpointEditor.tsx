@@ -1,4 +1,5 @@
-import { ChevronDown, FileDown } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronRight, FileDown, Plus, X } from 'lucide-react';
 import { inferImportance } from '../../../../utils/quickMode';
 import { splitRef, type EditingState } from './types';
 
@@ -25,6 +26,18 @@ export function CheckpointEditor({
   dropdownRef,
   evidenceExamples,
 }: CheckpointEditorProps) {
+  const [memoOpenIdx, setMemoOpenIdx] = useState<Set<number>>(new Set());
+  const [evidencePopoverIdx, setEvidencePopoverIdx] = useState<number | null>(null);
+
+  const toggleMemo = (idx: number) => {
+    setMemoOpenIdx(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
   const toggleEvidence = (cpIdx: number, evIdx: number) => {
     const current = editing.checkpointEvidences[cpIdx] ?? [];
     const next = current.includes(evIdx)
@@ -35,6 +48,7 @@ export function CheckpointEditor({
       checkpointEvidences: { ...editing.checkpointEvidences, [cpIdx]: next },
     });
   };
+
   if (!checkPoints || checkPoints.length === 0) return null;
 
   return (
@@ -50,63 +64,80 @@ export function CheckpointEditor({
           const currentImportance = editing.checkpointImportances[i] ?? inferImportance(origCp);
           const inferredImportance = inferImportance(origCp);
           const importanceChanged = currentImportance !== inferredImportance;
+          const memoContent = editing.checkpointDetails[i] ?? '';
+          const hasMemo = memoContent.length > 0;
+          const isMemoOpen = memoOpenIdx.has(i);
+          const connectedEvidenceCount = (editing.checkpointEvidences[i] ?? []).length;
+          const isEvidencePopoverOpen = evidencePopoverIdx === i;
+
           return (
-            <div key={i} className="rounded-lg border border-ln bg-surface-base/50 overflow-hidden">
-              <div className="flex items-start gap-2 px-3 pt-2.5 pb-2">
-              <span className="shrink-0 mt-1.5 text-[10px] font-bold text-tx-tertiary w-5 text-right">{i + 1}</span>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <input
-                    className="flex-1 rounded border border-ln bg-surface-base px-2.5 py-1.5 text-xs text-tx-primary"
-                    value={editedBody}
-                    onChange={(e) => setEditing({
-                      ...editing,
-                      checkpoints: { ...editing.checkpoints, [i]: e.target.value },
-                    })}
-                  />
-                  {/* MUST/SHOULD toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setEditing({
-                      ...editing,
-                      checkpointImportances: {
-                        ...editing.checkpointImportances,
-                        [i]: currentImportance === 'MUST' ? 'SHOULD' : 'MUST',
-                      },
-                    })}
-                    className={`shrink-0 px-2 py-1.5 rounded text-[10px] font-bold transition-colors ${
-                      currentImportance === 'MUST'
-                        ? 'bg-danger-subtle text-danger-text'
-                        : 'bg-surface-sunken text-tx-tertiary'
-                    } ${importanceChanged ? 'ring-1 ring-status-hold-border' : ''}`}
-                    title={`클릭하여 ${currentImportance === 'MUST' ? 'SHOULD' : 'MUST'}로 변경`}
+            <div key={i} className="rounded-lg border border-ln bg-surface-base/50 px-3 py-2.5 space-y-2">
+              {/* Row 1: Number + Badge */}
+              <div className="flex items-center gap-2">
+                <span className="shrink-0 text-[10px] font-bold text-tx-tertiary w-5 text-right">{i + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => setEditing({
+                    ...editing,
+                    checkpointImportances: {
+                      ...editing.checkpointImportances,
+                      [i]: currentImportance === 'MUST' ? 'SHOULD' : 'MUST',
+                    },
+                  })}
+                  className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
+                    currentImportance === 'MUST'
+                      ? 'bg-danger-subtle text-danger-text'
+                      : 'bg-surface-sunken text-tx-tertiary'
+                  } ${importanceChanged ? 'ring-1 ring-status-hold-border' : ''}`}
+                  title={`클릭하여 ${currentImportance === 'MUST' ? '권고' : '필수'}로 변경`}
+                >
+                  {currentImportance === 'MUST' ? '필수' : '권고'}
+                </button>
+              </div>
+
+              {/* Row 2: Input (bigger, prominent) */}
+              <div className="pl-7">
+                <input
+                  className="w-full rounded border border-ln bg-surface-base px-2.5 py-1.5 text-sm font-medium text-tx-primary"
+                  value={editedBody}
+                  onChange={(e) => setEditing({
+                    ...editing,
+                    checkpoints: { ...editing.checkpoints, [i]: e.target.value },
+                  })}
+                />
+              </div>
+
+              {/* Row 3: Ref tag chips + Evidence tag + original diff */}
+              <div className="pl-7 flex flex-wrap items-center gap-1.5">
+                {/* Selected ref tags */}
+                {editedRefs.map((ref) => (
+                  <span
+                    key={ref}
+                    className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent-text border border-accent/20"
                   >
-                    {currentImportance}
-                  </button>
-                </div>
-                {/* Ref dropdown */}
+                    <FileDown size={9} />
+                    {ref}
+                    <button
+                      type="button"
+                      onClick={() => toggleRef(i, ref)}
+                      className="hover:text-danger-text transition-colors"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                ))}
+
+                {/* Add ref button + dropdown */}
                 <div className="relative" ref={isDropdownOpen ? dropdownRef : undefined}>
                   <button
                     type="button"
                     onClick={() => setRefDropdownIdx(isDropdownOpen ? null : i)}
-                    className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded border transition-colors ${
-                      editedRefs.length > 0
-                        ? 'bg-accent/10 text-accent-text border-accent/30'
-                        : 'bg-surface-sunken text-tx-muted border-ln hover:border-ln-strong'
-                    }`}
+                    className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-dashed border-ln text-tx-muted hover:border-ln-strong hover:text-tx-secondary transition-colors"
+                    title="참고 자료 추가"
                   >
-                    <FileDown size={10} />
-                    {editedRefs.length > 0
-                      ? `참고 자료 ${editedRefs.length}건`
-                      : '참고 자료 선택'}
-                    <ChevronDown size={10} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    <Plus size={10} />
+                    참고자료
                   </button>
-                  {/* Selected ref labels (inline preview) */}
-                  {editedRefs.length > 0 && !isDropdownOpen && (
-                    <span className="ml-1.5 text-[9px] text-tx-tertiary">
-                      {editedRefs.join(', ')}
-                    </span>
-                  )}
                   {isDropdownOpen && (
                     <div className="absolute z-30 left-0 top-full mt-1 w-72 max-w-[calc(100vw-2rem)] max-h-64 overflow-y-auto rounded-lg border border-ln bg-surface-overlay shadow-lg">
                       {groupedMaterials.map((group) => (
@@ -143,55 +174,82 @@ export function CheckpointEditor({
                     </div>
                   )}
                 </div>
+
+                {/* Evidence inline tag with popover */}
+                {evidenceExamples.length > 0 && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setEvidencePopoverIdx(isEvidencePopoverOpen ? null : i)}
+                      className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border transition-colors ${
+                        connectedEvidenceCount > 0
+                          ? 'bg-status-pass-bg text-status-pass-text border-status-pass-border'
+                          : 'border-dashed border-ln text-tx-muted hover:border-ln-strong hover:text-tx-secondary'
+                      }`}
+                    >
+                      증빙 {connectedEvidenceCount}건
+                    </button>
+                    {isEvidencePopoverOpen && (
+                      <div className="absolute z-30 left-0 top-full mt-1 w-64 max-h-52 overflow-y-auto rounded-lg border border-ln bg-surface-overlay shadow-lg p-1.5">
+                        {evidenceExamples.map((ev, evIdx) => {
+                          const selected = (editing.checkpointEvidences[i] ?? []).includes(evIdx);
+                          return (
+                            <button
+                              key={evIdx}
+                              type="button"
+                              onClick={() => toggleEvidence(i, evIdx)}
+                              className={`flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-left text-xs transition-colors ${
+                                selected
+                                  ? 'bg-accent/10 text-accent-text'
+                                  : 'text-tx-secondary hover:bg-interactive-hover'
+                              }`}
+                            >
+                              <span className={`shrink-0 h-3.5 w-3.5 rounded border flex items-center justify-center text-[8px] ${
+                                selected
+                                  ? 'bg-accent border-accent text-white'
+                                  : 'border-ln bg-surface-base'
+                              }`}>
+                                {selected && '\u2713'}
+                              </span>
+                              {ev}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Original diff indicator */}
                 {(editedBody !== origBody || refsChanged) && (
-                  <p className="text-[9px] text-tx-muted truncate">
-                    원본: {origBody}{origRefs.length > 0 ? ` [ref: ${origRefs.join(', ')}]` : ''}
-                  </p>
+                  <span className="text-[9px] text-tx-muted truncate max-w-48" title={`원본: ${origBody}${origRefs.length > 0 ? ` [ref: ${origRefs.join(', ')}]` : ''}`}>
+                    원본: {origBody.slice(0, 30)}{origBody.length > 30 ? '...' : ''}
+                  </span>
                 )}
               </div>
-              </div>
-              {/* detail memo at card bottom */}
-              <div className="border-t border-ln bg-surface-sunken/40 px-3 py-2 space-y-2">
-                <textarea
-                  className="w-full rounded border border-ln bg-surface-base px-2.5 py-1.5 text-xs text-tx-primary resize-y placeholder:text-tx-muted/50"
-                  value={editing.checkpointDetails[i] ?? ''}
-                  onChange={(e) => setEditing({
-                    ...editing,
-                    checkpointDetails: { ...editing.checkpointDetails, [i]: e.target.value },
-                  })}
-                  rows={1}
-                  placeholder="이 체크포인트에 대한 상세 메모를 입력하세요"
-                />
-                {evidenceExamples.length > 0 && (
-                  <div>
-                    <span className="text-[9px] font-bold text-tx-muted uppercase tracking-wider">증빙 예시 연결</span>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {evidenceExamples.map((ev, evIdx) => {
-                        const selected = (editing.checkpointEvidences[i] ?? []).includes(evIdx);
-                        return (
-                          <button
-                            key={evIdx}
-                            type="button"
-                            onClick={() => toggleEvidence(i, evIdx)}
-                            className={`inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border transition-colors ${
-                              selected
-                                ? 'bg-accent/10 text-accent-text border-accent/30 font-semibold'
-                                : 'bg-surface-base text-tx-muted border-ln hover:border-ln-strong hover:text-tx-secondary'
-                            }`}
-                          >
-                            <span className={`shrink-0 h-3 w-3 rounded-sm border flex items-center justify-center text-[7px] ${
-                              selected
-                                ? 'bg-accent border-accent text-white'
-                                : 'border-ln bg-surface-base'
-                            }`}>
-                              {selected && '\u2713'}
-                            </span>
-                            {ev}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+
+              {/* Row 4: Collapsible memo disclosure */}
+              <div className="pl-7">
+                <button
+                  type="button"
+                  onClick={() => toggleMemo(i)}
+                  className="inline-flex items-center gap-1 text-[10px] text-tx-muted hover:text-tx-secondary transition-colors"
+                >
+                  <ChevronRight size={12} className={`transition-transform ${isMemoOpen ? 'rotate-90' : ''}`} />
+                  <span>메모</span>
+                  {hasMemo && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                </button>
+                {isMemoOpen && (
+                  <textarea
+                    className="mt-1 w-full rounded border border-ln bg-surface-base px-2.5 py-1.5 text-xs text-tx-primary resize-y placeholder:text-tx-muted/50"
+                    value={memoContent}
+                    onChange={(e) => setEditing({
+                      ...editing,
+                      checkpointDetails: { ...editing.checkpointDetails, [i]: e.target.value },
+                    })}
+                    rows={2}
+                    placeholder="이 체크포인트에 대한 상세 메모를 입력하세요"
+                  />
                 )}
               </div>
             </div>
