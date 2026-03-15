@@ -157,7 +157,7 @@ export function ContentEditForm({
                 : 'bg-surface-base border border-ln text-tx-muted hover:text-tx-secondary hover:border-ln-strong'
             }`}
           >
-            {preview ? <><Eye size={11} /> 미리보기</> : <><Pencil size={11} /> 편집</>}
+            {preview ? <><Pencil size={11} /> 편집</> : <><Eye size={11} /> 미리보기</>}
           </button>
           {onHistory && (
             <button
