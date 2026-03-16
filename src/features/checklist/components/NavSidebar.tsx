@@ -40,7 +40,7 @@ export function NavSidebar({
     const mapped = shortLabelMap[text];
     if (mapped) return mapped;
     const cleaned = text.replace(/[?.,]/g, '').trim();
-    return cleaned.length > 14 ? `${cleaned.slice(0, 14)}…` : cleaned;
+    return cleaned;
   };
 
   const applicableItems = checklist.filter(item => item.status !== 'Not_Applicable');
@@ -298,7 +298,7 @@ export function NavSidebar({
                                 <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : theme.idleText}`}>
                                   {String(index + 1).padStart(2, '0')}
                                 </span>
-                                <span className="block truncate flex-1">{toShortLabel(item.title)}</span>
+                                <span className="block flex-1 line-clamp-2 break-words">{toShortLabel(item.title)}</span>
                                 {isBlocked && (
                                   <span className="shrink-0 rounded-full border border-ln bg-surface-sunken px-1.5 py-0.5 text-[9px] font-semibold text-tx-tertiary">
                                     잠금

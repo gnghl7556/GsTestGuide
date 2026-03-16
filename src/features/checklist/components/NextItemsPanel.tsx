@@ -61,7 +61,7 @@ export function NextItemsPanel({ checklist, reviewData, setSelectedReqId }: Next
                         >
                           <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${theme.bg}`} />
                           <div className="flex-1 min-w-0">
-                            <span className="block text-xs font-semibold text-tx-primary truncate">
+                            <span className="block text-xs font-semibold text-tx-primary line-clamp-2 break-words">
                               {item.title}
                             </span>
                             <span className={`text-[10px] ${theme.text}`}>
@@ -90,7 +90,7 @@ export function NextItemsPanel({ checklist, reviewData, setSelectedReqId }: Next
                         className="w-full text-left px-3 py-2.5 rounded-lg border border-status-hold-border bg-status-hold-bg/30 hover:bg-status-hold-bg/60 transition-all flex items-center gap-2.5 group"
                       >
                         <Clock size={12} className="text-status-hold-text shrink-0" />
-                        <span className="flex-1 min-w-0 text-xs font-semibold text-tx-primary truncate">
+                        <span className="flex-1 min-w-0 text-xs font-semibold text-tx-primary line-clamp-2 break-words">
                           {item.title}
                         </span>
                         <ChevronRight size={12} className="text-tx-muted shrink-0 group-hover:text-tx-secondary transition-colors" />

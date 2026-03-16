@@ -285,7 +285,7 @@ export function CenterDisplay({
           )}
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <h2 className={`text-2xl font-bold leading-snug ${isNA ? 'text-tx-muted' : 'text-tx-primary'}`}>
+          <h2 className={`text-2xl font-bold leading-snug break-words ${isNA ? 'text-tx-muted' : 'text-tx-primary'}`}>
             {activeItem.title}
           </h2>
           {refItems.length > 0 && !isNA && (
@@ -401,7 +401,7 @@ export function CenterDisplay({
                                 ));
                               })()}
                             </div>
-                            <span className="text-[14px] leading-snug font-semibold text-tx-primary">{question.text}</span>
+                            <span className="text-[14px] leading-snug font-semibold text-tx-primary break-words">{question.text}</span>
                           </div>
                         </div>
                         <div className="flex items-center shrink-0 gap-1.5">
