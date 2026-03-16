@@ -487,6 +487,295 @@ CheckpointEditor 4-Row 레이아웃 개선은 **전체 매치율 98%**로 설계
 
 ---
 
+---
+
+# v4.0 시험 생성 UI 개선 (2026-03-16)
+
+## 1. 개요
+
+### 1.1 배경
+
+v3.0에서 콘텐츠 위키 스타일 버전 관리 시스템을 구축한 이후, 시험 생성(create 모드) 프로세스의 UX를 개선하는 단계에 진입했다. 기존 문제점:
+
+- **CalendarInput 2개 반복**: 시작일과 종료일 입력이 각각 별도 컴포넌트였음
+- **시험번호 입력 시 즉시 프로젝트 생성**: 확정되지 않은 시점에 Firestore에 프로젝트 문서가 생성되는 취약점
+- **일정 입력 프로세스 개선 부재**: 마일스톤 기반 일정 관리 UI 미적용
+
+**목표**: ScheduleWizard 모달을 활용하여 통합된 일정 입력 체험을 제공하고, 의도적 행위(합의서 업로드, 일정 저장, 시험 시작)에서만 Firestore 쓰기가 발생하도록 구조를 개선한다.
+
+### 1.2 결과 요약
+
+```
++────────────────────────────────────────────+
+|  전체 매치율: 92%                             |
++────────────────────────────────────────────+
+|  CalendarInput 제거:             100%       |
+|  ScheduleModal 통합:             100%       |
+|  즉시 프로젝트 생성 제거:          100%       |
+|  로컬 상태 동기화:                90%       |
+|  Firestore 쓰기 의도성:           100%       |
+|  데드 코드 정리:                  80%       |
+|  아키텍처 준수:                   85%       |
++────────────────────────────────────────────+
+```
+
+---
+
+## 2. 관련 문서
+
+| 단계 | 문서 | 상태 |
+|------|------|------|
+| Plan | 변경 사양 트랜스크립트 | 완료 |
+| Design | N/A (구현 계획에 설계 의도 기술) | N/A |
+| Check | [admin.analysis.md (v4.0)](../03-analysis/admin.analysis.md) | 완료 |
+| Act | 현재 문서 | 작성 완료 |
+
+---
+
+## 3. 변경 사항 상세
+
+### 3.1 변경 1: CalendarInput → ScheduleModal 교체
+
+#### 변경 전
+
+```typescript
+// TestSetupPage.tsx
+<CalendarInput label="시작일" value={scheduleStartDate} onChange={onChangeScheduleStartDate} />
+<CalendarInput label="종료일" value={scheduleEndDate} onChange={onChangeScheduleEndDate} />
+```
+
+#### 변경 후
+
+```typescript
+// TestSetupPage.tsx
+<button
+  disabled={!testNumberValidation.isValid}
+  onClick={() => setScheduleWizardOpen(true)}
+>
+  📅 일정 관리
+</button>
+
+{scheduleWizardOpen && testNumberValidation.isValid && (
+  <ScheduleModal
+    project={minimalProject}
+    onSave={(updates) => {
+      onUpdateProjectSchedule?.(trimmedTestNumber, updates);
+      if (updates.scheduleStartDate) onChangeScheduleStartDate(updates.scheduleStartDate as string);
+      if (updates.scheduleEndDate) onChangeScheduleEndDate(updates.scheduleEndDate as string);
+      setScheduleWizardOpen(false);
+    }}
+    onClose={() => setScheduleWizardOpen(false)}
+  />
+)}
+```
+
+**개선 사항:**
+- CalendarInput 2개 제거 (TestSetupPage, CalendarInput.tsx 데드 코드)
+- ScheduleWizard 모달로 마일스톤 기반 일정 설정 통합
+- 시험번호 미확정 시 버튼 disabled 상태로 안내
+
+### 3.2 변경 2: 즉시 프로젝트 생성 제거
+
+#### 변경 전
+
+```typescript
+const createProjectFromInput = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return;
+  await ensureProjectSkeleton(trimmed);  // ❌ Firestore 즉시 생성
+  setTestSetup((prev) => ({ ...prev, testNumber: trimmed }));
+};
+```
+
+#### 변경 후
+
+```typescript
+const createProjectFromInput = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return;
+  if (!currentUserId) {
+    window.alert('사용자를 먼저 선택해주세요.');
+    return;
+  }
+  const exists = projects.find((item) => item.testNumber === trimmed || item.id === trimmed);
+  if (exists) {
+    window.alert('이미 존재하는 시험번호입니다.');
+    return;
+  }
+  setTestSetup((prev) => ({ ...prev, testNumber: trimmed }));  // ✅ 로컬 상태만 업데이트
+};
+```
+
+**개선 사항:**
+- `ensureProjectSkeleton` 호출 제거
+- 로컬 상태(`testSetup`) 업데이트만 수행
+- Firestore 쓰기는 의도적 행위(합의서 업로드, 일정 저장, 시험 시작)에서만 발생
+
+### 3.3 Firestore 쓰기 흐름
+
+```
+시험번호 입력        →  로컬 상태만 업데이트 (Firestore 쓰기 없음)
+              ↓
+일정 저장 (버튼)    →  onUpdateProjectSchedule(testNumber, updates)
+              │       └─ setDoc(doc(db, 'projects', testNumber), {...}, {merge: true})
+              ↓
+합의서 업로드       →  uploadAgreementDoc → ensureProjectSkeleton + 합의서 저장
+              ↓
+시험 시작 (버튼)    →  startProject → saveProjectNow + saveDocsNow
+```
+
+---
+
+## 4. 구현 완료 항목
+
+### 4.1 핵심 변경 파일
+
+| 파일 | 변경 사항 |
+|------|----------|
+| `src/features/test-setup/components/TestSetupPage.tsx` | CalendarInput import/사용 제거, ScheduleModal 연동, scheduleWizardOpen 상태 추가 |
+| `src/features/test-setup/hooks/useTestSetupState.ts` | `createProjectFromInput`에서 `ensureProjectSkeleton` 제거 |
+| `src/features/test-setup/routes/TestSetupView.tsx` | `onUpdateProjectSchedule` 콜백 추가 |
+
+### 4.2 재사용 컴포넌트
+
+| 컴포넌트 | 역할 |
+|--------|------|
+| `src/features/checklist/components/ScheduleModal.tsx` | 기존 마일스톤 모달 활용 (변경 없음) |
+| `src/components/schedule/ScheduleWizard.tsx` | lazy load 지원 |
+
+### 4.3 데드 코드
+
+| 파일 | 상태 |
+|------|:----:|
+| `src/features/test-setup/components/CalendarInput.tsx` | ⚠️ 삭제 필요 (현재 어디에서도 사용되지 않음) |
+
+---
+
+## 5. 발견된 차이점
+
+### 5.1 데드 코드 정리 (우선순위: 낮)
+
+| 항목 | 상태 | 영향도 |
+|------|:----:|:------:|
+| CalendarInput.tsx 파일 삭제 | 미완료 | 낮 |
+
+**설명**: 파일이 아직 존재하지만, TestSetupPage에서 CalendarInput import/사용이 모두 제거되었고, 전체 코드베이스에서 어느 파일도 CalendarInput을 참조하지 않는 완전한 데드 코드 상태이다. 삭제는 선택사항.
+
+### 5.2 로컬 상태 부분 동기화 이슈 (우선순위: 중)
+
+| 항목 | 설계 의도 | 현재 구현 | 영향도 |
+|------|----------|----------|:------:|
+| 중간 마일스톤 동기화 | ScheduleWizard에서 저장한 `scheduleDefect1`, `schedulePatchDate` 등이 로컬 상태에도 반영 | `scheduleStartDate`와 `scheduleEndDate`만 `onChangeScheduleStartDate`/`onChangeScheduleEndDate`로 동기화. 나머지 마일스톤은 Firestore에만 저장 | 중 |
+
+**시나리오 (데이터 손실 위험):**
+1. 사용자가 ScheduleWizard에서 `scheduleDefect1 = '2026-04-01'` 설정 후 저장
+2. `onUpdateProjectSchedule`이 Firestore에 `{ scheduleDefect1: '2026-04-01', ... }` 저장 ✅
+3. 로컬 `testSetup.scheduleDefect1`은 여전히 `''` ⚠️
+4. 사용자가 "시험 시작" 클릭 → `saveProjectNow`가 `scheduleDefect1: ''`으로 덮어씀 ❌
+
+**수정 방안**: `onSave` 콜백에서 모든 스케줄 필드를 동기화하거나, `useTestSetupState`에 `updateScheduleFields` 함수 추가.
+
+---
+
+## 6. 아키텍처 준수도
+
+### 6.1 Feature-First 구조
+
+| 항목 | 상태 | 비고 |
+|------|:----:|------|
+| ScheduleModal 크로스 피처 참조 | ⚠️ | `test-setup` 피처에서 `checklist/components/ScheduleModal`을 import. 이상적으로는 공통 컴포넌트로 이동 권장 |
+
+### 6.2 관심사 분리 (SoC)
+
+| 항목 | 상태 | 비고 |
+|------|:----:|------|
+| Firestore 쓰기 로직 위치 | ⚠️ | `TestSetupView.tsx`에서 `setDoc` 직접 호출. `useTestSetupState`에 훅 함수로 추출 권장 |
+
+---
+
+## 7. 품질 검증
+
+### 7.1 빌드
+
+| 항목 | 결과 |
+|------|:----:|
+| `npm run build` | ✅ 통과 |
+| TypeScript 컴파일 | ✅ 통과 |
+| ESLint | ✅ 통과 |
+
+### 7.2 변경 파일 요약
+
+| 파일 | 변경 종류 | 주요 내용 |
+|------|:-------:|----------|
+| TestSetupPage.tsx | 수정 | CalendarInput 제거, ScheduleModal 추가, Calendar 아이콘 추가 |
+| useTestSetupState.ts | 수정 | createProjectFromInput에서 ensureProjectSkeleton 제거 |
+| TestSetupView.tsx | 수정 | onUpdateProjectSchedule 콜백 추가 |
+| CalendarInput.tsx | 데드 코드 | 어디에서도 사용되지 않음 (삭제 대기) |
+
+---
+
+## 8. 회고 (Retrospective)
+
+### 8.1 잘된 점
+
+1. **명확한 요구사항 전달**: CalendarInput 제거와 즉시 생성 제거라는 두 가지 명확한 변경이 정확히 구현되었다.
+
+2. **기존 ScheduleWizard 재활용**: 새로운 컴포넌트를 만들지 않고 기존 ScheduleWizard를 test-setup에서 재사용하는 현실적인 선택으로 개발 효율성을 높였다.
+
+3. **조건부 활성화**: 시험번호 입력 전 일정 저장을 방지하기 위해 버튼에 `disabled={!testNumberValidation.isValid}` 조건을 적용하여 UX 안전성을 확보했다.
+
+4. **Firestore 쓰기 의도성**: 로컬 상태와 Firestore 쓰기의 경계를 명확히 함으로써, 미확정 시점에 Firestore 데이터가 생성되는 문제를 완전히 해결했다.
+
+### 8.2 개선이 필요한 점
+
+1. **중간 마일스톤 동기화 누락**: 마일스톤별 날짜(결함 리포트, 패치)가 Firestore에는 저장되지만 로컬 상태에 동기화되지 않아, "시험 시작" 시 빈 값으로 덮어쓰일 가능성이 있다.
+
+2. **CalendarInput.tsx 데드 코드**: 파일이 완전히 제거되지 않았으며, 향후 팀이 실수로 참조할 가능성이 있다.
+
+3. **별도 설계 문서 부재**: 변경 사양을 트랜스크립트 형태로 진행했으나, 정식 Design 문서가 있었으면 요구사항 검토가 더욱 체계적이었을 것이다.
+
+### 8.3 다음에 적용할 사항
+
+1. **로컬 상태 동기화 함수 추가**: `useTestSetupState`에 `updateScheduleFields(updates: Record<string, string>)` 함수를 추가하여 모든 마일스톤 필드를 한번에 동기화.
+
+2. **CalendarInput.tsx 삭제**: 데드 코드 정리 프로세스 적용.
+
+3. **ScheduleModal 공통 컴포넌트 이동**: `src/features/checklist/components/ScheduleModal.tsx` → `src/components/schedule/ScheduleModal.tsx`로 이동하여 크로스 피처 의존성 해소.
+
+4. **향후 UI 변경 시 Design 문서**: 구조 변경이 있는 피처는 먼저 간단한 설계 문서를 작성하고 진행하는 PDCA 플로우 강화.
+
+---
+
+## 9. 향후 과제
+
+### 9.1 즉시 조치 (중간 우선순위)
+
+| 우선순위 | 항목 | 파일 | 설명 |
+|:--------:|------|------|------|
+| 중 | 중간 마일스톤 로컬 동기화 | `TestSetupPage.tsx`, `useTestSetupState.ts` | `onSave` 콜백에서 모든 스케줄 필드 동기화 또는 `updateScheduleFields` 함수 추가 |
+
+### 9.2 단기 조치 (낮은 우선순위)
+
+| 우선순위 | 항목 | 파일 | 설명 |
+|:--------:|------|------|------|
+| 낮 | CalendarInput.tsx 삭제 | `src/features/test-setup/components/CalendarInput.tsx` | 데드 코드 제거 |
+| 낮 | ScheduleModal 공통 컴포넌트 이동 | `src/components/schedule/` | 크로스 피처 의존성 해소 |
+| 낮 | onUpdateProjectSchedule 훅으로 이동 | `TestSetupView.tsx:72-75` | SoC 개선 |
+
+---
+
+## 10. 결론
+
+시험 생성 UI 개선은 **전체 매치율 92%**로 설계 의도와 높은 일치도를 보인다.
+
+두 가지 핵심 변경이 올바르게 구현되었다:
+- **CalendarInput 제거 + ScheduleModal 통합**: TestSetupPage에서 CalendarInput이 완전히 제거되었고, ScheduleWizard 모달로 마일스톤 기반 일정 설정이 가능해졌다.
+- **즉시 프로젝트 생성 제거**: `createProjectFromInput`에서 `ensureProjectSkeleton` 호출이 제거되어, Firestore 쓰기는 합의서 업로드/일정 저장/시험 시작 등 의도적 행위에서만 발생한다.
+
+유일한 중간 우선순위 이슈는 ScheduleWizard의 중간 마일스톤이 로컬 상태에 동기화되지 않는 것인데, 이는 `updateScheduleFields` 함수 추가로 간단히 해결할 수 있다.
+
+---
+
 ## Version History
 
 | 버전 | 날짜 | 변경 내용 | 작성자 |
@@ -494,3 +783,4 @@ CheckpointEditor 4-Row 레이아웃 개선은 **전체 매치율 98%**로 설계
 | 1.0 | 2026-03-16 | 체크포인트 DnD 재정렬 기능 완성 보고서 | report-generator |
 | 2.0 | 2026-03-16 | CheckpointEditor 4-Row 레이아웃 개선 완성 보고서 | report-generator |
 | 3.0 | 2026-03-16 | 콘텐츠 위키 스타일 버전 관리 시스템 완성 보고서 | report-generator |
+| 4.0 | 2026-03-16 | 시험 생성 UI 개선 (CalendarInput→ScheduleModal, 즉시 프로젝트 생성 제거) | report-generator |

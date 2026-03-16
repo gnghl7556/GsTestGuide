@@ -1,5 +1,22 @@
 # Changelog
 
+## [2026-03-16] - 시험 생성 UI 개선
+
+### Changed
+- `src/features/test-setup/components/TestSetupPage.tsx` — CalendarInput 컴포넌트 제거, ScheduleModal 모달로 일정 관리 버튼 추가
+- `src/features/test-setup/hooks/useTestSetupState.ts` — `createProjectFromInput`에서 `ensureProjectSkeleton` 호출 제거 (Firestore 즉시 생성 방지)
+- `src/features/test-setup/routes/TestSetupView.tsx` — `onUpdateProjectSchedule` 콜백 추가 (Firestore 일정 저장)
+
+### Removed
+- `src/features/test-setup/components/CalendarInput.tsx` — 데드 코드 (파일 아직 존재하나 사용 중단, 삭제 대기)
+
+### Rationale
+- 시험번호 입력 시 즉시 Firestore 프로젝트 생성 취약점 해결: 로컬 상태 업데이트만 수행
+- CalendarInput 2개 반복 제거: ScheduleWizard 모달로 마일스톤 기반 통합 일정 관리로 전환
+- Firestore 쓰기 의도성 강화: 합의서 업로드, 일정 저장, 시험 시작 등 명시적 행위에서만 발생
+
+---
+
 ## [2026-03-16] - 콘텐츠 위키 스타일 버전 관리 시스템
 
 ### Added
