@@ -71,6 +71,7 @@ interface TestSetupPageProps {
   parsingTestNumber: string | null;
   onStartProject: () => Promise<{ ok: boolean; reason?: string }>;
   onUpdateProjectSchedule?: (testNumber: string, updates: Record<string, unknown>) => void;
+  onChangeProjectColor?: (testNumber: string, color: string) => void;
   canProceed: boolean;
   onQuickStart?: (testNumber: string) => void;
 }
@@ -110,6 +111,7 @@ export function TestSetupPage({
   parsingTestNumber,
   onStartProject,
   onUpdateProjectSchedule,
+  onChangeProjectColor,
   canProceed,
   onQuickStart
 }: TestSetupPageProps) {
@@ -949,9 +951,7 @@ export function TestSetupPage({
                 </div>
                 <ScheduleCalendar
                   projects={visibleProjects}
-                  onChangeColor={onUpdateProjectSchedule ? (testNumber, color) => {
-                    onUpdateProjectSchedule(testNumber, { projectColor: color });
-                  } : undefined}
+                  onChangeColor={onChangeProjectColor}
                 />
               </div>
             )}

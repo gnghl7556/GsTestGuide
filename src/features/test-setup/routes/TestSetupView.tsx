@@ -75,6 +75,10 @@ export function TestSetupView({ onStartProject, onQuickStart }: TestSetupViewPro
           void setDoc(doc(db, 'projects', testNumber), { ...updates, updatedAt: serverTimestamp() }, { merge: true });
           updateScheduleFields(updates);
         }}
+        onChangeProjectColor={(testNumber, color) => {
+          if (!db) return;
+          void setDoc(doc(db, 'projects', testNumber), { projectColor: color }, { merge: true });
+        }}
         canProceed={canProceed}
         onQuickStart={onQuickStart}
       />
