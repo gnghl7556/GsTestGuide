@@ -98,8 +98,9 @@ function SortableCheckpointCard({
   const memoContent = editing.checkpointDetails[i] ?? '';
   const hasMemo = memoContent.length > 0;
   const isMemoOpen = memoOpenIdx.has(i);
-  const connectedEvidenceCount = (editing.checkpointEvidences[i] ?? []).length;
   const isEvidencePopoverOpen = evidencePopoverIdx === i;
+
+  const connectedEvidenceIndices = editing.checkpointEvidences[i] ?? [];
 
   return (
     <div
@@ -107,8 +108,8 @@ function SortableCheckpointCard({
       style={style}
       className="rounded-lg border border-ln bg-surface-base/50 px-3 py-2.5 space-y-2"
     >
-      {/* Row 1: Drag handle + Number + Badge + Input (inline) */}
-      <div className="flex items-center gap-2">
+      {/* Row 1: Drag handle + Number + Badge + Ref tags */}
+      <div className="flex flex-wrap items-center gap-1.5">
         <button
           type="button"
           className="shrink-0 cursor-grab active:cursor-grabbing text-tx-muted hover:text-tx-secondary touch-none"
@@ -136,19 +137,8 @@ function SortableCheckpointCard({
         >
           {currentImportance === 'MUST' ? '필수' : '권고'}
         </button>
-        <input
-          className="flex-1 min-w-0 rounded border border-ln bg-surface-base px-2.5 py-1.5 text-sm font-medium text-tx-primary"
-          value={editedBody}
-          onChange={(e) => setEditing({
-            ...editing,
-            checkpoints: { ...editing.checkpoints, [i]: e.target.value },
-          })}
-        />
-      </div>
 
-      {/* Row 2: Ref tag chips + Evidence tag + original diff */}
-      <div className="pl-7 flex flex-wrap items-center gap-1.5">
-        {/* Selected ref tags */}
+        {/* Ref tags inline */}
         {editedRefs.map((ref) => (
           <span
             key={ref}
@@ -213,25 +203,57 @@ function SortableCheckpointCard({
             </div>
           )}
         </div>
+      </div>
 
-        {/* Evidence inline tag with popover */}
+      {/* Row 2: Input (full width) */}
+      <div className="pl-7">
+        <input
+          className="w-full rounded border border-ln bg-surface-base px-2.5 py-1.5 text-sm font-medium text-tx-primary"
+          value={editedBody}
+          onChange={(e) => setEditing({
+            ...editing,
+            checkpoints: { ...editing.checkpoints, [i]: e.target.value },
+          })}
+        />
+      </div>
+
+      {/* Row 3: Evidence chips + Add evidence + Original diff */}
+      <div className="pl-7 flex flex-wrap items-center gap-1.5">
+        {connectedEvidenceIndices.length > 0 && (
+          <span className="text-[10px] font-medium text-tx-muted">증빙:</span>
+        )}
+        {connectedEvidenceIndices.map((evIdx) => (
+          <span
+            key={evIdx}
+            className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-status-pass-bg text-status-pass-text border border-status-pass-border"
+          >
+            {evidenceExamples[evIdx]}
+            <button
+              type="button"
+              onClick={() => toggleEvidence(i, evIdx)}
+              className="hover:text-danger-text transition-colors"
+            >
+              <X size={10} />
+            </button>
+          </span>
+        ))}
+
+        {/* Add evidence button + popover */}
         {evidenceExamples.length > 0 && (
           <div className="relative">
             <button
               type="button"
               onClick={() => setEvidencePopoverIdx(isEvidencePopoverOpen ? null : i)}
-              className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border transition-colors ${
-                connectedEvidenceCount > 0
-                  ? 'bg-status-pass-bg text-status-pass-text border-status-pass-border'
-                  : 'border-dashed border-ln text-tx-muted hover:border-ln-strong hover:text-tx-secondary'
-              }`}
+              className="inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-dashed border-ln text-tx-muted hover:border-ln-strong hover:text-tx-secondary transition-colors"
+              title="증빙 추가"
             >
-              증빙 {connectedEvidenceCount}건
+              <Plus size={10} />
+              증빙
             </button>
             {isEvidencePopoverOpen && (
               <div className="absolute z-30 left-0 top-full mt-1 w-64 max-h-52 overflow-y-auto rounded-lg border border-ln bg-surface-overlay shadow-lg p-1.5">
                 {evidenceExamples.map((ev, evIdx) => {
-                  const selected = (editing.checkpointEvidences[i] ?? []).includes(evIdx);
+                  const selected = connectedEvidenceIndices.includes(evIdx);
                   return (
                     <button
                       key={evIdx}
@@ -261,13 +283,13 @@ function SortableCheckpointCard({
 
         {/* Original diff indicator */}
         {(editedBody !== origBody || refsChanged) && (
-          <span className="text-[9px] text-tx-muted truncate max-w-48" title={`원본: ${origBody}${origRefs.length > 0 ? ` [ref: ${origRefs.join(', ')}]` : ''}`}>
+          <span className="ml-auto text-[9px] text-tx-muted truncate max-w-48" title={`원본: ${origBody}${origRefs.length > 0 ? ` [ref: ${origRefs.join(', ')}]` : ''}`}>
             원본: {origBody.slice(0, 30)}{origBody.length > 30 ? '...' : ''}
           </span>
         )}
       </div>
 
-      {/* Row 3: Collapsible memo disclosure */}
+      {/* Row 4: Collapsible memo disclosure */}
       <div className="pl-7">
         <button
           type="button"
