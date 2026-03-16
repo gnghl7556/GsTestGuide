@@ -1,11 +1,13 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
 import type { Project } from '../../../types';
-import { MILESTONES, MILESTONE_COLOR_MAP, MILESTONE_ICON_MAP, getProjectColor } from '../../../constants/schedule';
+import { MILESTONES, MILESTONE_COLOR_MAP, MILESTONE_ICON_MAP, PROJECT_COLORS, getProjectColor } from '../../../constants/schedule';
 import type { MilestoneColor } from '../../../constants/schedule';
 import { MilestoneIcon } from '../../../components/schedule/MilestoneIcon';
+import { Check } from 'lucide-react';
 
 interface ScheduleCalendarProps {
   projects: Project[];
+  onChangeColor?: (testNumber: string, color: MilestoneColor) => void;
 }
 
 type MilestoneEntry = {
@@ -30,25 +32,30 @@ type PeriodBar = {
   isEnd: boolean;
 };
 
-export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
+export function ScheduleCalendar({ projects, onChangeColor }: ScheduleCalendarProps) {
   const today = new Date();
   const todayStr = toLocalDateString(today);
   const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [popoverDate, setPopoverDate] = useState<string | null>(null);
   const [popoverPos, setPopoverPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [colorPickerTarget, setColorPickerTarget] = useState<string | null>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!popoverDate) return;
+    if (!popoverDate && !colorPickerTarget) return;
     const handler = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+      if (popoverDate && popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setPopoverDate(null);
+      }
+      if (colorPickerTarget && colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setColorPickerTarget(null);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [popoverDate]);
+  }, [popoverDate, colorPickerTarget]);
 
   const projectColorMap = useMemo(() => {
     const map = new Map<string, MilestoneColor>();
@@ -276,9 +283,40 @@ export function ScheduleCalendar({ projects }: ScheduleCalendarProps) {
       {/* Legend: per-project */}
       <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10 flex flex-wrap items-center gap-3">
         {activeProjects.map((p) => (
-          <div key={p.testNumber} className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-white/60">
-            <span className={`w-2 h-2 rounded-full ${MILESTONE_COLOR_MAP[p.color].dot}`} />
+          <div key={p.testNumber} className="relative flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-white/60">
+            <button
+              type="button"
+              onClick={() => onChangeColor && setColorPickerTarget(colorPickerTarget === p.testNumber ? null : p.testNumber)}
+              className={`w-2.5 h-2.5 rounded-full ${MILESTONE_COLOR_MAP[p.color].dot} ${onChangeColor ? 'cursor-pointer hover:scale-150 hover:ring-2 hover:ring-offset-1 hover:ring-slate-300 dark:hover:ring-white/30 transition-all duration-150' : ''}`}
+              title={onChangeColor ? '색상 변경' : undefined}
+            />
             {p.testNumber}
+            {/* Color Picker Popover */}
+            {colorPickerTarget === p.testNumber && onChangeColor && (
+              <div
+                ref={colorPickerRef}
+                className="absolute bottom-full left-0 mb-2 z-50 rounded-xl border border-slate-200 dark:border-white/15 bg-white/95 dark:bg-[#0b1230]/95 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.5)] p-2"
+              >
+                <div className="flex items-center gap-1.5">
+                  {PROJECT_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => {
+                        onChangeColor(p.testNumber, c);
+                        setColorPickerTarget(null);
+                      }}
+                      className={`relative w-5 h-5 rounded-full ${MILESTONE_COLOR_MAP[c].dot} hover:scale-125 transition-all duration-150 flex items-center justify-center ${
+                        c === p.color ? 'ring-2 ring-offset-1 ring-slate-400 dark:ring-white/50' : ''
+                      }`}
+                      title={c}
+                    >
+                      {c === p.color && <Check className="w-3 h-3 text-white" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

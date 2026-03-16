@@ -947,7 +947,12 @@ export function TestSetupPage({
                 <div className="mb-2 flex items-center justify-between">
                   <div className="text-sm text-tx-secondary">시험 일정 확인</div>
                 </div>
-                <ScheduleCalendar projects={visibleProjects} />
+                <ScheduleCalendar
+                  projects={visibleProjects}
+                  onChangeColor={onUpdateProjectSchedule ? (testNumber, color) => {
+                    onUpdateProjectSchedule(testNumber, { projectColor: color });
+                  } : undefined}
+                />
               </div>
             )}
 
