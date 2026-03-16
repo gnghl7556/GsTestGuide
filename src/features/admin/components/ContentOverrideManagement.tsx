@@ -6,6 +6,7 @@ import { collection, onSnapshot } from 'firebase/firestore';
 import type { RequirementCategory, QuestionImportance, ContentSnapshot } from '../../../types';
 import { inferImportance } from '../../../utils/quickMode';
 import { requirementToSnapshot } from '../../../lib/content/snapshotUtils';
+import { useContentVersions } from '../../../hooks/useContentVersions';
 import { saveContentVersion } from '../hooks/useContentVersioning';
 import { AdminPageHeader, BusyOverlay } from '../shared';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
@@ -25,8 +26,8 @@ const CATEGORY_ORDER: RequirementCategory[] = ['SETUP', 'EXECUTION', 'COMPLETION
 
 
 export function ContentOverrideManagement() {
-  // contentVersions 루트 문서에서 현재 활성 스냅샷 구독
-  const [versionedContents, setVersionedContents] = useState<Record<string, ContentSnapshot>>({});
+  // contentVersions + 레거시 contentOverrides 병합 (점검 페이지와 동일한 데이터 소스)
+  const versionedContents = useContentVersions();
   const [versionNumbers, setVersionNumbers] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [busy, setBusy] = useState(false);
@@ -49,20 +50,17 @@ export function ContentOverrideManagement() {
   // 현재 사용자 정보
   const { currentUserId } = useTestSetupContext();
 
-  // Subscribe to Firestore contentVersions (루트 문서들)
+  // Subscribe to Firestore contentVersions (버전 번호 추적용)
   useEffect(() => {
     if (!db) return;
     const unsub = onSnapshot(collection(db, 'contentVersions'), (snap) => {
-      const contents: Record<string, ContentSnapshot> = {};
       const versions: Record<string, number> = {};
       snap.forEach((d) => {
         const data = d.data();
         if (data.content) {
-          contents[d.id] = data.content as ContentSnapshot;
           versions[d.id] = (data.currentVersion as number) ?? 0;
         }
       });
-      setVersionedContents(contents);
       setVersionNumbers(versions);
     });
     return () => unsub();
@@ -223,7 +221,7 @@ export function ContentOverrideManagement() {
     return result;
   }, [grouped, search, filterModified, versionedContents]);
 
-  const versionedCount = Object.keys(versionedContents).length;
+  const versionedCount = Object.values(versionNumbers).filter(v => v > 0).length;
 
   const toggleCategory = (cat: RequirementCategory) => {
     setExpandedCategories((prev) => {
