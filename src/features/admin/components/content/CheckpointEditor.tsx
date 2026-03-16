@@ -107,7 +107,7 @@ function SortableCheckpointCard({
       style={style}
       className="rounded-lg border border-ln bg-surface-base/50 px-3 py-2.5 space-y-2"
     >
-      {/* Row 1: Drag handle + Number + Badge */}
+      {/* Row 1: Drag handle + Number + Badge + Input (inline) */}
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -117,7 +117,7 @@ function SortableCheckpointCard({
         >
           <GripVertical size={14} />
         </button>
-        <span className="shrink-0 text-[10px] font-bold text-tx-tertiary w-5 text-right">{displayNum}</span>
+        <span className="shrink-0 text-xs font-bold text-tx-tertiary tabular-nums">{displayNum}</span>
         <button
           type="button"
           onClick={() => setEditing({
@@ -136,12 +136,8 @@ function SortableCheckpointCard({
         >
           {currentImportance === 'MUST' ? '필수' : '권고'}
         </button>
-      </div>
-
-      {/* Row 2: Input (bigger, prominent) */}
-      <div className="pl-9">
         <input
-          className="w-full rounded border border-ln bg-surface-base px-2.5 py-1.5 text-sm font-medium text-tx-primary"
+          className="flex-1 min-w-0 rounded border border-ln bg-surface-base px-2.5 py-1.5 text-sm font-medium text-tx-primary"
           value={editedBody}
           onChange={(e) => setEditing({
             ...editing,
@@ -150,8 +146,8 @@ function SortableCheckpointCard({
         />
       </div>
 
-      {/* Row 3: Ref tag chips + Evidence tag + original diff */}
-      <div className="pl-9 flex flex-wrap items-center gap-1.5">
+      {/* Row 2: Ref tag chips + Evidence tag + original diff */}
+      <div className="pl-7 flex flex-wrap items-center gap-1.5">
         {/* Selected ref tags */}
         {editedRefs.map((ref) => (
           <span
@@ -271,8 +267,8 @@ function SortableCheckpointCard({
         )}
       </div>
 
-      {/* Row 4: Collapsible memo disclosure */}
-      <div className="pl-9">
+      {/* Row 3: Collapsible memo disclosure */}
+      <div className="pl-7">
         <button
           type="button"
           onClick={() => toggleMemo(i)}
