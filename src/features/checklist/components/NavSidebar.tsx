@@ -298,7 +298,7 @@ export function NavSidebar({
                                 <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : theme.idleText}`}>
                                   {String(index + 1).padStart(2, '0')}
                                 </span>
-                                <span className="block flex-1 line-clamp-2 break-words">{toShortLabel(item.title)}</span>
+                                <span className="block flex-1 line-clamp-2 break-keep break-words">{toShortLabel(item.title)}</span>
                                 {isBlocked && (
                                   <span className="shrink-0 rounded-full border border-ln bg-surface-sunken px-1.5 py-0.5 text-[9px] font-semibold text-tx-tertiary">
                                     잠금
