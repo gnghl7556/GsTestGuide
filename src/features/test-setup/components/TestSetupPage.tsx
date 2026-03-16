@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Building2, List, UploadCloud, User, Trash2 } from 'lucide-react';
+import { Building2, ChevronRight, List, UploadCloud, User, Trash2 } from 'lucide-react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { logger } from '../../../utils/logger';
@@ -134,11 +134,6 @@ export function TestSetupPage({
       }))
       .sort((a, b) => normalizeUpdatedAt(b.updatedAt) - normalizeUpdatedAt(a.updatedAt));
   }, [projects, currentUserId, progressByTestNumber]);
-  const canSaveTestNumber = Boolean(
-    trimmedTestNumber &&
-      currentUserId &&
-      !projects.some((project) => project.testNumber.trim().toUpperCase() === trimmedTestNumber.toUpperCase())
-  );
   const featuredProject = visibleProjects[0];
   const otherProjects = visibleProjects.slice(1);
   const recentSideProjects = otherProjects.slice(0, 2);
@@ -177,6 +172,29 @@ export function TestSetupPage({
     info: Boolean(projectName || companyName || companyContactName || companyContactPhone || companyContactEmail),
     agreement: hasAgreementDoc
   };
+  const suggestedTestNumber = useMemo(() => {
+    const yy = String(new Date().getFullYear()).slice(2);
+    const pattern = new RegExp(`^GS-([A-Z])-${yy}-(\\d{4})$`);
+    let maxNum = 0;
+    let lastLetter = 'A';
+    for (const p of projects) {
+      const match = p.testNumber.trim().toUpperCase().match(pattern);
+      if (match) {
+        const num = parseInt(match[2], 10);
+        if (num > maxNum) {
+          maxNum = num;
+          lastLetter = match[1];
+        }
+      }
+    }
+    const nextNum = String(maxNum + 1).padStart(4, '0');
+    return `GS-${lastLetter}-${yy}-${nextNum}`;
+  }, [projects]);
+
+  const hasOptionalData = sectionDone.schedule || sectionDone.agreement || sectionDone.info;
+  const [optionalOpen, setOptionalOpen] = useState(hasOptionalData);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+
   const [agreementDeleteConfirmOpen, setAgreementDeleteConfirmOpen] = useState(false);
   const [agreementFailedOpen, setAgreementFailedOpen] = useState(false);
   const prevStatusRef = useRef<AgreementParsed['parseStatus']>(undefined);
@@ -235,8 +253,6 @@ export function TestSetupPage({
     }
     return { normalized, isValid: true, message: '사용 가능한 시험번호입니다.' };
   };
-  const canSaveTestNumberValidated =
-    canSaveTestNumber && (!testNumberValidation.touched || testNumberValidation.isValid);
   const resetCreateFields = () => {
     localStorage.removeItem(selectedTestStorageKey);
     onChangeUserId('');
@@ -370,7 +386,7 @@ export function TestSetupPage({
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <label className="text-sm text-tx-secondary block">
-                  <span className="mr-2 inline-flex rounded-md border border-sky-400/40 dark:border-sky-300/40 bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-sky-700 dark:text-sky-100">1단계</span>
+                  <span className="mr-2 inline-flex rounded-md border border-rose-400/40 dark:border-rose-300/40 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-rose-600 dark:text-rose-200">필수</span>
                   사용자 선택
                 </label>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.user ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
@@ -426,7 +442,7 @@ export function TestSetupPage({
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <label className="text-sm text-tx-secondary block">
-                  <span className="mr-2 inline-flex rounded-md border border-sky-400/40 dark:border-sky-300/40 bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-sky-700 dark:text-sky-100">3단계</span>
+                  <span className="mr-2 inline-flex rounded-md border border-rose-400/40 dark:border-rose-300/40 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-rose-600 dark:text-rose-200">필수</span>
                   담당 PL 선택
                 </label>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.pl ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
@@ -451,21 +467,131 @@ export function TestSetupPage({
             </div>
             )}
 
+            {/* create 모드: 선택 항목 disclosure */}
             {flowMode === 'create' && (
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm text-tx-secondary block">
-                  <span className="mr-2 inline-flex rounded-md border border-sky-400/40 dark:border-sky-300/40 bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-sky-700 dark:text-sky-100">4단계</span>
-                  시험 일정 입력
-                </label>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.schedule ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
-                  {sectionDone.schedule ? '완료' : '미완료'}
-                </span>
+            <div className="rounded-xl border border-ln bg-surface-sunken">
+              <button
+                type="button"
+                onClick={() => setOptionalOpen(!optionalOpen)}
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-tx-secondary hover:text-tx-primary transition"
+              >
+                <ChevronRight
+                  size={16}
+                  className={`text-tx-muted transition-transform duration-200 ${optionalOpen ? 'rotate-90' : ''}`}
+                />
+                <span className="font-medium">추가 설정</span>
+                <span className="text-[10px] text-tx-muted">(선택)</span>
+                {hasOptionalData && (
+                  <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full border border-status-pass-border text-status-pass-text">
+                    입력됨
+                  </span>
+                )}
+              </button>
+              {optionalOpen && (
+              <div className="px-4 pb-4 space-y-5 border-t border-ln pt-4">
+                {/* 시험 일정 */}
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="text-sm text-tx-secondary block">시험 일정 입력</label>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.schedule ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
+                      {sectionDone.schedule ? '완료' : '미완료'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <CalendarInput label="시작일" value={scheduleStartDate} onChange={onChangeScheduleStartDate} />
+                    <CalendarInput label="종료일" value={scheduleEndDate} onChange={onChangeScheduleEndDate} />
+                  </div>
+                </div>
+
+                {/* 합의서 업로드 */}
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="text-sm text-tx-secondary block">시험 합의서 업로드</label>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.agreement ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
+                      {sectionDone.agreement ? '완료' : '미완료'}
+                    </span>
+                  </div>
+                  <div className="min-h-[160px] border border-ln rounded-2xl bg-surface-base flex flex-col items-center justify-center gap-3 relative overflow-hidden">
+                    <UploadCloud size={24} className="text-tx-tertiary" />
+                    <div className="text-sm font-semibold text-tx-secondary">시험 합의서</div>
+                    <div className="text-xs text-tx-muted">파일을 클릭하여 업로드</div>
+                    <label className="absolute inset-0 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (!hasTestNumber) {
+                            window.alert('먼저 시험번호를 입력해주세요.');
+                            e.target.value = '';
+                            return;
+                          }
+                          onUploadAgreementDoc(file);
+                        }}
+                      />
+                    </label>
+                    {agreementParsed?.parseStatus && (
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        <div className="rounded-full border border-ln bg-interactive-bg px-3 py-1 text-[10px] text-tx-secondary">
+                          {statusLabel}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAgreementDeleteConfirmOpen(true)}
+                          className="inline-flex items-center gap-1 rounded-full border border-ln bg-interactive-bg px-2 py-1 text-[10px] font-semibold text-tx-secondary hover:text-tx-primary"
+                          title="시험 합의서 삭제"
+                          aria-label="시험 합의서 삭제"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 px-5 pb-3">
+                      <div className="text-xs text-tx-muted mb-1 flex justify-between">
+                        <span>{agreementParsed?.parseStatus === 'pending' ? '분석 중' : '대기'}</span>
+                        <span>{hasAgreementDoc ? '업로드됨' : '미업로드'}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-interactive-bg overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-500"
+                          style={{ width: agreementParsed?.parseStatus === 'pending' ? '60%' : '20%' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 시험 정보 입력 */}
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="text-sm text-tx-secondary block">시험 정보 입력</label>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.info ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
+                      {sectionDone.info ? '완료' : '미완료'}
+                    </span>
+                  </div>
+                  <TestInfoCard
+                    testNumber={selectedProject?.testNumber || trimmedTestNumber || ''}
+                    plId={plId}
+                    scheduleStartDate={scheduleStartDate}
+                    scheduleEndDate={scheduleEndDate}
+                    productName={projectName}
+                    companyName={companyName}
+                    managerName={companyContactName}
+                    managerPhone={companyContactPhone}
+                    managerEmail={companyContactEmail}
+                    operatingEnvironment={operatingEnvironment}
+                    plDirectory={plDirectory}
+                    agreementStatus={agreementParsed?.parseStatus}
+                    onChangePlId={onChangePlId}
+                    onChangeStartDate={onChangeScheduleStartDate}
+                    onChangeEndDate={onChangeScheduleEndDate}
+                    onChangeField={(field, value) => onUpdateManualInfo({ [field]: value })}
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <CalendarInput label="시작일" value={scheduleStartDate} onChange={onChangeScheduleStartDate} />
-                <CalendarInput label="종료일" value={scheduleEndDate} onChange={onChangeScheduleEndDate} />
-              </div>
+              )}
             </div>
             )}
 
@@ -473,10 +599,7 @@ export function TestSetupPage({
             {flowMode === 'existing' && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm text-tx-secondary block">
-                  <span className="mr-2 inline-flex rounded-md border border-sky-400/40 dark:border-sky-300/40 bg-sky-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-sky-700 dark:text-sky-100">2단계</span>
-                  시험 선택
-                </label>
+                <label className="text-sm text-tx-secondary block">시험 선택</label>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] px-2 py-0.5 rounded-full border border-ln-strong text-tx-muted">탐색</span>
                   <button
@@ -680,14 +803,22 @@ export function TestSetupPage({
             <div className="mb-2">
               <div className="mb-2 flex items-center justify-between">
                 <label className="text-sm text-tx-secondary block">
-                  <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">2단계</span>
-                  시험 번호 입력 후 저장
+                  <span className="mr-2 inline-flex rounded-md border border-rose-400/40 dark:border-rose-300/40 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-rose-600 dark:text-rose-200">필수</span>
+                  시험 번호
                 </label>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.testNumber ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
-                  {sectionDone.testNumber ? '완료' : '미완료'}
-                </span>
+                {autoSaveStatus === 'saved' && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full border border-status-pass-border text-status-pass-text">
+                    ✓ 생성됨
+                  </span>
+                )}
               </div>
-              <div className="h-11 flex items-center gap-2 bg-surface-sunken border border-ln rounded-xl px-3 focus-within:ring-2 focus-within:ring-accent/60">
+              <div className={`h-11 flex items-center gap-2 bg-surface-sunken border rounded-xl px-3 focus-within:ring-2 focus-within:ring-accent/60 ${
+                testNumberValidation.touched
+                  ? testNumberValidation.isValid
+                    ? 'border-status-pass-border'
+                    : 'border-status-fail-border'
+                  : 'border-ln'
+              }`}>
                 <List size={16} className="text-tx-muted" />
                 <input
                   className="h-full bg-transparent w-full text-sm text-tx-secondary placeholder:text-input-placeholder focus:outline-none"
@@ -696,13 +827,16 @@ export function TestSetupPage({
                   onChange={(e) => {
                     onChangeTestNumber(e.target.value);
                     setFlowMode('create');
+                    setAutoSaveStatus('idle');
                     if (testNumberValidation.touched) {
                       setTestNumberValidation({ touched: false, isValid: false, message: '' });
                     }
                   }}
                   onBlur={(e) => {
-                    const result = validateTestNumber(e.target.value);
-                    if (result.normalized !== e.target.value) {
+                    const raw = e.target.value;
+                    if (!raw.trim()) return;
+                    const result = validateTestNumber(raw);
+                    if (result.normalized !== raw) {
                       onChangeTestNumber(result.normalized);
                     }
                     setTestNumberValidation({
@@ -710,106 +844,54 @@ export function TestSetupPage({
                       isValid: result.isValid,
                       message: result.message
                     });
+                    if (result.isValid && currentUserId) {
+                      onSaveTestNumber(result.normalized);
+                      setAutoSaveStatus('saved');
+                    } else if (!result.isValid) {
+                      setAutoSaveStatus('error');
+                    }
                   }}
                   readOnly={false}
                 />
-                {flowMode === 'create' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSaveTestNumber(trimmedTestNumber);
-                      setFlowMode('create');
-                    }}
-                    disabled={!canSaveTestNumberValidated}
-                    className={`text-[11px] font-semibold px-2 py-1 rounded-md border ${
-                      canSaveTestNumberValidated
-                        ? 'border-accent bg-accent-subtle text-accent-text hover:bg-accent-subtle'
-                        : 'border-ln text-tx-muted cursor-not-allowed'
-                    }`}
-                  >
-                    저장
-                  </button>
+                {testNumberValidation.touched && (
+                  <span className={`text-sm shrink-0 ${testNumberValidation.isValid ? 'text-status-pass-text' : 'text-status-fail-text'}`}>
+                    {testNumberValidation.isValid ? '✓' : '✗'}
+                  </span>
                 )}
               </div>
-              {testNumberValidation.touched && (
-                <div
-                  className={`mt-2 text-xs ${
-                    testNumberValidation.isValid ? 'text-status-pass-text' : 'text-status-fail-text'
-                  }`}
-                >
+              {testNumberValidation.touched && !testNumberValidation.isValid && (
+                <div className="mt-1.5 text-xs text-status-fail-text">
                   {testNumberValidation.message}
                 </div>
+              )}
+              {!sectionDone.testNumber && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChangeTestNumber(suggestedTestNumber);
+                    const result = validateTestNumber(suggestedTestNumber);
+                    setTestNumberValidation({
+                      touched: true,
+                      isValid: result.isValid,
+                      message: result.message
+                    });
+                    if (result.isValid && currentUserId) {
+                      onSaveTestNumber(result.normalized);
+                      setAutoSaveStatus('saved');
+                    }
+                  }}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-ln-strong bg-interactive-bg px-3 py-1.5 text-xs text-tx-secondary hover:bg-interactive-hover hover:text-tx-primary transition"
+                >
+                  <span className="text-tx-muted">제안:</span>
+                  <span className="font-semibold">{suggestedTestNumber}</span>
+                  <span className="text-accent-text text-[10px]">적용</span>
+                </button>
               )}
             </div>
             )}
 
-            {/* 합의서 업로드 (create 모드) */}
-            {flowMode === 'create' && (
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-sm text-tx-secondary block">
-                  <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">5단계</span>
-                  시험 합의서 업로드
-                </label>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.agreement ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
-                  {sectionDone.agreement ? '완료' : '미완료'}
-                </span>
-              </div>
-              <div className="min-h-[230px] border border-ln rounded-2xl bg-surface-sunken flex flex-col items-center justify-center gap-3 relative overflow-hidden">
-                <UploadCloud size={28} className="text-tx-tertiary" />
-                <div className="text-sm font-semibold text-tx-secondary">시험 합의서</div>
-                <div className="text-xs text-tx-muted">드래그 파일을 업로드하세요.</div>
-                <label className="absolute inset-0 cursor-pointer">
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      if (!hasTestNumber) {
-                        window.alert('먼저 시험번호를 선택해주세요.');
-                        e.target.value = '';
-                        return;
-                      }
-                      onUploadAgreementDoc(file);
-                    }}
-                  />
-                </label>
-                {agreementParsed?.parseStatus && (
-                  <div className="absolute top-3 right-3 flex items-center gap-2">
-                    <div className="rounded-full border border-ln bg-interactive-bg px-3 py-1 text-[10px] text-tx-secondary">
-                      {statusLabel}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setAgreementDeleteConfirmOpen(true)}
-                      className="inline-flex items-center gap-1 rounded-full border border-ln bg-interactive-bg px-2 py-1 text-[10px] font-semibold text-tx-secondary hover:text-tx-primary"
-                      title="시험 합의서 삭제"
-                      aria-label="시험 합의서 삭제"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                )}
-                <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
-                  <div className="text-xs text-tx-muted mb-1 flex justify-between">
-                    <span>{agreementParsed?.parseStatus === 'pending' ? '분석 중' : '대기'}</span>
-                    <span>{hasAgreementDoc ? '업로드됨' : '미업로드'}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-interactive-bg overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all duration-500"
-                      style={{ width: agreementParsed?.parseStatus === 'pending' ? '60%' : '20%' }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            )}
-
-            {/* existing 모드: 시험 일정 캘린더 / create 모드: 시험 정보 입력 */}
-            {flowMode === 'existing' ? (
+            {/* existing 모드: 시험 일정 캘린더 */}
+            {flowMode === 'existing' && (
               <div className="mt-5 relative">
                 {!currentUserId && (
                   <div className="absolute inset-0 z-10 rounded-2xl bg-[var(--overlay-backdrop)] backdrop-blur-[2px] flex items-center justify-center text-center px-4">
@@ -822,46 +904,9 @@ export function TestSetupPage({
                   </div>
                 )}
                 <div className="mb-2 flex items-center justify-between">
-                  <div className="text-sm text-tx-secondary">
-                    <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">
-                      3단계
-                    </span>
-                    시험 일정 확인
-                  </div>
+                  <div className="text-sm text-tx-secondary">시험 일정 확인</div>
                 </div>
                 <ScheduleCalendar projects={visibleProjects} />
-              </div>
-            ) : (
-              <div className="mt-5 relative">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="text-sm text-tx-secondary">
-                    <span className="mr-2 inline-flex rounded-md border border-indigo-400/40 dark:border-indigo-300/40 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-indigo-700 dark:text-indigo-100">
-                      6단계
-                    </span>
-                    시험 정보 입력
-                  </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full border ${sectionDone.info ? 'border-status-pass-border text-status-pass-text' : 'border-ln-strong text-tx-muted'}`}>
-                    {sectionDone.info ? '완료' : '미완료'}
-                  </span>
-                </div>
-                <TestInfoCard
-                  testNumber={selectedProject?.testNumber || trimmedTestNumber || ''}
-                  plId={plId}
-                  scheduleStartDate={scheduleStartDate}
-                  scheduleEndDate={scheduleEndDate}
-                  productName={projectName}
-                  companyName={companyName}
-                  managerName={companyContactName}
-                  managerPhone={companyContactPhone}
-                  managerEmail={companyContactEmail}
-                  operatingEnvironment={operatingEnvironment}
-                  plDirectory={plDirectory}
-                  agreementStatus={agreementParsed?.parseStatus}
-                  onChangePlId={onChangePlId}
-                  onChangeStartDate={onChangeScheduleStartDate}
-                  onChangeEndDate={onChangeScheduleEndDate}
-                  onChangeField={(field, value) => onUpdateManualInfo({ [field]: value })}
-                />
               </div>
             )}
 

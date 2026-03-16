@@ -401,7 +401,6 @@ export function ContentOverrideManagement() {
     } finally {
       setBusy(false);
     }
-    setEditing(null);
   };
 
   const handleReset = async (reqId: string) => {
