@@ -3,6 +3,10 @@ id: SETUP-04
 phase: 시험준비
 title: 네트워크 설정
 order: 4
+checkpointEvidences:
+  1: [1]
+  2: [2]
+  3: [0]
 ---
 
 ## 설명

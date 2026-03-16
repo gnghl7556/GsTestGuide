@@ -3,6 +3,10 @@ id: SETUP-02
 phase: 시험준비
 title: 환경 구성 - 자리/장비
 order: 2
+checkpointEvidences:
+  1: [0]
+  2: [1]
+  3: [2]
 ---
 
 ## 설명

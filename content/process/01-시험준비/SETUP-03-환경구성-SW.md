@@ -3,6 +3,10 @@ id: SETUP-03
 phase: 시험준비
 title: 환경 구성 - SW
 order: 3
+checkpointEvidences:
+  2: [1, 2]
+  3: [0]
+  4: [0]
 ---
 
 ## 설명

@@ -138,6 +138,14 @@ function generateProcessModule(rootDir: string): string {
         })).filter((c) => c.role)
       : [];
 
+    // checkpointEvidences from frontmatter (Record<number, number[]>)
+    const rawCpEvidences = item.frontmatter.checkpointEvidences as Record<string | number, number[]> | undefined;
+    const checkpointEvidences: Record<number, number[]> | undefined = rawCpEvidences
+      ? Object.fromEntries(
+          Object.entries(rawCpEvidences).map(([k, v]) => [Number(k), v]),
+        )
+      : undefined;
+
     return {
       id: item.frontmatter.id as string,
       category,
@@ -146,6 +154,7 @@ function generateProcessModule(rootDir: string): string {
       checkPoints: parseCheckboxList(findSection(sections, '체크포인트')?.content ?? ''),
       evidenceExamples: parseBulletList(findSection(sections, '증빙 예시')?.content ?? ''),
       passCriteria: findSection(sections, '합격 기준')?.content?.trim() ?? '',
+      ...(checkpointEvidences && { checkpointEvidences }),
       requiredDocs: requiredDocs.length > 0 ? requiredDocs : undefined,
       relatedInfo: relatedInfo.length > 0 ? relatedInfo : undefined,
       contacts: contacts.length > 0 ? contacts : undefined,

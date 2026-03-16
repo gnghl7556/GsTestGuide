@@ -3,6 +3,10 @@ id: SETUP-01
 phase: 시험준비
 title: 시험 확인
 order: 1
+checkpointEvidences:
+  0: [0, 1]
+  1: [0]
+  2: [2, 3]
 ---
 
 ## 설명

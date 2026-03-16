@@ -3,6 +3,10 @@ id: SETUP-05
 phase: 시험준비
 title: 기타 환경 구성
 order: 5
+checkpointEvidences:
+  1: [2]
+  2: [1]
+  3: [0]
 ---
 
 ## 설명

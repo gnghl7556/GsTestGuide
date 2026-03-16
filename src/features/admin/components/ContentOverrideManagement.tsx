@@ -245,7 +245,7 @@ export function ContentOverrideManagement() {
       checkpointRefs: Object.fromEntries(cpEntries.map(({ i, refs }: { i: number; body: string; refs: string[] }) => [i, refs])),
       checkpointImportances: cpImportances,
       checkpointDetails: ov?.checkpointDetails ?? {},
-      checkpointEvidences: ov?.checkpointEvidences ?? {},
+      checkpointEvidences: ov?.checkpointEvidences ?? req.checkpointEvidences ?? {},
       checkpointOrder,
       evidenceExamples: ov?.evidenceExamples ?? req.evidenceExamples ?? [],
       testSuggestions: ov?.testSuggestions ?? req.testSuggestions ?? [],
