@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { doc, getDoc, type Firestore } from 'firebase/firestore';
+import { REQUIREMENTS_DB } from 'virtual:content/process';
 import type { Project } from '../types';
 import { isProjectFinalized } from '../utils/projectUtils';
 import { logger } from '../utils/logger';
@@ -17,6 +18,12 @@ export function useProgressByTestNumber(
     [projects]
   );
 
+  // 전체 체크포인트 수 (점검항목별 checkPoints 합산, 마크다운 추가 시 자동 반영)
+  const totalCheckpoints = useMemo(
+    () => REQUIREMENTS_DB.reduce((sum, req) => sum + (req.checkPoints?.length ?? 0), 0),
+    [],
+  );
+
   useEffect(() => {
     if (!db || !authReady || projects.length === 0) return;
     const dbRef = db;
@@ -24,19 +31,22 @@ export function useProgressByTestNumber(
     const load = async () => {
       const entries = await Promise.all(
         projects.map(async (project) => {
-          // Fix 10: isProjectFinalized 유틸로 통일
           if (isProjectFinalized(project)) return [project.testNumber, 100] as const;
           try {
             const snap = await getDoc(doc(dbRef, 'quickReviews', project.testNumber));
             if (!snap.exists()) return [project.testNumber, 0] as const;
             const data = snap.data() as { items?: Record<string, Record<string, unknown>> };
             if (!data.items) return [project.testNumber, 0] as const;
-            const items = Object.values(data.items);
-            const total = items.length;
-            if (total === 0) return [project.testNumber, 0] as const;
-            const decided = items.filter((item) => item.finalDecision != null).length;
-            const percent = Math.round((decided / total) * 100);
-            return [project.testNumber, percent] as const;
+            // 체크포인트(개별 질문) 단위로 응답 수 합산
+            let answered = 0;
+            for (const item of Object.values(data.items)) {
+              const aq = item.answeredQuestions as Record<string, boolean> | undefined;
+              if (aq) {
+                answered += Object.values(aq).filter(Boolean).length;
+              }
+            }
+            const percent = totalCheckpoints === 0 ? 0 : Math.round((answered / totalCheckpoints) * 100);
+            return [project.testNumber, Math.min(percent, 100)] as const;
           } catch (error) {
             logger.warn('QuickReviews', '진행율 조회 실패', error);
             return [project.testNumber, 0] as const;
