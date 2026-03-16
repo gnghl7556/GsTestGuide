@@ -26,6 +26,7 @@ export function TestSetupView({ onStartProject, onQuickStart }: TestSetupViewPro
     updatePlId,
     updateScheduleStartDate,
     updateScheduleEndDate,
+    updateScheduleFields,
     updateManualInfo,
     uploadAgreementDoc,
     deleteAgreementDoc,
@@ -72,6 +73,7 @@ export function TestSetupView({ onStartProject, onQuickStart }: TestSetupViewPro
         onUpdateProjectSchedule={(testNumber, updates) => {
           if (!db) return;
           void setDoc(doc(db, 'projects', testNumber), { ...updates, updatedAt: serverTimestamp() }, { merge: true });
+          updateScheduleFields(updates);
         }}
         canProceed={canProceed}
         onQuickStart={onQuickStart}

@@ -220,6 +220,19 @@ export function useTestSetupState({
     }));
   };
 
+  const updateScheduleFields = (updates: Record<string, unknown>) => {
+    setTestSetup((prev) => {
+      const next = { ...prev };
+      if (typeof updates.scheduleStartDate === 'string') next.scheduleStartDate = updates.scheduleStartDate;
+      if (typeof updates.scheduleEndDate === 'string') next.scheduleEndDate = updates.scheduleEndDate;
+      if (typeof updates.scheduleDefect1 === 'string') next.scheduleDefect1 = updates.scheduleDefect1;
+      if (typeof updates.scheduleDefect2 === 'string') next.scheduleDefect2 = updates.scheduleDefect2;
+      if (typeof updates.schedulePatchDate === 'string') next.schedulePatchDate = updates.schedulePatchDate;
+      if (typeof updates.scheduleWorkingDays === 'string') next.scheduleWorkingDays = updates.scheduleWorkingDays;
+      return next;
+    });
+  };
+
   const updateManualInfo = (updates: {
     projectName?: string;
     companyName?: string;
@@ -530,7 +543,7 @@ export function useTestSetupState({
     }
   };
 
-  const createProjectFromInput = async (value: string) => {
+  const createProjectFromInput = (value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
     if (!currentUserId) {
@@ -542,7 +555,6 @@ export function useTestSetupState({
       window.alert('이미 존재하는 시험번호입니다.');
       return;
     }
-    await ensureProjectSkeleton(trimmed);
     setTestSetup((prev) => ({
       ...prev,
       testNumber: trimmed
@@ -604,6 +616,7 @@ export function useTestSetupState({
     updatePlId,
     updateScheduleStartDate,
     updateScheduleEndDate,
+    updateScheduleFields,
     updateManualInfo,
     resetTestSetup,
     ensureProjectSkeleton,

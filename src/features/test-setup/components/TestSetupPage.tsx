@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Building2, List, Paperclip, User, Trash2 } from 'lucide-react';
+import { Building2, Calendar, List, Paperclip, User, Trash2 } from 'lucide-react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { logger } from '../../../utils/logger';
@@ -13,8 +13,8 @@ import type {
   UserRank,
   UserUpdateInput
 } from '../../../types';
-import { CalendarInput } from './CalendarInput';
 import { ScheduleCalendar } from './ScheduleCalendar';
+import { ScheduleModal } from '../../checklist/components/ScheduleModal';
 
 import {
   AccessDeniedModal,
@@ -218,6 +218,7 @@ export function TestSetupPage({
   const [accessDeniedOpen, setAccessDeniedOpen] = useState(false);
   const [accessDeniedInfo, setAccessDeniedInfo] = useState<{ testerName: string; plName: string } | null>(null);
   const [testDetailProject, setTestDetailProject] = useState<Project | null>(null);
+  const [scheduleWizardOpen, setScheduleWizardOpen] = useState(false);
   const location = useLocation();
   const openedFromStateRef = useRef(false);
   const [testNumberValidation, setTestNumberValidation] = useState<{
@@ -474,10 +475,27 @@ export function TestSetupPage({
                   {sectionDone.schedule ? '완료' : '선택'}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <CalendarInput label="시작일" value={scheduleStartDate} onChange={onChangeScheduleStartDate} />
-                <CalendarInput label="종료일" value={scheduleEndDate} onChange={onChangeScheduleEndDate} />
-              </div>
+              <button
+                type="button"
+                disabled={!testNumberValidation.isValid}
+                onClick={() => setScheduleWizardOpen(true)}
+                className="w-full flex items-center gap-3 rounded-xl border border-ln bg-surface-sunken px-4 py-3 text-left hover:bg-interactive-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Calendar size={18} className="text-tx-muted shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold text-tx-secondary">일정 관리</div>
+                  <div className="text-[11px] text-tx-tertiary mt-0.5">
+                    {!testNumberValidation.isValid
+                      ? '시험번호를 먼저 입력하세요'
+                      : scheduleStartDate && scheduleEndDate
+                        ? `${scheduleStartDate} ~ ${scheduleEndDate}`
+                        : '마일스톤 일정을 설정하세요'}
+                  </div>
+                </div>
+                {testNumberValidation.isValid && (
+                  <span className="text-[10px] text-tx-muted shrink-0">&rsaquo;</span>
+                )}
+              </button>
             </div>
             )}
 
@@ -1086,6 +1104,26 @@ export function TestSetupPage({
             onUpdateProjectSchedule(testDetailProject.testNumber, updates);
             setTestDetailProject(null);
           } : undefined}
+        />
+      )}
+
+      {scheduleWizardOpen && testNumberValidation.isValid && (
+        <ScheduleModal
+          open={scheduleWizardOpen}
+          onClose={() => setScheduleWizardOpen(false)}
+          project={{
+            id: trimmedTestNumber,
+            testNumber: trimmedTestNumber,
+            projectId: trimmedTestNumber,
+            status: '대기',
+            scheduleStartDate: scheduleStartDate || undefined,
+            scheduleEndDate: scheduleEndDate || undefined,
+          } as Project}
+          otherProjects={visibleProjects}
+          onSave={(updates) => {
+            onUpdateProjectSchedule?.(trimmedTestNumber, updates);
+            setScheduleWizardOpen(false);
+          }}
         />
       )}
     </div>
