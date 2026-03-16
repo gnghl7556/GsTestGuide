@@ -1,16 +1,19 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ChevronDown, ChevronRight, AlertTriangle, Trash2, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle, Search } from 'lucide-react';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
 import { db } from '../../../lib/firebase';
-import { doc, setDoc, deleteDoc, getDocs, collection, onSnapshot, serverTimestamp, addDoc } from 'firebase/firestore';
-import type { ContentOverride } from '../../../lib/content/mergeOverrides';
-import type { RequirementCategory, QuestionImportance } from '../../../types';
+import { collection, onSnapshot } from 'firebase/firestore';
+import type { RequirementCategory, QuestionImportance, ContentSnapshot } from '../../../types';
 import { inferImportance } from '../../../utils/quickMode';
+import { requirementToSnapshot } from '../../../lib/content/snapshotUtils';
+import { saveContentVersion } from '../hooks/useContentVersioning';
 import { AdminPageHeader, BusyOverlay } from '../shared';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { ContentEditForm } from './content/ContentEditForm';
-import { ChangeHistoryModal } from './content/ChangeHistoryModal';
+import { VersionHistoryModal } from './content/VersionHistoryModal';
+import { EditNoteModal } from './content/EditNoteModal';
 import { splitRef, joinRef, type EditingState } from './content/types';
+import { useTestSetupContext } from '../../../providers/useTestSetupContext';
 
 const CATEGORY_LABELS: Record<RequirementCategory, string> = {
   SETUP: '시험 준비',
@@ -22,11 +25,12 @@ const CATEGORY_ORDER: RequirementCategory[] = ['SETUP', 'EXECUTION', 'COMPLETION
 
 
 export function ContentOverrideManagement() {
-  const [overrides, setOverrides] = useState<Record<string, ContentOverride>>({});
+  // contentVersions 루트 문서에서 현재 활성 스냅샷 구독
+  const [versionedContents, setVersionedContents] = useState<Record<string, ContentSnapshot>>({});
+  const [versionNumbers, setVersionNumbers] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [busy, setBusy] = useState(false);
-  const [resetTarget, setResetTarget] = useState<string | null>(null);
-  const [resetAllConfirm, setResetAllConfirm] = useState(false);
+  const [rollbackTarget, setRollbackTarget] = useState<{ reqId: string; version: number; snapshot: ContentSnapshot } | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<RequirementCategory>>(
     new Set(CATEGORY_ORDER),
   );
@@ -35,19 +39,31 @@ export function ContentOverrideManagement() {
   const [refDropdownIdx, setRefDropdownIdx] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // EditNoteModal state
+  const [showNoteModal, setShowNoteModal] = useState(false);
+
   // Search & filter state
   const [search, setSearch] = useState('');
   const [filterModified, setFilterModified] = useState(false);
 
-  // Subscribe to Firestore contentOverrides
+  // 현재 사용자 정보
+  const { currentUserId } = useTestSetupContext();
+
+  // Subscribe to Firestore contentVersions (루트 문서들)
   useEffect(() => {
     if (!db) return;
-    const unsub = onSnapshot(collection(db, 'contentOverrides'), (snap) => {
-      const result: Record<string, ContentOverride> = {};
+    const unsub = onSnapshot(collection(db, 'contentVersions'), (snap) => {
+      const contents: Record<string, ContentSnapshot> = {};
+      const versions: Record<string, number> = {};
       snap.forEach((d) => {
-        result[d.id] = d.data() as ContentOverride;
+        const data = d.data();
+        if (data.content) {
+          contents[d.id] = data.content as ContentSnapshot;
+          versions[d.id] = (data.currentVersion as number) ?? 0;
+        }
       });
-      setOverrides(result);
+      setVersionedContents(contents);
+      setVersionNumbers(versions);
     });
     return () => unsub();
   }, []);
@@ -194,10 +210,10 @@ export function ContentOverrideManagement() {
     };
     for (const cat of CATEGORY_ORDER) {
       result[cat] = grouped[cat].filter((req) => {
-        if (filterModified && !(req.id in overrides)) return false;
+        if (filterModified && !(req.id in versionedContents)) return false;
         if (lowerSearch) {
-          const ov = overrides[req.id];
-          const title = (ov?.title ?? req.title).toLowerCase();
+          const vc = versionedContents[req.id];
+          const title = (vc?.title ?? req.title).toLowerCase();
           const id = req.id.toLowerCase();
           if (!title.includes(lowerSearch) && !id.includes(lowerSearch)) return false;
         }
@@ -205,9 +221,9 @@ export function ContentOverrideManagement() {
       });
     }
     return result;
-  }, [grouped, search, filterModified, overrides]);
+  }, [grouped, search, filterModified, versionedContents]);
 
-  const overrideCount = Object.keys(overrides).length;
+  const versionedCount = Object.keys(versionedContents).length;
 
   const toggleCategory = (cat: RequirementCategory) => {
     setExpandedCategories((prev) => {
@@ -218,245 +234,160 @@ export function ContentOverrideManagement() {
     });
   };
 
+  /** 스냅샷 기반 편집 시작 */
   const handleEditStart = (reqId: string) => {
     const req = REQUIREMENTS_DB.find((r) => r.id === reqId);
     if (!req) return;
-    const ov = overrides[reqId];
-    const cpEntries = (req.checkPoints ?? []).map((cp: string, i: number) => {
-      const full = ov?.checkpoints?.[i] ?? cp;
-      const { body, refs } = splitRef(full);
+
+    // versionedContents에 있으면 그 스냅샷을 사용, 없으면 원본에서 생성
+    const snapshot = versionedContents[reqId] ?? requirementToSnapshot(req);
+
+    const cpEntries = snapshot.checkpoints.map((cp: string, i: number) => {
+      const { body, refs } = splitRef(cp);
       return { i, body, refs };
     });
     const cpImportances: Record<number, QuestionImportance> = {};
-    (req.checkPoints ?? []).forEach((cp: string, i: number) => {
-      const ovText = ov?.checkpoints?.[i] ?? cp;
-      cpImportances[i] = ov?.checkpointImportances?.[i] ?? inferImportance(ovText);
+    snapshot.checkpoints.forEach((cp: string, i: number) => {
+      cpImportances[i] = snapshot.checkpointImportances[i] ?? inferImportance(cp);
     });
 
-    const cpCount = (req.checkPoints ?? []).length;
+    const cpCount = snapshot.checkpoints.length;
     const defaultOrder = Array.from({ length: cpCount }, (_, i) => i);
-    const checkpointOrder = ov?.checkpointOrder ?? defaultOrder;
 
     setEditing({
       reqId,
-      title: ov?.title ?? req.title,
-      description: ov?.description ?? req.description,
-      checkpoints: Object.fromEntries(cpEntries.map(({ i, body }: { i: number; body: string; refs: string[] }) => [i, body])),
-      checkpointRefs: Object.fromEntries(cpEntries.map(({ i, refs }: { i: number; body: string; refs: string[] }) => [i, refs])),
+      title: snapshot.title,
+      description: snapshot.description,
+      checkpoints: Object.fromEntries(cpEntries.map(({ i, body }) => [i, body])),
+      checkpointRefs: Object.fromEntries(cpEntries.map(({ i, refs }) => [i, refs])),
       checkpointImportances: cpImportances,
-      checkpointDetails: ov?.checkpointDetails ?? {},
-      checkpointEvidences: ov?.checkpointEvidences ?? req.checkpointEvidences ?? {},
-      checkpointOrder,
-      evidenceExamples: ov?.evidenceExamples ?? req.evidenceExamples ?? [],
-      testSuggestions: ov?.testSuggestions ?? req.testSuggestions ?? [],
-      passCriteria: ov?.passCriteria ?? req.passCriteria ?? '',
-      branchingRules: ov?.branchingRules ?? [],
+      checkpointDetails: snapshot.checkpointDetails ?? {},
+      checkpointEvidences: snapshot.checkpointEvidences ?? {},
+      checkpointOrder: snapshot.checkpointOrder ?? defaultOrder,
+      evidenceExamples: snapshot.evidenceExamples ?? [],
+      testSuggestions: snapshot.testSuggestions ?? [],
+      passCriteria: snapshot.passCriteria ?? '',
+      branchingRules: snapshot.branchingRules ?? [],
     });
   };
 
-  const handleSave = async () => {
-    if (!editing || !db) return;
-    const req = REQUIREMENTS_DB.find((r) => r.id === editing.reqId);
-    if (!req) return;
+  /** EditingState → ContentSnapshot 변환 */
+  const buildSnapshotFromEditing = useCallback((ed: EditingState): ContentSnapshot => {
+    // 체크포인트 텍스트 재조합 (body + refs)
+    const checkpoints = Object.keys(ed.checkpoints)
+      .sort((a, b) => Number(a) - Number(b))
+      .map((iStr) => {
+        const i = Number(iStr);
+        return joinRef(ed.checkpoints[i], ed.checkpointRefs[i] ?? []);
+      });
 
-    const patch: ContentOverride = { updatedAt: serverTimestamp(), updatedBy: 'admin' };
-    if (editing.title !== req.title) patch.title = editing.title;
-    if (editing.description !== req.description) patch.description = editing.description;
-
-    const cpDiffs: Record<number, string> = {};
-    for (const [iStr, editedBody] of Object.entries(editing.checkpoints)) {
-      const i = Number(iStr);
-      const origFull = req.checkPoints?.[i] ?? '';
-      const { body: origBody, refs: origRefs } = splitRef(origFull);
-      const editedRefs = editing.checkpointRefs[i] ?? [];
-      const bodyChanged = editedBody !== origBody;
-      const refsChanged = JSON.stringify(editedRefs) !== JSON.stringify(origRefs);
-      if (bodyChanged || refsChanged) {
-        cpDiffs[i] = joinRef(editedBody, editedRefs);
-      }
-    }
-    if (Object.keys(cpDiffs).length > 0) patch.checkpoints = cpDiffs;
-
-    const impDiffs: Record<number, QuestionImportance> = {};
-    for (const [iStr, importance] of Object.entries(editing.checkpointImportances)) {
-      const i = Number(iStr);
-      const origCp = req.checkPoints?.[i] ?? '';
-      const inferred = inferImportance(origCp);
-      if (importance !== inferred) {
-        impDiffs[i] = importance;
-      }
-    }
-    if (Object.keys(impDiffs).length > 0) patch.checkpointImportances = impDiffs;
-
-    const detailDiffs: Record<number, string> = {};
-    for (const [iStr, detail] of Object.entries(editing.checkpointDetails)) {
-      const trimmed = detail.trim();
-      if (trimmed) detailDiffs[Number(iStr)] = trimmed;
-    }
-    if (Object.keys(detailDiffs).length > 0) patch.checkpointDetails = detailDiffs;
-
-    const origEvidence = req.evidenceExamples ?? [];
-    const editedEvidence = editing.evidenceExamples.filter(s => s.trim());
-    if (JSON.stringify(editedEvidence) !== JSON.stringify(origEvidence)) {
-      patch.evidenceExamples = editedEvidence;
-    }
-
-    // 빈 증빙이 필터링되면 인덱스 시프트 발생 → checkpointEvidences 리매핑
-    const origCpEvidences = req.checkpointEvidences ?? {};
-    const editedCpEvidences: Record<number, number[]> = {};
+    // 빈 증빙 필터링 + checkpointEvidences 인덱스 리매핑
+    const evidenceExamples = ed.evidenceExamples.filter(s => s.trim());
     const evidenceIndexMap = new Map<number, number>();
     let newIdx = 0;
-    for (let oldIdx = 0; oldIdx < editing.evidenceExamples.length; oldIdx++) {
-      if (editing.evidenceExamples[oldIdx].trim()) {
+    for (let oldIdx = 0; oldIdx < ed.evidenceExamples.length; oldIdx++) {
+      if (ed.evidenceExamples[oldIdx].trim()) {
         evidenceIndexMap.set(oldIdx, newIdx++);
       }
     }
-    for (const [iStr, indices] of Object.entries(editing.checkpointEvidences)) {
+    const checkpointEvidences: Record<number, number[]> = {};
+    for (const [iStr, indices] of Object.entries(ed.checkpointEvidences)) {
       const remapped = indices
         .map(ei => evidenceIndexMap.get(ei))
         .filter((ei): ei is number => ei !== undefined);
-      if (remapped.length > 0) editedCpEvidences[Number(iStr)] = remapped;
-    }
-    if (JSON.stringify(editedCpEvidences) !== JSON.stringify(origCpEvidences)) {
-      patch.checkpointEvidences = editedCpEvidences;
+      if (remapped.length > 0) checkpointEvidences[Number(iStr)] = remapped;
     }
 
-    const origSuggestions = req.testSuggestions ?? [];
-    const editedSuggestions = editing.testSuggestions.filter(s => s.trim());
-    if (JSON.stringify(editedSuggestions) !== JSON.stringify(origSuggestions)) {
-      patch.testSuggestions = editedSuggestions;
+    const checkpointDetails: Record<number, string> = {};
+    for (const [iStr, detail] of Object.entries(ed.checkpointDetails)) {
+      const trimmed = detail.trim();
+      if (trimmed) checkpointDetails[Number(iStr)] = trimmed;
     }
 
-    const origCriteria = req.passCriteria ?? '';
-    if (editing.passCriteria !== origCriteria) {
-      patch.passCriteria = editing.passCriteria;
-    }
+    return {
+      title: ed.title,
+      description: ed.description,
+      checkpoints,
+      checkpointImportances: ed.checkpointImportances,
+      checkpointDetails,
+      checkpointEvidences,
+      checkpointOrder: ed.checkpointOrder,
+      evidenceExamples,
+      testSuggestions: ed.testSuggestions.filter(s => s.trim()),
+      passCriteria: ed.passCriteria,
+      branchingRules: ed.branchingRules,
+    };
+  }, []);
 
-    if (editing.branchingRules.length > 0) {
-      patch.branchingRules = editing.branchingRules;
-    }
+  /** 저장 버튼 → EditNoteModal 표시 */
+  const handleSave = () => {
+    if (!editing || !db) return;
+    setShowNoteModal(true);
+  };
 
-    const cpCount = (req.checkPoints ?? []).length;
-    const defaultOrder = Array.from({ length: cpCount }, (_, idx) => idx);
-    const isReordered = JSON.stringify(editing.checkpointOrder) !== JSON.stringify(defaultOrder);
-    if (isReordered) {
-      patch.checkpointOrder = editing.checkpointOrder;
-    }
+  /** EditNoteModal에서 사유 입력 후 확인 → 실제 저장 */
+  const handleSaveWithNote = async (note: string) => {
+    if (!editing || !db) return;
 
-    // Compute change entries for history
-    const ov = overrides[editing.reqId];
-    const changes: Array<{ field: string; before: string; after: string }> = [];
-    const prevTitle = ov?.title ?? req.title;
-    const newTitle = patch.title ?? req.title;
-    if (prevTitle !== newTitle) changes.push({ field: 'title', before: prevTitle, after: newTitle });
-    const prevDesc = ov?.description ?? req.description;
-    const newDesc = patch.description ?? req.description;
-    if (prevDesc !== newDesc) changes.push({ field: 'description', before: prevDesc, after: newDesc });
-    if (patch.checkpoints) {
-      for (const [iStr, val] of Object.entries(patch.checkpoints)) {
-        const i = Number(iStr);
-        const prev = ov?.checkpoints?.[i] ?? req.checkPoints?.[i] ?? '';
-        if (prev !== val) changes.push({ field: `checkpoint:${i}`, before: prev, after: val });
-      }
-    }
-    if (patch.checkpointImportances) {
-      for (const [iStr, val] of Object.entries(patch.checkpointImportances)) {
-        const i = Number(iStr);
-        const prev = ov?.checkpointImportances?.[i] ?? inferImportance(req.checkPoints?.[i] ?? '');
-        if (prev !== val) changes.push({ field: `importance:${i}`, before: prev, after: val });
-      }
-    }
-    if (patch.passCriteria !== undefined) {
-      const prev = ov?.passCriteria ?? req.passCriteria ?? '';
-      if (prev !== patch.passCriteria) changes.push({ field: 'passCriteria', before: prev, after: patch.passCriteria ?? '' });
-    }
-    if (patch.evidenceExamples) {
-      const prev = (ov?.evidenceExamples ?? req.evidenceExamples ?? []).join('\n');
-      const next = patch.evidenceExamples.join('\n');
-      if (prev !== next) changes.push({ field: 'evidenceExamples', before: prev, after: next });
-    }
-    if (patch.testSuggestions) {
-      const prev = (ov?.testSuggestions ?? req.testSuggestions ?? []).join('\n');
-      const next = patch.testSuggestions.join('\n');
-      if (prev !== next) changes.push({ field: 'testSuggestions', before: prev, after: next });
-    }
+    const newSnapshot = buildSnapshotFromEditing(editing);
+    const req = REQUIREMENTS_DB.find((r) => r.id === editing.reqId);
+    const previousContent = versionedContents[editing.reqId] ?? (req ? requirementToSnapshot(req) : undefined);
 
     setBusy(true);
+    setShowNoteModal(false);
     try {
-      const isEmpty = !patch.title && !patch.description && !patch.checkpoints && !patch.checkpointImportances && !patch.checkpointDetails && !patch.checkpointEvidences && !patch.checkpointOrder && !patch.evidenceExamples && !patch.testSuggestions && !patch.passCriteria && !patch.branchingRules;
-      if (isEmpty) {
-        await deleteDoc(doc(db, 'contentOverrides', editing.reqId));
-      } else {
-        await setDoc(doc(db, 'contentOverrides', editing.reqId), patch);
-      }
-      // Record history if there were changes
-      if (changes.length > 0) {
-        await addDoc(collection(db, 'contentOverrides', editing.reqId, 'history'), {
-          changedAt: serverTimestamp(),
-          changedBy: 'admin',
-          action: isEmpty ? 'reset' : 'edit',
-          changes,
-        });
-      }
+      await saveContentVersion({
+        reqId: editing.reqId,
+        content: newSnapshot,
+        editor: currentUserId || 'admin',
+        editorId: currentUserId || 'admin',
+        note,
+        action: 'edit',
+        previousContent,
+      });
     } finally {
       setBusy(false);
     }
   };
 
-  const handleReset = async (reqId: string) => {
+  /** v0(원본)으로 되돌리기 = 새 버전(action='rollback') 생성 */
+  const handleRollback = async (reqId: string, version: number, snapshot: ContentSnapshot) => {
     if (!db || busy) return;
-    const ov = overrides[reqId];
-    const req = REQUIREMENTS_DB.find((r) => r.id === reqId);
+    setRollbackTarget({ reqId, version, snapshot });
+  };
+
+  const confirmRollback = async () => {
+    if (!rollbackTarget || !db) return;
     setBusy(true);
     try {
-      await deleteDoc(doc(db, 'contentOverrides', reqId));
-      // Record reset in history
-      if (ov && req) {
-        const changes: Array<{ field: string; before: string; after: string }> = [];
-        if (ov.title) changes.push({ field: 'title', before: ov.title, after: req.title });
-        if (ov.description) changes.push({ field: 'description', before: ov.description, after: req.description });
-        if (ov.checkpoints) {
-          for (const [iStr, val] of Object.entries(ov.checkpoints)) {
-            changes.push({ field: `checkpoint:${iStr}`, before: val, after: req.checkPoints?.[Number(iStr)] ?? '' });
-          }
-        }
-        if (changes.length > 0) {
-          await addDoc(collection(db, 'contentOverrides', reqId, 'history'), {
-            changedAt: serverTimestamp(),
-            changedBy: 'admin',
-            action: 'reset',
-            changes,
-          });
-        }
-      }
-      if (editing?.reqId === reqId) setEditing(null);
+      const req = REQUIREMENTS_DB.find((r) => r.id === rollbackTarget.reqId);
+      const previousContent = versionedContents[rollbackTarget.reqId] ?? (req ? requirementToSnapshot(req) : undefined);
+
+      await saveContentVersion({
+        reqId: rollbackTarget.reqId,
+        content: rollbackTarget.snapshot,
+        editor: currentUserId || 'admin',
+        editorId: currentUserId || 'admin',
+        note: `v${rollbackTarget.version}으로 되돌리기`,
+        action: 'rollback',
+        previousContent,
+      });
+
+      if (editing?.reqId === rollbackTarget.reqId) setEditing(null);
     } finally {
       setBusy(false);
-      setResetTarget(null);
+      setRollbackTarget(null);
     }
   };
 
-  const handleResetAll = async () => {
-    if (!db || busy) return;
-    setBusy(true);
-    try {
-      const snap = await getDocs(collection(db, 'contentOverrides'));
-      await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
-      setEditing(null);
-    } finally {
-      setBusy(false);
-      setResetAllConfirm(false);
-    }
-  };
-
-  const hasOverride = (reqId: string) => reqId in overrides;
+  const hasVersion = (reqId: string) => reqId in versionedContents && (versionNumbers[reqId] ?? 0) > 0;
 
   const getDisplayValue = (reqId: string, field: 'title' | 'description') => {
     const req = REQUIREMENTS_DB.find((r) => r.id === reqId);
     if (!req) return '';
-    const ov = overrides[reqId];
-    if (field === 'title') return ov?.title ?? req.title;
-    return ov?.description ?? req.description;
+    const vc = versionedContents[reqId];
+    if (field === 'title') return vc?.title ?? req.title;
+    return vc?.description ?? req.description;
   };
 
   // Get the current editing requirement
@@ -468,18 +399,7 @@ export function ContentOverrideManagement() {
       <div className="shrink-0 px-6 pt-6 pb-4">
         <AdminPageHeader
           title="콘텐츠 관리"
-          description={`점검항목의 제목, 설명, 체크포인트, 상세 정보를 수정합니다. (${overrideCount}건 수정됨)`}
-          action={overrideCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setResetAllConfirm(true)}
-              disabled={busy}
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-danger bg-danger-subtle px-3 py-1.5 text-xs font-semibold text-danger-text hover:opacity-80 disabled:opacity-40 transition-colors"
-            >
-              <Trash2 size={13} />
-              전체 초기화
-            </button>
-          ) : undefined}
+          description={`점검항목의 제목, 설명, 체크포인트, 상세 정보를 수정합니다. (${versionedCount}건 버전 관리 중)`}
         />
       </div>
 
@@ -520,7 +440,7 @@ export function ContentOverrideManagement() {
                     : 'bg-surface-sunken text-tx-muted hover:text-tx-secondary'
                 }`}
               >
-                수정됨 {overrideCount > 0 && `(${overrideCount})`}
+                수정됨 {versionedCount > 0 && `(${versionedCount})`}
               </button>
             </div>
           </div>
@@ -547,7 +467,7 @@ export function ContentOverrideManagement() {
                   </button>
                   {expanded && items.map((req) => {
                     const isSelected = editing?.reqId === req.id;
-                    const modified = hasOverride(req.id);
+                    const modified = hasVersion(req.id);
                     return (
                       <button
                         key={req.id}
@@ -567,8 +487,8 @@ export function ContentOverrideManagement() {
                           {getDisplayValue(req.id, 'title')}
                         </span>
                         {modified && (
-                          <span className="shrink-0 text-[8px] font-bold text-status-hold-text bg-status-hold-bg px-1 py-0.5 rounded">
-                            수정됨
+                          <span className="shrink-0 text-[8px] font-bold text-accent-text bg-accent-subtle px-1 py-0.5 rounded">
+                            v{versionNumbers[req.id]}
                           </span>
                         )}
                       </button>
@@ -591,9 +511,16 @@ export function ContentOverrideManagement() {
               onSave={handleSave}
               onCancel={() => setEditing(null)}
               busy={busy}
-              isModified={hasOverride(editing.reqId)}
+              isModified={hasVersion(editing.reqId)}
               onHistory={() => setHistoryTarget({ reqId: editing.reqId, title: getDisplayValue(editing.reqId, 'title') })}
-              onReset={() => setResetTarget(editing.reqId)}
+              onReset={() => {
+                // v0으로 되돌리기
+                const req = REQUIREMENTS_DB.find((r) => r.id === editing.reqId);
+                if (req) {
+                  const v0Snapshot = requirementToSnapshot(req);
+                  handleRollback(editing.reqId, 0, v0Snapshot);
+                }
+              }}
               groupedMaterials={groupedMaterials}
               toggleRef={toggleRef}
               refDropdownIdx={refDropdownIdx}
@@ -615,19 +542,28 @@ export function ContentOverrideManagement() {
         </div>
       </div>
 
-      {/* Reset single item confirm modal */}
+      {/* Edit note modal — 편집 사유 입력 */}
+      <EditNoteModal
+        open={showNoteModal}
+        onConfirm={handleSaveWithNote}
+        onCancel={() => setShowNoteModal(false)}
+        busy={busy}
+      />
+
+      {/* Rollback confirm modal */}
       <ConfirmModal
-        open={!!resetTarget}
-        title="원본으로 되돌리기" aria-label="원본으로 되돌리기"
+        open={!!rollbackTarget}
+        title="원본으로 되돌리기"
         description={
           <p className="text-xs text-tx-tertiary">
-            <strong className="text-tx-secondary">{resetTarget}</strong> 항목의 수정 내용을 삭제하고 원본으로 복원하시겠습니까?
+            <strong className="text-tx-secondary">{rollbackTarget?.reqId}</strong> 항목을
+            v{rollbackTarget?.version}으로 되돌리시겠습니까? 새 버전(rollback)이 생성됩니다.
           </p>
         }
         confirmLabel={busy ? '처리 중...' : '되돌리기'}
         confirmVariant="warning"
-        onConfirm={() => resetTarget && handleReset(resetTarget)}
-        onCancel={() => setResetTarget(null)}
+        onConfirm={confirmRollback}
+        onCancel={() => setRollbackTarget(null)}
         busy={busy}
         icon={
           <div className="flex items-center justify-center h-10 w-10 rounded-full bg-status-hold-bg shrink-0">
@@ -636,38 +572,21 @@ export function ContentOverrideManagement() {
         }
       />
 
-      {/* Reset all confirm modal */}
-      <ConfirmModal
-        open={resetAllConfirm}
-        title="전체 초기화"
-        description={
-          <p className="text-xs text-tx-tertiary">
-            수정된 <strong className="text-tx-secondary">{overrideCount}건</strong>의 오버라이드를 모두 삭제하고 원본으로 복원하시겠습니까? 이 작업은 되돌릴 수 없습니다.
-          </p>
-        }
-        confirmLabel={busy ? '처리 중...' : '전체 초기화'}
-        confirmVariant="danger"
-        onConfirm={handleResetAll}
-        onCancel={() => setResetAllConfirm(false)}
-        busy={busy}
-        icon={
-          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-danger-subtle shrink-0">
-            <AlertTriangle size={20} className="text-danger" />
-          </div>
-        }
-      />
-
-      {/* Change history modal */}
+      {/* Version history modal */}
       {historyTarget && (
-        <ChangeHistoryModal
+        <VersionHistoryModal
           reqId={historyTarget.reqId}
           reqTitle={historyTarget.title}
           onClose={() => setHistoryTarget(null)}
+          onRollback={(version, snapshot) => {
+            setHistoryTarget(null);
+            handleRollback(historyTarget.reqId, version, snapshot);
+          }}
         />
       )}
 
       {/* Busy overlay for save operations */}
-      <BusyOverlay visible={busy && !resetTarget && !resetAllConfirm} />
+      <BusyOverlay visible={busy && !rollbackTarget} />
     </div>
   );
 }

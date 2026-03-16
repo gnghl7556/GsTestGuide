@@ -1,4 +1,6 @@
 import type { Requirement, RequiredDoc, QuestionImportance } from '../../types';
+import type { ContentSnapshot } from '../../types/contentVersion';
+import { applySnapshotToRequirement } from './snapshotUtils';
 
 export interface DocMaterial {
   label: string;
@@ -13,6 +15,7 @@ export interface BranchingRule {
   skipIndices: number[];
 }
 
+/** @deprecated 마이그레이션 참조용으로 유지. 새 코드는 ContentSnapshot 사용. */
 export interface ContentOverride {
   title?: string;
   description?: string;
@@ -27,112 +30,6 @@ export interface ContentOverride {
   branchingRules?: BranchingRule[];
   updatedAt?: unknown;
   updatedBy?: string;
-}
-
-const REF_PATTERN = /\[ref:\s*(.+?)\]\s*$/;
-
-/** 체크포인트 텍스트들에서 참조되는 자료 라벨을 모두 수집 */
-function collectActiveRefs(checkPoints: string[]): Set<string> {
-  const refs = new Set<string>();
-  for (const cp of checkPoints) {
-    const match = cp.match(REF_PATTERN);
-    if (match) {
-      match[1].split(',').map((r) => r.trim()).filter(Boolean).forEach((r) => refs.add(r));
-    }
-  }
-  return refs;
-}
-
-export function mergeOverrides(
-  base: Requirement[],
-  overrides: Record<string, ContentOverride>,
-): Requirement[] {
-  if (!overrides || Object.keys(overrides).length === 0) return base;
-
-  return base.map((req) => {
-    const ov = overrides[req.id];
-    if (!ov) return req;
-
-    const merged = {
-      ...req,
-      ...(ov.title != null && { title: ov.title }),
-      ...(ov.description != null && { description: ov.description }),
-      ...(ov.checkpoints != null && req.checkPoints && {
-        checkPoints: req.checkPoints.map((cp, i) =>
-          ov.checkpoints![i] != null ? ov.checkpoints![i] : cp,
-        ),
-      }),
-      ...(ov.evidenceExamples != null && { evidenceExamples: ov.evidenceExamples }),
-      ...(ov.testSuggestions != null && { testSuggestions: ov.testSuggestions }),
-      ...(ov.passCriteria != null && { passCriteria: ov.passCriteria }),
-      ...(ov.checkpointImportances != null && { checkpointImportances: ov.checkpointImportances }),
-      ...(ov.checkpointDetails != null && { checkpointDetails: ov.checkpointDetails }),
-      ...(ov.checkpointEvidences != null && {
-        checkpointEvidences: (() => {
-          const evLen = (ov.evidenceExamples ?? req.evidenceExamples ?? []).length;
-          const cleaned: Record<number, number[]> = {};
-          for (const [cpStr, indices] of Object.entries(ov.checkpointEvidences!)) {
-            const valid = indices.filter(ei => ei >= 0 && ei < evLen);
-            if (valid.length > 0) cleaned[Number(cpStr)] = valid;
-          }
-          return cleaned;
-        })(),
-      }),
-      ...(ov.branchingRules != null && { branchingRules: ov.branchingRules }),
-    };
-
-    // 체크포인트가 오버라이드된 경우, requiredDocs를 실제 ref 사용 현황에 맞춰 필터링
-    if (ov.checkpoints != null && merged.checkPoints && merged.requiredDocs) {
-      const activeRefs = collectActiveRefs(merged.checkPoints);
-      merged.requiredDocs = merged.requiredDocs.filter((d) => activeRefs.has(d.label));
-    }
-
-    // checkpointOrder가 있으면 체크포인트 및 관련 메타데이터 재정렬
-    if (ov.checkpointOrder && merged.checkPoints) {
-      const order = ov.checkpointOrder;
-      merged.checkPoints = order.map((origIdx) => merged.checkPoints![origIdx]);
-      if (merged.checkpointImportances) {
-        const reordered: Record<number, QuestionImportance> = {};
-        order.forEach((origIdx, newIdx) => {
-          if (merged.checkpointImportances![origIdx] != null) {
-            reordered[newIdx] = merged.checkpointImportances![origIdx];
-          }
-        });
-        merged.checkpointImportances = reordered;
-      }
-      if (merged.checkpointDetails) {
-        const reordered: Record<number, string> = {};
-        order.forEach((origIdx, newIdx) => {
-          if (merged.checkpointDetails![origIdx] != null) {
-            reordered[newIdx] = merged.checkpointDetails![origIdx];
-          }
-        });
-        merged.checkpointDetails = reordered;
-      }
-      if (merged.checkpointEvidences) {
-        const reordered: Record<number, number[]> = {};
-        order.forEach((origIdx, newIdx) => {
-          if (merged.checkpointEvidences![origIdx] != null) {
-            reordered[newIdx] = merged.checkpointEvidences![origIdx];
-          }
-        });
-        merged.checkpointEvidences = reordered;
-      }
-      if (merged.branchingRules) {
-        const indexMap = new Map<number, number>();
-        order.forEach((origIdx, newIdx) => indexMap.set(origIdx, newIdx));
-        merged.branchingRules = merged.branchingRules.map((rule) => ({
-          ...rule,
-          sourceIndex: indexMap.get(rule.sourceIndex) ?? rule.sourceIndex,
-          skipIndices: rule.skipIndices
-            .map((i) => indexMap.get(i) ?? i)
-            .sort((a, b) => a - b),
-        }));
-      }
-    }
-
-    return merged;
-  });
 }
 
 /** docMaterials의 linkedSteps 기반으로 각 요구사항의 requiredDocs를 동적으로 구성 */
@@ -170,5 +67,18 @@ export function mergeDocLinks(
 
     if (additions.length === 0) return req;
     return { ...req, requiredDocs: [...(req.requiredDocs ?? []), ...additions] };
+  });
+}
+
+export function applyVersionedContent(
+  base: Requirement[],
+  versionedContents: Record<string, ContentSnapshot>,
+): Requirement[] {
+  if (!versionedContents || Object.keys(versionedContents).length === 0) return base;
+
+  return base.map((req) => {
+    const snapshot = versionedContents[req.id];
+    if (!snapshot) return req;
+    return applySnapshotToRequirement(req, snapshot);
   });
 }

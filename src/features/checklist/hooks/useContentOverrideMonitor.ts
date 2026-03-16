@@ -1,31 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ContentOverride } from '../../../lib/content/mergeOverrides';
+import type { ContentSnapshot } from '../../../types/contentVersion';
 
-export function useContentOverrideMonitor(contentOverrides: Record<string, ContentOverride>) {
+export function useContentOverrideMonitor(versionedContents: Record<string, ContentSnapshot>) {
   const [contentUpdateNotice, setContentUpdateNotice] = useState(false);
-  const overrideMonitorRef = useRef(false);
-  const prevOverrideFpRef = useRef('');
+  const monitorRef = useRef(false);
+  const prevFpRef = useRef('');
 
   useEffect(() => {
     const t = setTimeout(() => {
-      overrideMonitorRef.current = true;
-      prevOverrideFpRef.current = JSON.stringify(
-        Object.entries(contentOverrides).map(([k, v]) => [k, v.title, JSON.stringify(v.checkpoints), v.passCriteria])
+      monitorRef.current = true;
+      prevFpRef.current = JSON.stringify(
+        Object.entries(versionedContents).map(([k, v]) => [k, v.title, JSON.stringify(v.checkpoints), v.passCriteria])
       );
     }, 3000);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!overrideMonitorRef.current) return;
+    if (!monitorRef.current) return;
     const fp = JSON.stringify(
-      Object.entries(contentOverrides).map(([k, v]) => [k, v.title, JSON.stringify(v.checkpoints), v.passCriteria])
+      Object.entries(versionedContents).map(([k, v]) => [k, v.title, JSON.stringify(v.checkpoints), v.passCriteria])
     );
-    if (fp !== prevOverrideFpRef.current) {
+    if (fp !== prevFpRef.current) {
       setContentUpdateNotice(true);
-      prevOverrideFpRef.current = fp;
+      prevFpRef.current = fp;
     }
-  }, [contentOverrides]);
+  }, [versionedContents]);
 
   const dismissNotice = () => setContentUpdateNotice(false);
 

@@ -16,6 +16,18 @@ service cloud.firestore {
       allow create, update, delete: if isSignedIn() && !isProjectLocked(projectId);
     }
 
+    // 콘텐츠 버전 관리: 루트 문서 (읽기/쓰기 가능)
+    match /contentVersions/{reqId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // 콘텐츠 버전 히스토리: 생성만 허용, 수정/삭제 불가 (불변 이력)
+    match /contentVersions/{reqId}/versions/{v} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if isSignedIn();
     }

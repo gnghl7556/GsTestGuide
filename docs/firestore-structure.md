@@ -15,6 +15,12 @@ agreementDocs/{testNumber}
 quickReviews/{testNumber}
 users/{userId}
 plContacts/{plId}
+
+contentVersions/{reqId}              ← 콘텐츠 버전 관리 (루트)
+  └─ versions/{versionNumber}        ← 불변 이력 서브컬렉션
+
+contentOverrides/{reqId}             ← [deprecated] 레거시 패치 데이터
+  └─ history/{historyId}             ← [deprecated] 레거시 변경 이력
 ```
 
 ## 2) 컬렉션별 필드 정리
@@ -76,6 +82,49 @@ plContacts/{plId}
   - `defectId`, `linkedTestCaseId`, `summary`, `testEnvironment`, `severity`, `frequency`,
     `qualityCharacteristic`, `accessPath`, `stepsToReproduce`, `description`, `ttaComment`,
     `status`, `evidenceFiles`, `reportedAt`
+
+### contentVersions/{reqId}
+- 저장 위치: `src/features/admin/hooks/useContentVersioning.ts`, `src/hooks/useContentVersions.ts`
+- 역할: 점검항목 콘텐츠의 버전 관리 (나무위키 스타일)
+- 필드
+  - `currentVersion`: number — 현재 활성 버전 번호
+  - `content`: ContentSnapshot — 현재 활성 콘텐츠 (전체 스냅샷)
+  - `updatedAt`: Timestamp
+  - `updatedBy`: string — 마지막 편집자
+
+### contentVersions/{reqId}/versions/{versionNumber}
+- 저장 위치: `src/features/admin/hooks/useContentVersioning.ts`
+- 역할: 불변 이력 (create-only, update/delete 불가)
+- 필드
+  - `version`: number
+  - `content`: ContentSnapshot — 해당 버전의 전체 콘텐츠 스냅샷
+  - `editor`: string — 편집자 실명
+  - `editorId`: string
+  - `editedAt`: Timestamp
+  - `note`: string — 편집 사유 (필수)
+  - `action`: 'create' | 'edit' | 'rollback'
+  - `diff?`: FieldDiff[] — 이전 버전과의 차이
+
+#### ContentSnapshot 구조
+```typescript
+{
+  title: string;
+  description: string;
+  checkpoints: string[];
+  checkpointImportances: Record<number, QuestionImportance>;
+  checkpointDetails: Record<number, string>;
+  checkpointEvidences: Record<number, number[]>;
+  checkpointOrder: number[];
+  evidenceExamples: string[];
+  testSuggestions: string[];
+  passCriteria: string;
+  branchingRules: BranchingRule[];
+}
+```
+
+### contentOverrides/{reqId} [deprecated]
+- 레거시 패치 기반 오버라이드. `contentVersions`로 대체됨.
+- 마이그레이션 후 참조용으로 보존.
 
 ## 3) 중복/정리 포인트 (제안)
 

@@ -20,10 +20,10 @@ import type {
   UserProfile
 } from '../../../types';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
-import { useContentOverrides } from '../../../hooks/useContentOverrides';
+import { useContentVersions } from '../../../hooks/useContentVersions';
 import { useDocMaterials } from '../../../hooks/useDocMaterials';
 import { REQUIREMENTS_DB } from 'virtual:content/process';
-import { mergeOverrides, mergeDocLinks } from '../../../lib/content/mergeOverrides';
+import { applyVersionedContent, mergeDocLinks } from '../../../lib/content/mergeOverrides';
 import { db } from '../../../lib/firebase';
 import { useRegisterExecutionToolbar } from '../../../providers/ExecutionToolbarContext';
 import { isProjectFinalized } from '../../../utils/projectUtils';
@@ -85,10 +85,10 @@ export function ExecutionPage() {
   const [reviewData, setReviewData] = useState<Record<string, ReviewData>>(stored.reviewData || {});
   const [quickReviewById, setQuickReviewById] = useState<Record<string, QuickReviewAnswer>>(stored.quickReviewById || {});
   const { defects } = useDefects(currentTestNumber || null);
-  const contentOverrides = useContentOverrides();
+  const versionedContents = useContentVersions();
   const docMaterials = useDocMaterials();
 
-  const { contentUpdateNotice, dismissNotice: dismissContentNotice } = useContentOverrideMonitor(contentOverrides);
+  const { contentUpdateNotice, dismissNotice: dismissContentNotice } = useContentOverrideMonitor(versionedContents);
 
   const hasLocalData = Object.keys(quickReviewById).length > 0 || Object.keys(reviewData).length > 0;
   const { setFirestoreLoaded } = useFirestoreReviewLoader(
@@ -108,8 +108,8 @@ export function ExecutionPage() {
   }, [profile, reviewData, selectedReqId, quickReviewById, testSetup, currentUserId, currentTestNumber]);
 
   const mergedRequirements = useMemo(
-    () => mergeDocLinks(mergeOverrides(REQUIREMENTS_DB, contentOverrides), docMaterials),
-    [contentOverrides, docMaterials],
+    () => mergeDocLinks(applyVersionedContent(REQUIREMENTS_DB, versionedContents), docMaterials),
+    [versionedContents, docMaterials],
   );
   const checklist = useMemo(() => generateChecklist(profile, mergedRequirements), [profile, mergedRequirements]);
   const currentProject = useMemo(
