@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, FileDown, GripVertical, Plus, X } from 'lucide-react';
+import { CheckSquare, ChevronRight, FileDown, GripVertical, Plus, X } from 'lucide-react';
 import {
   DndContext,
   PointerSensor,
@@ -227,6 +227,7 @@ function SortableCheckpointCard({
             key={evIdx}
             className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-status-pass-bg text-status-pass-text border border-status-pass-border"
           >
+            <CheckSquare size={9} />
             {evidenceExamples[evIdx]}
             <button
               type="button"
@@ -272,6 +273,7 @@ function SortableCheckpointCard({
                       }`}>
                         {selected && '\u2713'}
                       </span>
+                      <CheckSquare size={11} className="shrink-0 opacity-50" />
                       {ev}
                     </button>
                   );
@@ -294,11 +296,14 @@ function SortableCheckpointCard({
         <button
           type="button"
           onClick={() => toggleMemo(i)}
-          className="inline-flex items-center gap-1 text-[10px] text-tx-muted hover:text-tx-secondary transition-colors"
+          className={`inline-flex items-center gap-1 text-[10px] transition-colors ${
+            hasMemo
+              ? 'text-accent-text font-semibold hover:text-accent-text/80'
+              : 'text-tx-muted hover:text-tx-secondary'
+          }`}
         >
           <ChevronRight size={12} className={`transition-transform ${isMemoOpen ? 'rotate-90' : ''}`} />
           <span>메모</span>
-          {hasMemo && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
         </button>
         {isMemoOpen && (
           <textarea
