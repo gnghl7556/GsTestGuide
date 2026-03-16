@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Clock, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { CATEGORY_THEMES } from 'virtual:content/categories';
 import type { ChecklistItem, ReviewData } from '../../../types';
+import { BreakableText } from '../../../components/ui';
 
 interface NextItemsPanelProps {
   checklist: ChecklistItem[];
@@ -62,7 +63,7 @@ export function NextItemsPanel({ checklist, reviewData, setSelectedReqId }: Next
                           <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${theme.bg}`} />
                           <div className="flex-1 min-w-0">
                             <span className="block text-xs font-semibold text-tx-primary line-clamp-2 break-keep break-words">
-                              {item.title}
+                              <BreakableText>{item.title}</BreakableText>
                             </span>
                             <span className={`text-[10px] ${theme.text}`}>
                               {PHASE_LABELS[item.category] || item.category}
@@ -91,7 +92,7 @@ export function NextItemsPanel({ checklist, reviewData, setSelectedReqId }: Next
                       >
                         <Clock size={12} className="text-status-hold-text shrink-0" />
                         <span className="flex-1 min-w-0 text-xs font-semibold text-tx-primary line-clamp-2 break-keep break-words">
-                          {item.title}
+                          <BreakableText>{item.title}</BreakableText>
                         </span>
                         <ChevronRight size={12} className="text-tx-muted shrink-0 group-hover:text-tx-secondary transition-colors" />
                       </button>

@@ -4,6 +4,7 @@ import { CheckCircle2, AlertCircle, Clock, Circle, ChevronDown, ChevronRight, Ch
 import type { ChecklistItem, ExecutionItemGate, QuickModeItem, QuickReviewAnswer, ReviewData } from '../../../types';
 import { CATEGORIES, CATEGORY_THEMES } from 'virtual:content/categories';
 import { GuideModal } from '../../guide/components/GuideModal';
+import { BreakableText } from '../../../components/ui';
 
 
 interface NavSidebarProps {
@@ -298,7 +299,7 @@ export function NavSidebar({
                                 <span className={`shrink-0 font-mono text-[10px] ${isActive ? theme.text : theme.idleText}`}>
                                   {String(index + 1).padStart(2, '0')}
                                 </span>
-                                <span className="block flex-1 line-clamp-2 break-keep break-words">{toShortLabel(item.title)}</span>
+                                <span className="block flex-1 line-clamp-2 break-keep break-words"><BreakableText>{toShortLabel(item.title)}</BreakableText></span>
                                 {isBlocked && (
                                   <span className="shrink-0 rounded-full border border-ln bg-surface-sunken px-1.5 py-0.5 text-[9px] font-semibold text-tx-tertiary">
                                     잠금

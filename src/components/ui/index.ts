@@ -7,3 +7,4 @@ export { BaseModal } from './BaseModal';
 export { FormModal } from './FormModal';
 export { ConfirmModal } from './ConfirmModal';
 export { TabGroup } from './TabGroup';
+export { BreakableText } from './BreakableText';

@@ -9,7 +9,7 @@ import type {
 import { CATEGORY_THEMES } from 'virtual:content/categories';
 import { Ban, FileDown, ExternalLink, Download, User, Phone, Mail, MessageSquare, ChevronDown } from 'lucide-react';
 import { useTestSetupContext } from '../../../providers/useTestSetupContext';
-import { RequiredDocChip } from '../../../components/ui';
+import { RequiredDocChip, BreakableText } from '../../../components/ui';
 import { useEffect, useState } from 'react';
 import { db, storage } from '../../../lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
@@ -284,9 +284,9 @@ export function CenterDisplay({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap min-w-0">
           <h2 className={`text-2xl font-bold leading-snug break-keep break-words ${isNA ? 'text-tx-muted' : 'text-tx-primary'}`}>
-            {activeItem.title}
+            <BreakableText>{activeItem.title}</BreakableText>
           </h2>
           {refItems.length > 0 && !isNA && (
             <div className="flex flex-wrap items-center gap-1">
@@ -401,7 +401,7 @@ export function CenterDisplay({
                                 ));
                               })()}
                             </div>
-                            <span className="text-[14px] leading-snug font-semibold text-tx-primary break-keep break-words">{question.text}</span>
+                            <span className="text-[14px] leading-snug font-semibold text-tx-primary break-keep break-words"><BreakableText>{question.text}</BreakableText></span>
                           </div>
                         </div>
                         <div className="flex items-center shrink-0 gap-1.5">
