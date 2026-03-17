@@ -222,6 +222,31 @@ export function ContentOverrideManagement() {
     return result;
   }, [grouped, search, filterModified, versionedContents]);
 
+  /** 변경 요약 칩 계산 — 어떤 필드가 수정되었는지 */
+  const changeSummaryMap = useMemo(() => {
+    const result: Record<string, string[]> = {};
+    for (const reqId of Object.keys(versionedContents)) {
+      const vc = versionedContents[reqId];
+      const req = REQUIREMENTS_DB.find((r) => r.id === reqId);
+      if (!vc || !req) continue;
+      const changes: string[] = [];
+      if (vc.title && vc.title !== req.title) changes.push('제목');
+      if (vc.description && vc.description !== req.description) changes.push('설명');
+      const origCps = req.checkPoints ?? [];
+      const vcCps = vc.checkpoints ?? [];
+      if (vcCps.length !== origCps.length || vcCps.some((cp: string, i: number) => cp !== origCps[i])) {
+        changes.push('CP');
+      }
+      const origEvidence = req.evidenceExamples ?? [];
+      if (JSON.stringify(vc.evidenceExamples ?? []) !== JSON.stringify(origEvidence)) changes.push('증빙');
+      const origSuggestions = req.testSuggestions ?? [];
+      if (JSON.stringify(vc.testSuggestions ?? []) !== JSON.stringify(origSuggestions)) changes.push('제안');
+      if ((vc.passCriteria ?? '') !== (req.passCriteria ?? '')) changes.push('판정');
+      if (changes.length > 0) result[reqId] = changes;
+    }
+    return result;
+  }, [versionedContents]);
+
   const versionedCount = Object.values(versionNumbers).filter(v => v > 0).length;
 
   const toggleCategory = (cat: RequirementCategory) => {
@@ -504,6 +529,20 @@ export function ContentOverrideManagement() {
                         <span className="text-xs text-tx-primary truncate flex-1">
                           {getDisplayValue(req.id, 'title')}
                         </span>
+                        {modified && changeSummaryMap[req.id] && (
+                          <span className="shrink-0 flex items-center gap-0.5">
+                            {changeSummaryMap[req.id].slice(0, 2).map((label) => (
+                              <span key={label} className="text-[8px] font-medium text-status-hold-text bg-status-hold-bg px-1 py-0.5 rounded">
+                                {label}
+                              </span>
+                            ))}
+                            {changeSummaryMap[req.id].length > 2 && (
+                              <span className="text-[8px] font-medium text-tx-muted">
+                                +{changeSummaryMap[req.id].length - 2}
+                              </span>
+                            )}
+                          </span>
+                        )}
                         {modified && (
                           <span className="shrink-0 text-[8px] font-bold text-accent-text bg-accent-subtle px-1 py-0.5 rounded">
                             v{versionNumbers[req.id]}

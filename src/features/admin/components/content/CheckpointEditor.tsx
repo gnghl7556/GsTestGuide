@@ -91,6 +91,7 @@ function SortableCheckpointCard({
   const editedBody = editing.checkpoints[i] ?? origBody;
   const editedRefs = editing.checkpointRefs[i] ?? [];
   const refsChanged = JSON.stringify(editedRefs) !== JSON.stringify(origRefs);
+  const isBodyOrRefsModified = editedBody !== origBody || refsChanged;
   const isDropdownOpen = refDropdownIdx === i;
   const currentImportance = editing.checkpointImportances[i] ?? inferImportance(origCp);
   const inferredImportance = inferImportance(origCp);
@@ -106,7 +107,11 @@ function SortableCheckpointCard({
     <div
       ref={setNodeRef}
       style={style}
-      className="rounded-lg border border-ln bg-surface-base/50 px-3 py-2.5 space-y-2"
+      className={`rounded-lg border bg-surface-base/50 px-3 py-2.5 space-y-2 ${
+        isBodyOrRefsModified
+          ? 'border-ln border-l-[3px] border-l-status-hold-border'
+          : 'border-ln'
+      }`}
     >
       {/* Row 1: Drag handle + Number + Badge + Ref tags */}
       <div className="flex flex-wrap items-center gap-1.5">
@@ -283,11 +288,12 @@ function SortableCheckpointCard({
           </div>
         )}
 
-        {/* Original diff indicator */}
-        {(editedBody !== origBody || refsChanged) && (
-          <span className="ml-auto text-[9px] text-tx-muted truncate max-w-48" title={`원본: ${origBody}${origRefs.length > 0 ? ` [ref: ${origRefs.join(', ')}]` : ''}`}>
-            원본: {origBody.slice(0, 30)}{origBody.length > 30 ? '...' : ''}
-          </span>
+        {/* Original diff block */}
+        {isBodyOrRefsModified && (
+          <div className="w-full mt-1 flex items-center gap-1.5 bg-surface-sunken rounded px-2 py-1">
+            <span className="shrink-0 text-[9px] font-semibold text-tx-muted">원본</span>
+            <span className="text-[10px] text-tx-muted line-through truncate">{origBody}</span>
+          </div>
         )}
       </div>
 

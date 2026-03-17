@@ -1,5 +1,23 @@
 # Changelog
 
+## [2026-03-17] - 콘텐츠 관리 수정 내역 시각적 식별 개선
+
+### Added
+- `docs/04-report/admin.report.md` — 콘텐츠 관리 수정 내역 시각화 피처 완료 보고서 (Match Rate 100%)
+
+### Changed
+- `src/features/admin/components/ContentOverrideManagement.tsx` — changeSummaryMap useMemo 추가 (변경 필드 요약 칩)
+- `src/features/admin/components/content/ContentEditForm.tsx` — 수정 필드 좌측 bar + diff 블록 하이라이트
+- `src/features/admin/components/content/CheckpointEditor.tsx` — 체크포인트 카드 수정 표시 및 원본 비교 diff
+- `src/features/admin/components/content/DetailFieldsEditor.tsx` — 리스트 항목별 변경/신규/삭제 표시
+
+### Rationale
+- 관리자 콘텐츠 편집 시 수정 항목 식별 곤란 문제 해결
+- 일관된 디자인 토큰(`border-l-status-hold-border`, `bg-surface-sunken` 등) 기반 구현
+- light/dark 모드 자동 대응, 14개 설계 항목 100% 충족
+
+---
+
 ## [2026-03-16] - 시험 생성 UI 개선
 
 ### Changed

@@ -210,24 +210,38 @@ export function ContentEditForm({
               <div>
                 <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">제목</label>
                 <input
-                  className="mt-1 w-full rounded border border-ln bg-surface-base px-3 py-2 text-sm text-tx-primary"
+                  className={`mt-1 w-full rounded border bg-surface-base px-3 py-2 text-sm text-tx-primary ${
+                    editing.title !== req.title
+                      ? 'border-l-[3px] border-l-status-hold-border border-t-ln border-r-ln border-b-ln bg-status-hold-bg/20'
+                      : 'border-ln'
+                  }`}
                   value={editing.title}
                   onChange={(e) => setEditing({ ...editing, title: e.target.value })}
                 />
                 {editing.title !== req.title && (
-                  <p className="mt-0.5 text-[10px] text-tx-muted">원본: {req.title}</p>
+                  <div className="mt-1.5 flex items-center gap-1.5 bg-surface-sunken rounded px-2 py-1">
+                    <span className="shrink-0 text-[9px] font-semibold text-tx-muted">원본</span>
+                    <span className="text-[11px] text-tx-muted line-through">{req.title}</span>
+                  </div>
                 )}
               </div>
               <div>
                 <label className="text-[10px] font-bold text-tx-tertiary uppercase tracking-wider">설명</label>
                 <textarea
-                  className="mt-1 w-full rounded border border-ln bg-surface-base px-3 py-2 text-sm text-tx-primary resize-y min-h-[60px]"
+                  className={`mt-1 w-full rounded border bg-surface-base px-3 py-2 text-sm text-tx-primary resize-y min-h-[60px] ${
+                    editing.description !== req.description
+                      ? 'border-l-[3px] border-l-status-hold-border border-t-ln border-r-ln border-b-ln bg-status-hold-bg/20'
+                      : 'border-ln'
+                  }`}
                   value={editing.description}
                   onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                   rows={3}
                 />
                 {editing.description !== req.description && (
-                  <p className="mt-0.5 text-[10px] text-tx-muted line-clamp-2">원본: {req.description}</p>
+                  <div className="mt-1.5 flex items-start gap-1.5 bg-surface-sunken rounded px-2 py-1">
+                    <span className="shrink-0 text-[9px] font-semibold text-tx-muted mt-px">원본</span>
+                    <span className="text-[11px] text-tx-muted line-through line-clamp-3">{req.description}</span>
+                  </div>
                 )}
               </div>
             </EditSection>
