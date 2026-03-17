@@ -28,6 +28,9 @@ import { db } from '../../../lib/firebase';
 import { useRegisterExecutionToolbar } from '../../../providers/ExecutionToolbarContext';
 import { isProjectFinalized } from '../../../utils/projectUtils';
 import { logger } from '../../../utils/logger';
+import { computeCpFingerprint } from '../../../lib/content/contentFingerprint';
+import { ConfirmModal } from '../../../components/ui/ConfirmModal';
+import { AlertTriangle } from 'lucide-react';
 
 const storageKey = 'gs-test-guide:review';
 
@@ -91,7 +94,7 @@ export function ExecutionPage() {
   const { contentUpdateNotice, dismissNotice: dismissContentNotice } = useContentOverrideMonitor(versionedContents);
 
   const hasLocalData = Object.keys(quickReviewById).length > 0 || Object.keys(reviewData).length > 0;
-  const { setFirestoreLoaded } = useFirestoreReviewLoader(
+  const { setFirestoreLoaded, staleResetItems, dismissStaleNotice } = useFirestoreReviewLoader(
     currentTestNumber, hasLocalData, setQuickReviewById, setReviewData,
   );
 
@@ -261,6 +264,12 @@ export function ExecutionPage() {
           items: {
             [itemId]: {
               requirementId: itemId,
+              cpFingerprint: (() => {
+                const qm = quickModeById[itemId];
+                return qm?.expertDetails?.checkPoints?.length
+                  ? computeCpFingerprint(qm.expertDetails.checkPoints)
+                  : null;
+              })(),
               answers: entry.answers || {},
               inputValues: entry.inputValues || {},
               answeredQuestions: entry.answeredQuestions || {},
@@ -280,7 +289,7 @@ export function ExecutionPage() {
     } catch (error) {
       logger.warn('Firestore', '질문 저장 실패', error);
     }
-  }, [currentTestNumber, quickReviewById, reviewData]);
+  }, [currentTestNumber, quickReviewById, reviewData, quickModeById]);
 
   const statusToDecision: Record<ReviewData['status'], QuickDecision> = {
     Verified: 'PASS',
@@ -650,6 +659,39 @@ export function ExecutionPage() {
   });
 
   return (
+    <>
+    {/* 점검항목 구조 변경으로 초기화된 항목 알림 */}
+    <ConfirmModal
+      open={staleResetItems.length > 0}
+      title="점검항목이 업데이트되었습니다"
+      description={
+        <div className="space-y-2">
+          <p className="text-xs text-tx-secondary">
+            아래 항목의 체크포인트가 변경되어 진행 중이던 점검 데이터가 초기화되었습니다.
+            해당 항목은 새로운 체크포인트로 다시 점검해 주세요.
+          </p>
+          <ul className="space-y-1 mt-2">
+            {staleResetItems.map((item) => (
+              <li key={item.id} className="flex items-center gap-2 text-xs">
+                <span className="shrink-0 font-bold text-tx-tertiary bg-surface-sunken px-1.5 py-0.5 rounded text-[10px]">
+                  {item.id}
+                </span>
+                <span className="text-tx-primary">{item.title}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      }
+      confirmLabel="확인"
+      confirmVariant="warning"
+      onConfirm={dismissStaleNotice}
+      onCancel={dismissStaleNotice}
+      icon={
+        <div className="flex items-center justify-center h-10 w-10 rounded-full bg-status-hold-bg shrink-0">
+          <AlertTriangle size={20} className="text-status-hold-text" />
+        </div>
+      }
+    />
     <ChecklistView
       checklist={checklist}
       reviewData={reviewData}
@@ -683,5 +725,6 @@ export function ExecutionPage() {
       contentUpdateNotice={contentUpdateNotice}
       onDismissContentNotice={dismissContentNotice}
     />
+    </>
   );
 }

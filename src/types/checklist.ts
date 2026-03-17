@@ -20,6 +20,7 @@ export interface Requirement {
     helper?: string;
   }>;
   checkPoints?: string[];
+  cpFingerprint?: string;
   evidenceExamples?: string[];
   testSuggestions?: string[];
   passCriteria?: string;

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Eye, Pencil, ChevronDown, ChevronRight, RotateCcw, Clock } from 'lucide-react';
+import { Eye, Pencil, ChevronDown, ChevronRight, RotateCcw, Clock, AlertTriangle } from 'lucide-react';
+import type { StalenessInfo } from '../../../../lib/content/snapshotUtils';
 import type { EditingState } from './types';
 import { splitRef } from './types';
 import type { RequirementCategory } from '../../../../types';
@@ -27,6 +28,7 @@ type ContentEditFormProps = {
   onCancel: () => void;
   busy: boolean;
   isModified: boolean;
+  staleInfo?: StalenessInfo | null;
   onHistory?: () => void;
   onReset?: () => void;
   groupedMaterials: Array<{ name: string; labels: string[] }>;
@@ -87,6 +89,7 @@ export function ContentEditForm({
   onCancel,
   busy,
   isModified,
+  staleInfo,
   onHistory,
   onReset,
   groupedMaterials,
@@ -185,6 +188,19 @@ export function ContentEditForm({
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {/* Stale snapshot warning banner */}
+        {staleInfo?.isStale && (
+          <div className="flex items-start gap-2 rounded-lg bg-status-hold-bg px-3 py-2.5">
+            <AlertTriangle size={16} className="text-status-hold-text shrink-0 mt-0.5" />
+            <div className="text-xs text-status-hold-text">
+              <p className="font-semibold">원본 콘텐츠가 변경되어 저장된 스냅샷이 초기화되었습니다.</p>
+              <p className="mt-0.5 text-[11px] opacity-80">
+                마크다운 기본값으로 편집을 시작합니다. 저장하면 새 스냅샷이 생성됩니다.
+              </p>
+            </div>
+          </div>
+        )}
+
         {preview ? (
           <ContentPreview editing={editing} category={req.category} />
         ) : (

@@ -5,7 +5,7 @@ import { db } from '../../../lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 import type { RequirementCategory, QuestionImportance, ContentSnapshot } from '../../../types';
 import { inferImportance } from '../../../utils/quickMode';
-import { requirementToSnapshot } from '../../../lib/content/snapshotUtils';
+import { requirementToSnapshot, checkSnapshotStaleness, type StalenessInfo } from '../../../lib/content/snapshotUtils';
 import { useContentVersions } from '../../../hooks/useContentVersions';
 import { saveContentVersion } from '../hooks/useContentVersioning';
 import { AdminPageHeader, BusyOverlay } from '../shared';
@@ -30,6 +30,7 @@ export function ContentOverrideManagement() {
   const versionedContents = useContentVersions();
   const [versionNumbers, setVersionNumbers] = useState<Record<string, number>>({});
   const [editing, setEditing] = useState<EditingState | null>(null);
+  const [staleInfo, setStaleInfo] = useState<StalenessInfo | null>(null);
   const [busy, setBusy] = useState(false);
   const [rollbackTarget, setRollbackTarget] = useState<{ reqId: string; version: number; snapshot: ContentSnapshot } | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<RequirementCategory>>(
@@ -237,8 +238,23 @@ export function ContentOverrideManagement() {
     const req = REQUIREMENTS_DB.find((r) => r.id === reqId);
     if (!req) return;
 
-    // versionedContents에 있으면 그 스냅샷을 사용, 없으면 원본에서 생성
-    const snapshot = versionedContents[reqId] ?? requirementToSnapshot(req);
+    // stale 검증: versionedContents가 있으면 fingerprint 비교
+    const stored = versionedContents[reqId];
+    let detectedStale: StalenessInfo | null = null;
+    let snapshot;
+    if (stored) {
+      const info = checkSnapshotStaleness(req, stored);
+      if (info.isStale) {
+        detectedStale = info;
+        // stale → 마크다운 원본으로 편집 시작
+        snapshot = requirementToSnapshot(req);
+      } else {
+        snapshot = stored;
+      }
+    } else {
+      snapshot = requirementToSnapshot(req);
+    }
+    setStaleInfo(detectedStale);
 
     const cpEntries = snapshot.checkpoints.map((cp: string, i: number) => {
       const { body, refs } = splitRef(cp);
@@ -302,6 +318,9 @@ export function ContentOverrideManagement() {
       if (trimmed) checkpointDetails[Number(iStr)] = trimmed;
     }
 
+    // 현재 마크다운 기준 fingerprint 포함
+    const req = REQUIREMENTS_DB.find((r) => r.id === ed.reqId);
+
     return {
       title: ed.title,
       description: ed.description,
@@ -314,6 +333,7 @@ export function ContentOverrideManagement() {
       testSuggestions: ed.testSuggestions.filter(s => s.trim()),
       passCriteria: ed.passCriteria,
       branchingRules: ed.branchingRules,
+      sourceFingerprint: req?.cpFingerprint,
     };
   }, []);
 
@@ -510,6 +530,7 @@ export function ContentOverrideManagement() {
               onCancel={() => setEditing(null)}
               busy={busy}
               isModified={hasVersion(editing.reqId)}
+              staleInfo={staleInfo}
               onHistory={() => setHistoryTarget({ reqId: editing.reqId, title: getDisplayValue(editing.reqId, 'title') })}
               onReset={() => {
                 // v0으로 되돌리기

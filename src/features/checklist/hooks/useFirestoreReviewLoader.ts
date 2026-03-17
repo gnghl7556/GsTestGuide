@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { logger } from '../../../utils/logger';
+import { REQUIREMENTS_DB } from 'virtual:content/process';
 import type {
   QuickAnswer,
   QuickDecision,
@@ -11,6 +12,8 @@ import type {
 
 type QuickInputValues = NonNullable<QuickReviewAnswer['inputValues']>;
 
+export type StaleResetItem = { id: string; title: string };
+
 export function useFirestoreReviewLoader(
   currentTestNumber: string,
   hasLocalData: boolean,
@@ -18,6 +21,7 @@ export function useFirestoreReviewLoader(
   setReviewData: Dispatch<SetStateAction<Record<string, ReviewData>>>,
 ) {
   const [firestoreLoaded, setFirestoreLoaded] = useState(false);
+  const [staleResetItems, setStaleResetItems] = useState<StaleResetItem[]>([]);
   const activeTestRef = useRef(currentTestNumber);
 
   useEffect(() => {
@@ -39,10 +43,33 @@ export function useFirestoreReviewLoader(
         const data = snap.data() as { items?: Record<string, Record<string, unknown>> };
         if (!data.items || Object.keys(data.items).length === 0) return;
 
+        // 항목별 stale 여부를 한 번만 계산 (quickReview + reviewData 양쪽에서 공유)
+        const staleItems = new Set<string>();
+        const resetItems: StaleResetItem[] = [];
+        for (const [itemId, item] of Object.entries(data.items!)) {
+          const storedFp = item.cpFingerprint as string | undefined;
+          const req = REQUIREMENTS_DB.find((r: { id: string }) => r.id === itemId);
+          if (!storedFp || !req?.cpFingerprint || storedFp === req.cpFingerprint) continue;
+
+          // 이미 판정 완료된 항목은 stale이어도 보존 (완료된 시험 기록 유지)
+          const hasCompletedReview = item.reviewStatus && item.reviewStatus !== 'None';
+          if (hasCompletedReview) {
+            logger.warn('Firestore', `[Stale] ${itemId}: 구조 불일치 — 판정 완료 항목이므로 보존`);
+            continue;
+          }
+
+          logger.warn('Firestore', `[Stale] ${itemId}: 구조 불일치 — 건너뜀`);
+          staleItems.add(itemId);
+          resetItems.push({ id: itemId, title: req?.title ?? itemId });
+        }
+        if (resetItems.length > 0) setStaleResetItems(resetItems);
+
         setQuickReviewById((prev) => {
           if (Object.keys(prev).length > 0) return prev;
           const result: Record<string, QuickReviewAnswer> = {};
           for (const [itemId, item] of Object.entries(data.items!)) {
+            if (staleItems.has(itemId)) continue;
+
             result[itemId] = {
               requirementId: (item.requirementId as string) || itemId,
               answers: (item.answers as Record<string, QuickAnswer>) || {},
@@ -60,6 +87,8 @@ export function useFirestoreReviewLoader(
           if (Object.keys(prev).length > 0) return prev;
           const result: Record<string, ReviewData> = {};
           for (const [itemId, item] of Object.entries(data.items!)) {
+            if (staleItems.has(itemId)) continue;
+
             const status = item.reviewStatus as ReviewData['status'] | undefined;
             if (status && status !== 'None') {
               result[itemId] = {
@@ -82,5 +111,7 @@ export function useFirestoreReviewLoader(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTestNumber, firestoreLoaded]);
 
-  return { firestoreLoaded, setFirestoreLoaded };
+  const dismissStaleNotice = () => setStaleResetItems([]);
+
+  return { firestoreLoaded, setFirestoreLoaded, staleResetItems, dismissStaleNotice };
 }

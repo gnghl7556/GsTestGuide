@@ -1,6 +1,44 @@
 import type { Requirement, QuestionImportance } from '../../types';
 import type { ContentSnapshot, FieldDiff } from '../../types/contentVersion';
 import type { ContentOverride, BranchingRule } from './mergeOverrides';
+import { computeCpFingerprint } from './contentFingerprint';
+
+// --- Staleness detection ---
+
+export type StalenessInfo = {
+  isStale: boolean;
+  reason?: 'fingerprint_mismatch' | 'count_mismatch' | 'index_overflow';
+};
+
+/**
+ * 마크다운 원본(base)과 Firestore 스냅샷 간 구조 일치 여부를 검사한다.
+ * 1순위: fingerprint 비교, 2순위: CP 수 비교, 3순위: 인덱스 범위 검사
+ */
+export function checkSnapshotStaleness(
+  base: Requirement,
+  snapshot: ContentSnapshot,
+): StalenessInfo {
+  const baseCps = base.checkPoints ?? [];
+
+  // 1순위: 양쪽 fingerprint 비교
+  if (base.cpFingerprint && snapshot.sourceFingerprint) {
+    return base.cpFingerprint === snapshot.sourceFingerprint
+      ? { isStale: false }
+      : { isStale: true, reason: 'fingerprint_mismatch' };
+  }
+
+  // 2순위: 레거시(fingerprint 없음) → CP 수 비교
+  if (snapshot.checkpoints.length !== baseCps.length) {
+    return { isStale: true, reason: 'count_mismatch' };
+  }
+
+  // 3순위: checkpointOrder 인덱스 범위 검사
+  if (snapshot.checkpointOrder.some(i => i >= snapshot.checkpoints.length)) {
+    return { isStale: true, reason: 'index_overflow' };
+  }
+
+  return { isStale: false };
+}
 
 /**
  * Requirement + (선택적) ContentOverride → ContentSnapshot 변환.
@@ -56,6 +94,9 @@ export function requirementToSnapshot(
     testSuggestions: override?.testSuggestions ?? req.testSuggestions ?? [],
     passCriteria: override?.passCriteria ?? req.passCriteria ?? '',
     branchingRules: override?.branchingRules ?? req.branchingRules ?? [],
+    sourceFingerprint: baseCheckpoints.length > 0
+      ? computeCpFingerprint(baseCheckpoints)
+      : undefined,
   };
 }
 
@@ -69,8 +110,22 @@ export function applySnapshotToRequirement(
   base: Requirement,
   snapshot: ContentSnapshot,
 ): Requirement {
-  const order = snapshot.checkpointOrder;
-  const reorderedCheckpoints = order.map((origIdx) => snapshot.checkpoints[origIdx]);
+  // Stale 검증: 불일치 시 마크다운 원본 그대로 반환
+  const staleness = checkSnapshotStaleness(base, snapshot);
+  if (staleness.isStale) {
+    console.warn(`[Stale] ${base.id}: ${staleness.reason} — 마크다운 원본 사용`);
+    return base;
+  }
+
+  const cpLen = snapshot.checkpoints.length;
+  // 방어: checkpointOrder 범위 밖 인덱스 필터 + 누락 인덱스 보충
+  const safeOrder = snapshot.checkpointOrder.filter(i => i >= 0 && i < cpLen);
+  const existing = new Set(safeOrder);
+  for (let i = 0; i < cpLen; i++) {
+    if (!existing.has(i)) safeOrder.push(i);
+  }
+  const order = safeOrder;
+  const reorderedCheckpoints = order.map((origIdx) => snapshot.checkpoints[origIdx] ?? '');
 
   // 재정렬된 메타데이터
   const reorderedImportances: Record<number, QuestionImportance> = {};

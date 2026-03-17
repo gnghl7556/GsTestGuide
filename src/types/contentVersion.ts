@@ -15,6 +15,7 @@ export interface ContentSnapshot {
   testSuggestions: string[];
   passCriteria: string;
   branchingRules: BranchingRule[];
+  sourceFingerprint?: string;
 }
 
 export type VersionAction = 'create' | 'edit' | 'rollback';

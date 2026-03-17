@@ -78,6 +78,16 @@ function parseTable(content: string): Record<string, string>[] {
   });
 }
 
+// --- Inline djb2 fingerprint (mirrors src/lib/content/contentFingerprint.ts) ---
+function computeCpFingerprint(checkpoints: string[]): string {
+  const joined = checkpoints.join('\n');
+  let hash = 5381;
+  for (let i = 0; i < joined.length; i++) {
+    hash = ((hash << 5) + hash + joined.charCodeAt(i)) | 0;
+  }
+  return `v1:${checkpoints.length}:${(hash >>> 0).toString(36)}`;
+}
+
 const PHASE_TO_CATEGORY: Record<string, string> = {
   '시험준비': 'SETUP',
   '시험수행': 'EXECUTION',
@@ -146,12 +156,15 @@ function generateProcessModule(rootDir: string): string {
         )
       : undefined;
 
+    const checkPoints = parseCheckboxList(findSection(sections, '체크포인트')?.content ?? '');
+
     return {
       id: item.frontmatter.id as string,
       category,
       title: item.frontmatter.title as string,
       description: findSection(sections, '설명')?.content ?? '',
-      checkPoints: parseCheckboxList(findSection(sections, '체크포인트')?.content ?? ''),
+      checkPoints,
+      cpFingerprint: checkPoints.length > 0 ? computeCpFingerprint(checkPoints) : undefined,
       evidenceExamples: parseBulletList(findSection(sections, '증빙 예시')?.content ?? ''),
       passCriteria: findSection(sections, '합격 기준')?.content?.trim() ?? '',
       ...(checkpointEvidences && { checkpointEvidences }),
