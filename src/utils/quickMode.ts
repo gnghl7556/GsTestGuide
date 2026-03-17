@@ -73,6 +73,7 @@ const toSummary = (text: string) => {
 };
 
 export const inferImportance = (text: string): QuestionImportance => {
+  if (!text) return 'MUST';
   if (MUST_HINTS.some((hint) => text.includes(hint))) return 'MUST';
   if (SHOULD_HINTS.some((hint) => text.includes(hint))) return 'SHOULD';
   return 'MUST';

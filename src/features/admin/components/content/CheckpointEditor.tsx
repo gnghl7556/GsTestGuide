@@ -394,7 +394,7 @@ export function CheckpointEditor({
                 id={`cp-${origIdx}`}
                 origIdx={origIdx}
                 displayNum={pos + 1}
-                origCp={checkPoints[origIdx]}
+                origCp={checkPoints[origIdx] ?? ''}
                 editing={editing}
                 setEditing={setEditing}
                 groupedMaterials={groupedMaterials}
