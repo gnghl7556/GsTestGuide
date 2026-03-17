@@ -23,6 +23,7 @@ const REF_PATTERN = /\s*\[ref:\s*(.+?)\]\s*$/;
 
 /** body text from checkpoint text, splitting off [ref:~] suffix */
 export const splitRef = (text: string): { body: string; refSuffix: string; refs: string[] } => {
+  if (!text) return { body: '', refSuffix: '', refs: [] };
   const match = text.match(REF_PATTERN);
   if (!match) return { body: text, refSuffix: '', refs: [] };
   const refs = match[1].split(',').map((r) => r.trim()).filter(Boolean);
